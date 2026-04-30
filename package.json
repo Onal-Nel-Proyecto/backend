@@ -5,10 +5,11 @@
   "license": "ISC",
   "author": "",
   "type": "module",
-  "main": "index.js",
+  "main": "/src/app.js",
   "scripts": {
     "test": "jest",
-    "start": "nodemon index.js"
+    "start": "node src/config/server.js",
+    "dev": "nodemon src/config/server.js"
   },
   "dependencies": {
     "bcryptjs": "^3.0.3",
