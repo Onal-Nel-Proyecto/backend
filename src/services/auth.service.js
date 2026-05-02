@@ -1,16 +1,19 @@
 import { UserModel } from '../models/user.models.js';
 import { ACCESS_TOKEN_KEY, ACCESS_TOKEN_EXPIRES_IN, REFRESH_TOKEN_KEY, REFRESH_TOKEN_EXPIRES_IN } from '../config/config.js';
 import jwt from 'jsonwebtoken';
-import { compareSync } from 'bcryptjs';
+import bcrypt from 'bcryptjs';
 
 export const loginUser = async (e) => {
 
-  const data = await UserModel.getUserByEmail(e)
+  try {
+    const data = await UserModel.getUserByEmail(e)
   // validar usuario y contraseña
-  if (data === false || !compareSync(e.pass, data.data.contraseña)) return { err: "Usuario invalido", erroCode: 401 }
+  if (!data?.status || !bcrypt.compareSync(e.pass, data.data.contraseña)) {
+    return { err: "Usuario invalido", errorCode: 401 };
+  }
 
-  if (data.data.estado === 2) return { err: "Usuario bloqueado", erroCode: 403 }
-  
+  if (data.data.estado === 2) return { err: "Usuario bloqueado", errorCode: 403 }
+
   // crear token de acceso
   const payload = {
     // datos del usuario que se incluirán en el token
@@ -43,6 +46,9 @@ export const loginUser = async (e) => {
     token: newAccessToken,
     refreshToken: newRefreshToken
   }
+  } catch (error) {
+    return { err: error.message, errorCode: 500 }
+  }
 }
 
 export const refreshTokenService = async (token) => {
@@ -64,7 +70,7 @@ export const refreshTokenService = async (token) => {
       }
     )
 
-    return newAccessToken 
+    return newAccessToken
 
   } catch (error) {
 

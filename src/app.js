@@ -11,7 +11,7 @@ app.use(cors());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 
-app.use('/log', loginRute) // ruta para login y logout
+app.use('/auth', loginRute) // ruta para login y logout
 
 // ruta de prueba de autenticacion y autorizacion
 app.get('/prueba', authValidator, isAdmin, (req, res) => {

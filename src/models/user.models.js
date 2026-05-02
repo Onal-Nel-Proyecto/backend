@@ -10,7 +10,7 @@ export class UserModel {
       [email.toLowerCase()]
     )
 
-    if (rows.length === 0) return false // si no se encuentra el usuario, retornar false
+    if (rows.length === 0) return { status: false }; // si no se encuentra el usuario, retornar false
     
     // retornar datos del usuario formateado encontrado
     return {

@@ -5,7 +5,7 @@ import validateFields from "../middleware/validator.middleware.js";
 const router = express.Router();
 
 // ruta para login
-router.post("/",
+router.post("/login",
   // middlewares para validar los campos de login
   [
     ...loginValidator,

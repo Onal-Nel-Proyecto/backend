@@ -12,9 +12,9 @@ const ctlLog = async (req, res) => {
       }
     );
 
-    if (result.err) return res.status(result.erroCode).json({err: result.err}) // control de errores en el servicio
+    if (result.err) return res.status(result.errorCode).json({err: result.err}) // control de errores en el servicio
 
-    res.status(201)
+    res.status(200)
     .cookie('token', result.token, {
       httpOnly: true,
       sameSite: 'strict',
