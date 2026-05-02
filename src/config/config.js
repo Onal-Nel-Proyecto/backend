@@ -11,7 +11,10 @@ const {
   MYSQL_PASSWORD,
   MYSQL_DATABASE,
 
-  TOKEN_KEY // clave secreta para generar tokens de autenticación
+  ACCESS_TOKEN_KEY, // clave secreta para generar tokens de autenticación
+  ACCESS_TOKEN_EXPIRES_IN, // tiempo de expiración del token de acceso
+  REFRESH_TOKEN_KEY, // clave secreta para generar tokens de actualización
+  REFRESH_TOKEN_EXPIRES_IN // tiempo de expiración del token de actualización
 } = process.env
 
 export {
@@ -20,5 +23,8 @@ export {
   MYSQL_USER,
   MYSQL_PASSWORD,
   MYSQL_DATABASE,
-  TOKEN_KEY
+  ACCESS_TOKEN_KEY,
+  ACCESS_TOKEN_EXPIRES_IN,
+  REFRESH_TOKEN_KEY,
+  REFRESH_TOKEN_EXPIRES_IN
 }
