@@ -108,4 +108,34 @@ export class PedidoModel {
       [id]
     );
   }
+  static async updateStatus({pedidoId, usu_id, estado}) {
+    const sql = `
+    CALL sp_cambiar_estado_pedido(
+      ?, ?, ?, @result
+    )
+  `;
+
+    const values = [
+      pedidoId,
+      estado,
+      usu_id
+    ];
+
+    // Ejecutar procedimiento
+    await db.query(sql, values);
+
+    // Obtener ID generado
+    const [[result]] = await db.query(
+      'SELECT @result AS resultado'
+    );
+    console.log(result, estado)
+    // Validar resultado
+    if (!result) {
+      throw new Error(
+        'No se pudo cambiar el estado del pedido'
+      );
+    }
+
+    return result.resultado;
+  }
 } 

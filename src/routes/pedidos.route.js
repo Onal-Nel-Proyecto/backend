@@ -6,6 +6,8 @@ import { basePedidoValidator, cancelPedidoValidator, parametroValidator, updateV
 import validateFields from "../middleware/validator.middleware.js";
 import { actualizarDetalleValidator, crearDetalleValidator } from "../validators/dt_pedido.validator.js";
 import { actualizarDetalle, crearDetalle, eliminarDetalle } from "../controllers/dt_pedido.controller.js";
+import { createNewProductionController, eliminarProduccion, updateProductionController } from "../controllers/produccion.controller.js";
+import { produccionPATCHValidator, produccionPOSTValidator } from "../validators/produccion.validator.js";
 
 export const router = Router()
 
@@ -30,7 +32,7 @@ router.post('/', authValidator,
 router.get('/:id', authValidator, getPedidoByIdController);
 
 // ruta para actualizar un pedido
-router.put('/:id', authValidator, 
+router.put('/:id', authValidator,
   [
     ...updateValidator,
     validateFields
@@ -46,7 +48,7 @@ router.patch('/:id/cancelar', authValidator,
 
 // ruta para detalles de pedido
 router.post('/:id/detalles', authValidator,
-   [
+  [
     ...crearDetalleValidator,
     validateFields
   ],
@@ -57,9 +59,25 @@ router.post('/:id/detalles', authValidator,
 router.delete('/:id/detalles/:id_detalle', authValidator, eliminarDetalle)
 
 // PATCH para actualizar detalle
-router.patch('/:id/detalles/:id_detalle', 
-   [
+router.patch('/:id/detalles/:id_detalle',
+  [
     ...actualizarDetalleValidator,
     validateFields
   ],
-   actualizarDetalle);
+  actualizarDetalle);
+
+// ruta para produccion
+
+// registrar produccion de un detalle
+router.post('/:id/detalles/:id_detalle/produccion', authValidator,
+  [
+    ...produccionPOSTValidator,
+    validateFields
+  ], createNewProductionController)
+
+router.patch('/:id/detalles/:id_detalle/produccion/:id_produccion', authValidator,
+  [
+    ...produccionPATCHValidator,
+    validateFields
+  ], updateProductionController)
+router.delete('/:id/detalles/:id_detalle/produccion/:id_produccion', authValidator, eliminarProduccion)

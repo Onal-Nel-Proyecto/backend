@@ -70,7 +70,7 @@ export class DetallePedidoModel {
     ]);
   }
   async getDetalle(detalleId) {
-    const sql = 'SELECT pedIdFk, proIdFk FROM det_pedido WHERE detPedId = ? LIMIT 1';
+    const sql = 'SELECT pedIdFk, proIdFk, detPedCant FROM det_pedido WHERE detPedId = ? LIMIT 1';
     const [rows] = await this.connection.execute(sql, [detalleId]);
     return rows[0] || null;
   }

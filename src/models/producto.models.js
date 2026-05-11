@@ -26,7 +26,7 @@ export class ProductoModel {
       productoData.estado ?? 3
     ]);
     console.log(result)
-    return  productoData.producto_id.toString();
+    return productoData.producto_id.toString();
   }
   async generarId() {
     // Llamada al procedimiento almacenado y recuperación del ID
@@ -38,7 +38,7 @@ export class ProductoModel {
   }
 
   async getById(productoId) {
-    const sql = 'SELECT proId, proNom, proPreUni, proEst FROM productos WHERE proId = ? LIMIT 1';
+    const sql = 'SELECT * FROM productos WHERE proId = ? LIMIT 1';
     const [rows] = await this.connection.execute(sql, [productoId]);
     return rows[0] || null;
   }
@@ -65,8 +65,12 @@ export class ProductoModel {
       campos.push('proPreUni = ?');
       valores.push(data.precio);
     }
+    if (data.stock !== undefined) {
+      campos.push('proStock = ?');
+      valores.push(data.stock);
+    }
     if (campos.length === 0) return;
-    console.log(productoId)
+    console.log(productoId, data.stock)
     valores.push(productoId);
     const sql = `UPDATE productos SET ${campos.join(', ')} WHERE proId = ?`;
     await this.connection.execute(sql, valores);
