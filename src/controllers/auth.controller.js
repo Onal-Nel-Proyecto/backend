@@ -13,7 +13,8 @@ const ctlLog = async (req, res) => {
     );
 
     if (result.err) return res.status(result.errorCode).json({err: result.err}) // control de errores en el servicio
-
+    // console.log(result);
+    
     res.status(200)
     .cookie('token', result.token, {
       httpOnly: true,
@@ -56,5 +57,30 @@ const refreshTokenController = async (req, res) => {
     return res.status(401).json(error)
   }
 }
+const profile = async (req, res) => {
 
-export {ctlLog, refreshTokenController}
+  try {
+
+    // req.user viene del middleware
+    const user = req.user;
+
+    return res.status(200).json({
+
+      authenticated: true,
+
+      user: {
+        user_id: user.user_id,
+        nombres: user.nombres,
+        apellidos: user.apellidos,
+        rol: user.rol,
+      },
+    });
+
+  } catch (error) {
+
+    return res.status(500).json({
+      message: "Error obteniendo perfil",
+    });
+  }
+};
+export {ctlLog, refreshTokenController, profile}

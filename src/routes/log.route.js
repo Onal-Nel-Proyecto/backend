@@ -1,6 +1,7 @@
 import express from "express";
-import { ctlLog, refreshTokenController } from '../controllers/auth.controller.js'
+import { ctlLog, profile, refreshTokenController } from '../controllers/auth.controller.js'
 import { loginValidator } from "../validators/auth.validator.js";
+import { authValidator } from "../middleware/auth.middleware.js";
 import validateFields from "../middleware/validator.middleware.js";
 const router = express.Router();
 
@@ -25,4 +26,5 @@ router.post("/logout", (req, res) => {
 
 // ruta para refrescar el token de acceso
 router.post('/refresh', refreshTokenController);
+router.get('/perfil', authValidator, profile);
 export { router };
