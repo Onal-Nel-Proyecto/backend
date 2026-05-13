@@ -127,7 +127,7 @@ describe('GET /pedidos', () => {
     const res = await request(app).get('/pedidos');
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ message: 'Error interno del servidor' });
+    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -202,7 +202,7 @@ describe('POST /pedidos', () => {
       .send(pedidoValido);
 
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ message: 'Cliente no encontrado' });
+    expect(res.body).toEqual({ success: false, error: 'Cliente no encontrado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -213,7 +213,7 @@ describe('POST /pedidos', () => {
       .send(pedidoValido);
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ message: 'Error interno del servidor' });
+    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -256,7 +256,7 @@ describe('GET /pedidos/:id', () => {
     const res = await request(app).get('/pedidos/INEXISTENTE');
 
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ message: 'Pedido no encontrado' });
+    expect(res.body).toEqual({ success: false, error: 'Pedido no encontrado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -265,7 +265,7 @@ describe('GET /pedidos/:id', () => {
     const res = await request(app).get('/pedidos/PD001');
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ message: 'Error interno' });
+    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -307,7 +307,7 @@ describe('PUT /pedidos/:id', () => {
       .send(datosActualizacion);
 
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ status: false, msg: 'Pedido no encontrado' });
+    expect(res.body).toEqual({ success: false, error: 'Pedido no encontrado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -318,7 +318,7 @@ describe('PUT /pedidos/:id', () => {
       .send(datosActualizacion);
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ status: false, msg: 'Error interno del servidor' });
+    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -364,7 +364,7 @@ describe('PATCH /pedidos/:id/cancelar', () => {
       .send({ motivo: 'Ya estaba cancelado' });
 
     expect(res.status).toBe(400);
-    expect(res.body).toEqual({ status: false, msg: 'El pedido ya está cancelado' });
+    expect(res.body).toEqual({ success: false, error: 'El pedido ya está cancelado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -375,7 +375,7 @@ describe('PATCH /pedidos/:id/cancelar', () => {
       .send({ motivo: 'Prueba' });
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ status: false, msg: 'Error interno del servidor' });
+    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
   });
 });
 

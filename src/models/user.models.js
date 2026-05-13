@@ -26,4 +26,12 @@ export class UserModel {
       }
     };
   }
+  
+  static async getById(id) {
+    const [rows] = await db.query(
+      'SELECT * FROM usuario WHERE usuId = ?',
+      [id]
+    )
+    return rows
+  }
 }
