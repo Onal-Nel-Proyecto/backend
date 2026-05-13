@@ -1,26 +1,22 @@
 import express from "express";
 import cors from "cors";
-import { router as loginRute } from './routes/log.route.js'
-import { router as userRoute } from './routes/user.route.js'
-import { authValidator, isAdmin } from "./middleware/auth.middleware.js";
 import cookieParser from "cookie-parser";
+import routes from './routes/index.route.js'
+import { errorMiddleware } from './middleware/err.middleware.js';
+
 const app = express();
 
 // configuración de middlewares
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true,
+}));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
+app.use('/', routes)
 
-app.use('/auth', loginRute) // ruta para login y logout
-
-app.use('/usuarios', userRoute)
-
-// ruta de prueba de autenticacion y autorizacion
-app.get('/prueba', authValidator, isAdmin, (req, res) => {
-  res.send("pagina protegida")
-})
-
-
+// Middleware global de errores (debe ir después de las rutas)
+app.use(errorMiddleware);
 
 export default app

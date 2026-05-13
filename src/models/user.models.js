@@ -157,4 +157,12 @@ static async supervisorExists({ supervisorId }) {
   );
   return rows.length > 0;
 }
+  
+  static async getById(id) {
+    const [rows] = await db.query(
+      'SELECT * FROM usuario WHERE usuId = ?',
+      [id]
+    )
+    return rows
+  }
 }
