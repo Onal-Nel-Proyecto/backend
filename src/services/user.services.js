@@ -26,6 +26,16 @@ export const getUserByIdService = async ({ id }) => {
 // Servicio para crear un nuevo usuario
 export const createUserService = async ({ id, nombres, apellidos, telefono, correo, password, rolId, supervisorId }) => {
   try {
+    // Verificar que el rol espicificado exista
+    const rolValido = await UserModel.rolExists({ rolId });
+    if (!rolValido) return { err: 'El rol especificado no existe', errorCode: 400 };
+
+    // Verificar que el supervisor exista 
+    if (supervisorId) {
+      const supervisorValido = await UserModel.supervisorExists({ supervisorId });
+      if (!supervisorValido) return { err: 'El supervisor especificado no existe', errorCode: 400 };
+    }
+
     // Verificar que no exista otro usuario con el mismo correo
     const correoEnUso = await UserModel.emailExists({ correo, excludeId: '' });
     if (correoEnUso) return { err: 'El correo ya está registrado', errorCode: 409 };
@@ -46,6 +56,16 @@ export const updateUserService = async ({ id, nombres, apellidos, telefono, corr
     // Verificar que el usuario exista antes de actualizar
     const userExists = await UserModel.getUserById({ id });
     if (!userExists) return { err: 'Usuario no encontrado', errorCode: 404 };
+
+    // Verificar que el rol espicificado exista
+    const rolValido = await UserModel.rolExists({ rolId });
+    if (!rolValido) return { err: 'El rol especificado no existe', errorCode: 400 };
+
+    // Verificar que el supervisor exista 
+    if (supervisorId) {
+      const supervisorValido = await UserModel.supervisorExists({ supervisorId });
+      if (!supervisorValido) return { err: 'El supervisor especificado no existe', errorCode: 400 };
+    }
 
     // Verificar que el correo nuevo no lo tenga otro usuario
     const correoEnUso = await UserModel.emailExists({ correo, excludeId: id });

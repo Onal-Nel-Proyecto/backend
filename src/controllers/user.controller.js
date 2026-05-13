@@ -4,7 +4,7 @@ import {
   createUserService,
   updateUserService,
   changeUserStatusService
-} from '../services/user.service.js';
+} from '../services/user.services.js'
 
 // Controlador para obtener todos los usuarios
 const ctlGetAllUsers = async (req, res) => {
