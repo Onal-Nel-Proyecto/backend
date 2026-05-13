@@ -57,7 +57,32 @@ export const parametroValidator = [
   check('pag')
     .optional()
     .isInt()
-    .withMessage("el parametro pag debe ser un numero")
+    .withMessage("el parametro pag debe ser un numero"),
+
+  check('estado')
+    .optional()
+    .isIn(["pendiente", "terminado", "cancelado", "en_proceso"])
+    .withMessage("el estado debe ser: pendiente | terminado | cancelado | en_proceso"),
+
+  check('fecha_desde')
+    .optional()
+    .isISO8601()
+    .withMessage("fecha_desde debe tener formato válido (YYYY-MM-DD)"),
+
+  check('fecha_hasta')
+    .optional()
+    .isISO8601()
+    .withMessage("fecha_hasta debe tener formato válido (YYYY-MM-DD)"),
+
+  check('cliente')
+    .optional()
+    .isString()
+    .withMessage("el parametro cliente debe ser texto"),
+
+  check('tipo_pedido')
+    .optional()
+    .isIn(["personalizado", "retoques", "modificaciones"])
+    .withMessage("tipo_pedido debe ser: personalizado | retoques | modificaciones")
 ]
 
 export const updateValidator = [

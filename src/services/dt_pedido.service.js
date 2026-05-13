@@ -57,7 +57,7 @@ export const getDetallePedidoByIdPedido = async (id_pedido) => {
           produccion_id: e.prodId,
           cantidad: e.cantidad,
           estado: e.estado,
-          fecha_inicio: e.fecha_inicio.toISOString().split('T')[0],
+          fecha_inicio: e.fecha_inicio != null ? e.fecha_inicio.toISOString().split('T')[0] : e.fecha_inicio,
           fecha_fin: e.fecha_fin != null ? e.fecha_fin.toISOString().split('T')[0] : e.fecha_fin
         });
       }
