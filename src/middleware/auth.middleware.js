@@ -8,7 +8,7 @@ export const authValidator = (req, res, next) => {
     if (!req.cookies.token) return res.status(401).json({ message: "No autorizado, se requiere autenticación" })
 
     const decodeToken = jwt.verify(req.cookies.token, ACCESS_TOKEN_KEY) // verificar que el token sea valido
-    console.log( `Token decodificado: ${JSON.stringify(decodeToken)}`) // imprimir el token decodificado para verificar su contenido;
+    // console.log( `Token decodificado: ${JSON.stringify(decodeToken)}`) // imprimir el token decodificado para verificar su contenido;
     
     req.user = decodeToken // guarda los datos del usuario para rutas protegidas
     // console.log(req.user)
