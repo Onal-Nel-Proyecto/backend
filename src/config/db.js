@@ -3,7 +3,8 @@ import {
   MYSQL_HOST,
   MYSQL_USER,
   MYSQL_PASSWORD,
-  MYSQL_DATABASE
+  MYSQL_DATABASE,
+  MYSQL_PORT
 } from './config.js';
 
 //  crear pool (sin await)
@@ -12,6 +13,7 @@ const pool = mysql2.createPool({
   user: MYSQL_USER,
   password: MYSQL_PASSWORD,
   database: MYSQL_DATABASE,
+  port: MYSQL_PORT,
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0

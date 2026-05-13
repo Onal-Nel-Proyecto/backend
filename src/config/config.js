@@ -10,6 +10,7 @@ const {
   MYSQL_USER,
   MYSQL_PASSWORD,
   MYSQL_DATABASE,
+  MYSQL_PORT,
 
   ACCESS_TOKEN_KEY, // clave secreta para generar tokens de autenticación
   ACCESS_TOKEN_EXPIRES_IN, // tiempo de expiración del token de acceso
@@ -23,6 +24,7 @@ export {
   MYSQL_USER,
   MYSQL_PASSWORD,
   MYSQL_DATABASE,
+  MYSQL_PORT,
   ACCESS_TOKEN_KEY,
   ACCESS_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_KEY,

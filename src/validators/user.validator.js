@@ -58,7 +58,7 @@ export const updateUserValidator = [
 
   body('telefono')
     .notEmpty().withMessage('El teléfono es requerido')
-    .isString().withMessage('El teléfono debe ser numérico')
+    .isNumeric().withMessage('El teléfono debe ser numérico')
     .isLength({ max: 10 }).withMessage('El teléfono no puede superar 10 caracteres'),
 
   body('correo')

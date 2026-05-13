@@ -26,7 +26,7 @@ export const getUserByIdService = async ({ id }) => {
 // Servicio para crear un nuevo usuario
 export const createUserService = async ({ id, nombres, apellidos, telefono, correo, password, rolId, supervisorId }) => {
   try {
-    // Verificar que el rol espicificado exista
+    // Verificar que el rol especificado exista
     const rolValido = await UserModel.rolExists({ rolId });
     if (!rolValido) return { err: 'El rol especificado no existe', errorCode: 400 };
 
@@ -57,7 +57,7 @@ export const updateUserService = async ({ id, nombres, apellidos, telefono, corr
     const userExists = await UserModel.getUserById({ id });
     if (!userExists) return { err: 'Usuario no encontrado', errorCode: 404 };
 
-    // Verificar que el rol espicificado exista
+    // Verificar que el rol especificado exista
     const rolValido = await UserModel.rolExists({ rolId });
     if (!rolValido) return { err: 'El rol especificado no existe', errorCode: 400 };
 
