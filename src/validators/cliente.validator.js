@@ -97,6 +97,6 @@ export const updateClienteRules = [
 export const estadoValidator = [
   body('estado')
   .notEmpty()
-  .isIn(1,2)
+  .isIn([1, 2])
   .withMessage('El estado seleccionado no es permitido, (1 = activo, 2 = inactivo/bloqueado)')
 ]

@@ -1,7 +1,7 @@
+import { AppError } from '../utils/appError.js';
 import { actualizarDetalleService, crearDetalle as crear, eliminarDetalle as eliminar } from '../services/dt_pedido.service.js';
-// import {  ProductoModel  } from '../models/producto.models.js'; 
-// import db from '../config/db.js'
-export const crearDetalle = async (req, res) => {
+
+export const crearDetalle = async (req, res, next) => {
   try {
     const { id: pedidoId } = req.params;
     const body = req.body;
@@ -15,17 +15,11 @@ export const crearDetalle = async (req, res) => {
     });
   } catch (error) {
     console.error('Error en crearDetalle:', error);
-    // console.log(await new ProductoModel(await db.getConnection()).existe("PR001"))
-    // El servicio ya envuelve errores de negocio con mensaje descriptivo
-    const mensaje = error.message || 'Error interno del servidor';
-    return res.status(500).json({
-      status: false,
-      msg: mensaje
-    });
+    next(new AppError(error.message || 'Error interno del servidor', 500));
   }
 };
 
-export const eliminarDetalle = async (req, res) => {
+export const eliminarDetalle = async (req, res, next) => {
   try {
     const { id: pedidoId, id_detalle: detalleId } = req.params;
 
@@ -37,15 +31,11 @@ export const eliminarDetalle = async (req, res) => {
     });
   } catch (error) {
     console.error('Error en eliminarDetalle:', error);
-    const mensaje = error.message || 'Error interno del servidor';
-    return res.status(500).json({
-      status: false,
-      msg: mensaje
-    });
+    next(new AppError(error.message || 'Error interno del servidor', 500));
   }
 };
 
-export const actualizarDetalle = async (req, res) => {
+export const actualizarDetalle = async (req, res, next) => {
   try {
     const { id: pedidoId, id_detalle: detalleId } = req.params;
     const body = req.body;
@@ -59,10 +49,6 @@ export const actualizarDetalle = async (req, res) => {
     });
   } catch (error) {
     console.error('Error en actualizarDetalle:', error);
-    const mensaje = error.message || 'Error interno del servidor';
-    return res.status(500).json({
-      status: false,
-      msg: mensaje
-    });
+    next(new AppError(error.message || 'Error interno del servidor', 500));
   }
 };
