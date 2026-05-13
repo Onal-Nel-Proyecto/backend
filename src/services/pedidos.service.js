@@ -7,11 +7,11 @@ import { getDetallePedidoByIdPedido } from './dt_pedido.service.js';
 import db from "../config/db.js";
 
 // servicio para obtener todos los pedidos con paginacion
-export const getAllPedidosService = async (pag = 1) => {
+export const getAllPedidosService = async (pag = 1, filtros = {}) => {
 
   const limite = 5;
 
-  const rows = await PedidoModel.getAllPedidos(pag, limite);
+  const rows = await PedidoModel.getAllPedidos(pag, limite, filtros);
   const total = await PedidoModel.countPedidos();
 
   const data = rows.map(e => ({
@@ -90,7 +90,7 @@ export const getPedidoByIdService = async (id_pedido) => {
   const pedido = await PedidoModel.getById(id_pedido);
   if (!pedido) return { err: "Pedido no encontrado", errorCode: 404 }
   const detalles = await getDetallePedidoByIdPedido(id_pedido);
-  console.log(pedido.id)
+  console.log(detalles)
   return {
     pedido_id: pedido[0].id,
     cliente: {
@@ -184,25 +184,13 @@ export const cancelPedidoService = async (id, motivo, usuarioId) => {
   try {
     await connection.beginTransaction();
 
-    const pedido = await PedidoModel.getById(id);
+    // El SP sp_cancelar_pedido ya tiene control de errores implementado
+    const resultado = await PedidoModel.cancelar(connection, id, usuarioId, motivo);
 
-    if (!pedido) {
-      return { err: "Pedido no encontrado", errorCode: 404 };
+    if (resultado && resultado !== 'OK') {
+      await connection.rollback();
+      return { err: resultado, errorCode: 400 };
     }
-
-    if (pedido.pedEst === 'cancelado') {
-      return { err: "El pedido ya está cancelado", errorCode: 400 };
-    }
-
-    if (pedido.pedEst === 'terminado') {
-      return { err: "No se puede cancelar un pedido terminado", errorCode: 403 };
-    }
-
-    // 🔥 datos para el trigger
-    await PedidoModel.setTriggerData(connection, motivo, usuarioId);
-
-    // 🔹 update
-    await PedidoModel.cancelar(connection, id);
 
     await connection.commit();
 

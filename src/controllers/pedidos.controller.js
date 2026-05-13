@@ -4,13 +4,23 @@ import { normalizeEmptyStrings } from "../utils/normalizacion_datos.js";
 
 export const getAllPedidosController = async (req, res) => {
   try {
-    const { pag = 1 } = req.query;
+    const {
+      pag = 1,
+      estado,
+      fecha_desde,
+      fecha_hasta,
+      cliente,
+      tipo_pedido
+    } = req.query;
 
-    const result = await getAllPedidosService(pag);
+    const filtros = { estado, fecha_desde, fecha_hasta, cliente, tipo_pedido };
+
+    const result = await getAllPedidosService(pag, filtros);
 
     res.status(200).json(result);
 
   } catch (error) {
+    console.error(error);
     res.status(500).json({ message: 'Error interno del servidor' });
   }
 };
@@ -42,6 +52,7 @@ export const getPedidoByIdController = async (req, res) => {
     }
     res.status(200).json(result);
   } catch (error) {
+    console.error(error)
     res.status(500).json({ message: 'Error interno' });
   }
 }

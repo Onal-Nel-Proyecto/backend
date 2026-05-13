@@ -7,12 +7,48 @@ export class PedidoModel {
     return Number(rows[0].total)
   }
 
-  static async getAllPedidos(pag = 1, limite = 15) {
+  static async getAllPedidos(pag = 1, limite = 15, filtros = {}) {
     // variables de paginacion
-    const indice = limite * (pag - 1)
-    console.log(pag, limite);
-    
-    // console.log(indice)
+    const indice = limite * (pag - 1);
+    console.log(pag, limite, filtros);
+
+    // construir WHERE dinámico según filtros
+    const whereClauses = [];
+    const values = [];
+
+    if (filtros.estado) {
+      whereClauses.push("pedEst = ?");
+      values.push(filtros.estado);
+    }
+
+    if (filtros.fecha_desde) {
+      whereClauses.push("DATE(pedFecIng) >= ?");
+      values.push(filtros.fecha_desde);
+    }
+
+    if (filtros.fecha_hasta) {
+      whereClauses.push("DATE(pedFecIng) <= ?");
+      values.push(filtros.fecha_hasta);
+    }
+
+    if (filtros.cliente) {
+      whereClauses.push("(c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
+      const like = `%${filtros.cliente}%`;
+      values.push(like, like, like);
+    }
+
+    if (filtros.tipo_pedido) {
+      whereClauses.push("pedTipPed = ?");
+      values.push(filtros.tipo_pedido);
+    }
+
+    const whereSQL = whereClauses.length > 0
+      ? `WHERE ${whereClauses.join(" AND ")}`
+      : "";
+
+    // 🔥 parámetros finales: primero los del WHERE, luego LIMIT y OFFSET
+    values.push(limite, indice);
+
     const [rows] = await db.query(
       `
       SELECT 
@@ -24,14 +60,14 @@ export class PedidoModel {
       fn_dias_restantes_pedido(p.pedId) AS dias_faltantes
       FROM pedidos p
       JOIN cliente c ON c.cliId = p.pedCliIdFk
+      ${whereSQL}
       ORDER BY pedFecIng ASC
-      LIMIT ?
-      OFFSET ?
+      LIMIT ? OFFSET ?
       `,
-      [limite, indice]
-    )
+      values
+    );
 
-    return rows
+    return rows;
   }
 
   static async create(data) {
@@ -65,7 +101,7 @@ export class PedidoModel {
   }
 
   static async getById(id) {
-    const [row] = await db.query(`
+    const [rows] = await db.query(`
       SELECT 
       p.pedId AS id,
       p.pedCliIdFk AS cliente_id,
@@ -79,12 +115,11 @@ export class PedidoModel {
       p.pedFecEnt AS f_entrega,
       p.pedFecIng AS f_ingreso
       FROM pedidos p
-      JOIN cliente c ON c.cliId = p.pedCliIdFk
-      JOIN usuario u ON u.usuId = p.pedUsuIdFk
+      LEFT JOIN cliente c ON c.cliId = p.pedCliIdFk
+      LEFT JOIN usuario u ON u.usuId = p.pedUsuIdFk
       WHERE p.pedId = ?`, 
       [id])
-      // console.log(row)
-    return row
+    return rows.length > 0 ? rows : null
   }
   static async update(id, setClause, values) {
 
@@ -97,16 +132,14 @@ export class PedidoModel {
     await db.query(query, [...values, id]);
   }
 
-   static async setTriggerData(connection, motivo, usuarioId) {
-    // await connection.query("SET @motivo_cancelacion = ?", [motivo]);
-    await connection.query("SET @usuActual = ?", [usuarioId]);
-  }
-
-  static async cancelar(connection, id) {
+  static async cancelar(connection, id, usuarioId, motivo) {
     await connection.query(
-      "UPDATE pedidos SET pedEst = 'cancelado' WHERE pedId = ?",
-      [id]
+      "CALL sp_cancelar_pedido(?, ?, ?, @result)",
+      [id, usuarioId, motivo]
     );
+
+    const [[{ result }]] = await connection.query("SELECT @result AS result");
+    return result;
   }
   static async updateStatus({pedidoId, usu_id, estado}) {
     const sql = `
