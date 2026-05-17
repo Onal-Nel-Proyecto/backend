@@ -20,7 +20,10 @@ export class ProduccionModel {
   }
   // Metodo para ver total faltante de produccion
   static async produccionFaltante(detalle_id) {
-    const query = "SELECT SUM(cantidad) AS cantidad_total FROM produccion WHERE detPedIdFk = ?";
+    const query = `SELECT COALESCE(SUM(cantidad), 0) AS cantidad_total
+    FROM produccion
+    WHERE detPedIdFk = ?
+    AND estado <> 'CANCELADO'`;
     const [result] = await db.query(query, [detalle_id])
     return result[0]
   }
@@ -76,6 +79,13 @@ export class ProduccionModel {
 
     // Actualizar estado
     if (data.estado !== undefined) {
+      console.log(data.estado)
+      if (data.estado.toUpperCase() == 'EN PROCESO') {
+        campos.push('fecha_inicio = NOW()')
+      }
+      else if (data.estado.toUpperCase() == 'TERMINADO') {
+        campos.push('fecha_fin = NOW()')
+      }
       campos.push('estado = ?');
       valores.push(data.estado);
     }
@@ -122,7 +132,7 @@ export class ProduccionModel {
       INNER JOIN det_pedido d
       ON d.detPedId = p.detPedIdFk
       WHERE d.pedIdFk = ?
-      AND p.estado != 'TERMINADO'
+      AND p.estado IN ('PENDIENTE', 'EN PROCESO')
     `;
 
     const [[result]] = await db.query(sql, [

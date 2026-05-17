@@ -7,7 +7,7 @@ export class DashboardModel {
       SELECT 
         COUNT(*) AS total,
         SUM(CASE WHEN pedEst = 'pendiente' THEN 1 ELSE 0 END) AS pendientes,
-        SUM(CASE WHEN pedEst = 'en_proceso' THEN 1 ELSE 0 END) AS en_proceso,
+        SUM(CASE WHEN pedEst = 'en proceso' THEN 1 ELSE 0 END) AS en_proceso,
         SUM(CASE WHEN pedEst = 'terminado' THEN 1 ELSE 0 END) AS terminados,
         SUM(CASE WHEN pedEst = 'cancelado' THEN 1 ELSE 0 END) AS cancelados
       FROM pedidos

@@ -181,7 +181,7 @@ export const eliminarDetalle = async (pedidoId, detalleId) => {
     // 3. Validar que no existan producciones en estado "en curso" o "terminado"
     const produccionesNoPermitidas = await detalleModel.getProduccionesByEstados(
       detalleId,
-      ['en_proceso', 'terminado']
+      ['en proceso', 'terminado']
     );
     if (produccionesNoPermitidas.length > 0) {
       throw new Error('No se puede eliminar el detalle porque tiene producción en proceso o terminada');
