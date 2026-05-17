@@ -9,7 +9,7 @@ import db from "../config/db.js";
 // servicio para obtener todos los pedidos con paginacion
 export const getAllPedidosService = async (pag = 1, filtros = {}) => {
 
-  const limite = 5;
+  const limite = 15;
 
   const rows = await PedidoModel.getAllPedidos(pag, limite, filtros);
   const total = await PedidoModel.countPedidos();
@@ -18,7 +18,7 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
     id: e.id,
     descripcion: e.descripcion,
     cliente_nombres: e.cliente_nombres,
-    fecha_entrega_estimada: e.fecha_estimada.toLocaleDateString(),
+    fecha_entrega_estimada: e.fecha_estimada ? new Date(e.fecha_estimada).toLocaleDateString() : null,
     estado: e.estado,
     dias_faltantes: e.dias_faltantes
   }));
@@ -32,7 +32,7 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
 
 // servicio para crear un nuevo pedido
 export const createNewPedido = async ({
-  id_cliente,
+  cliente_id,
   fecha_estimada,
   observaciones,
   recordatorio,
@@ -42,12 +42,12 @@ export const createNewPedido = async ({
 }) => {
 
   // // 🔹 1. Validaciones básicas
-  // if (!id_cliente || !fecha_estimada || !descripcion || !usuarioId) {
+  // if (!cliente_id || !fecha_estimada || !descripcion || !usuarioId) {
   //   return { err: 'Campos obligatorios faltantes', errorCode: 400 };
   // }
 
   // // 🔹 2. Verificar cliente
-  const cliente = await ClienteModel.getById(id_cliente);
+  const cliente = await ClienteModel.getById(cliente_id);
   if (!cliente || !cliente.status) {
     return { err: 'Cliente no encontrado', errorCode: 404 };
   }
@@ -64,7 +64,7 @@ export const createNewPedido = async ({
   }
   // 🔹 4. Crear pedido
   const result = await PedidoModel.create({
-    id_cliente,
+    cliente_id,
     fecha_estimada,
     observaciones,
     recordatorio,
@@ -78,7 +78,6 @@ export const createNewPedido = async ({
   }
   // 🔹 5. Respuesta exitosa
   return {
-    message: 'Pedido creado correctamente',
     data: {
       pedido_id: result.insertId
     }
@@ -136,13 +135,17 @@ export const updatePedidoService = async (id, data) => {
   const values = [];
 
   if (cliente_id !== undefined) {
+    const cliente = await ClienteModel.getById(cliente_id);
+  if (!cliente || !cliente.status) {
+    return { err: 'Cliente no encontrado', errorCode: 404 };
+  }
     fields.pedCliIdFk = '?';
     values.push(cliente_id);
   }
 
   if (descripcion !== undefined) {
     fields.pedDesc = '?';
-    values.push(!descripcion ? `Pedido de ${toTitleCase(pedido[0].cliente_name)} - ${new Date(pedido[0].f_ingreso).toLocaleDateString('es-CO')}`: descripcion);
+    values.push(!descripcion ? `Pedido de ${toTitleCase(pedido[0].cliente_name)} - ${new Date(pedido[0].f_ingreso).toLocaleDateString('es-CO')}` : descripcion);
   }
 
   if (observacion !== undefined) {
@@ -169,8 +172,8 @@ export const updatePedidoService = async (id, data) => {
   const setClause = Object.keys(fields)
     .map(key => `${key} = ${fields[key]}`)
     .join(', ');
-    console.log(setClause)
-    
+  console.log(setClause)
+
   await PedidoModel.update(id, setClause, values);
 
   return { status: true };

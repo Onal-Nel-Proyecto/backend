@@ -35,7 +35,11 @@ export const createNewPedidoController = async (req, res, next) => {
       return next(new AppError(result.err, result.errorCode));
     }
 
-    res.status(201).json(result);
+    res.status(201).json({
+      status: true,
+      msg: `Se registro un nuevo pedido con el ID #${result.data.pedido_id}`,
+      data: result.data.pedido_id
+    });
   } catch (error) {
     console.error(error);
     next(new AppError('Error interno del servidor', 500));
@@ -82,7 +86,7 @@ export const cancelPedidoController = async (req, res, next) => {
     const usuarioId = req.user.user_id;
 
     const result = await cancelPedidoService(id, motivo, usuarioId);
-
+    console.log(result)
     if (result.err) {
       return next(new AppError(result.err, result.errorCode));
     }
@@ -93,6 +97,13 @@ export const cancelPedidoController = async (req, res, next) => {
     });
   } catch (error) {
     console.error(error);
+    if (error.code === 'ER_SIGNAL_EXCEPTION') {
+
+      return next(
+        new AppError(error.sqlMessage, 400)
+      );
+
+    }
     next(new AppError('Error interno del servidor', 500));
   }
 };

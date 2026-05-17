@@ -3,7 +3,8 @@ import { body } from "express-validator";
 
 const estados = [
   'PENDIENTE',
-  'EN_PROCESO',
+  // 'EN_PROCESO',
+  'EN PROCESO',
   'TERMINADO',
   'CANCELADO'
 ];
@@ -65,7 +66,8 @@ const cantidadOptionalValidator = body('cantidad')
 
 
 const estadoValidator = body('estado')
-  .optional()
+  .notEmpty()
+  .withMessage('El estado es obligatorio')
   .toUpperCase()
   .isIn(estados)
   .withMessage(

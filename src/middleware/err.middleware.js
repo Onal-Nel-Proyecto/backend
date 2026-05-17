@@ -14,7 +14,7 @@ export const errorMiddleware = (
     err.message || 'Error interno del servidor';
 
   res.status(status).json({
-    success: false,
+    status: false,
     error: message
   });
 

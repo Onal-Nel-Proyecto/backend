@@ -4,7 +4,7 @@ const estadoPedido = ["pendiente", "retoques", "modificaciones",]
 
 // validacion basica para registro de pedido
 export const basePedidoValidator = [
-  body("id_cliente")
+  body("cliente_id")
     .notEmpty()
     .withMessage("id del cliente requerido")
     .isLength({ max: 15, min: 7 })
@@ -86,7 +86,7 @@ export const parametroValidator = [
 ]
 
 export const updateValidator = [
-  body("id_cliente")
+  body("cliente_id")
     .optional()
     .isLength({ max: 15, min: 7 })
     .withMessage("El id del cliente debe tener entre 7 y 15 caracteres"),

@@ -61,7 +61,7 @@ export class PedidoModel {
       FROM pedidos p
       JOIN cliente c ON c.cliId = p.pedCliIdFk
       ${whereSQL}
-      ORDER BY pedFecIng ASC
+      ORDER BY pedFecIng DESC
       LIMIT ? OFFSET ?
       `,
       values
@@ -71,7 +71,7 @@ export class PedidoModel {
   }
 
   static async create(data) {
-    const { id_cliente, fecha_estimada, observaciones, recordatorio, descripcion, usuarioId, tipo_pedido } = data
+    const { cliente_id, fecha_estimada, observaciones, recordatorio, descripcion, usuarioId, tipo_pedido } = data
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
@@ -85,7 +85,7 @@ export class PedidoModel {
         `INSERT INTO pedidos 
       (pedId,pedCliIdFk, pedFecEst, pedObs, pedRecor, pedDesc, pedUsuIdFk, pedTipPed, pedFecIng)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-        [id, id_cliente, fecha_estimada, observaciones, recordatorio, descripcion, usuarioId, tipo_pedido]
+        [id, cliente_id, fecha_estimada, observaciones, recordatorio, descripcion, usuarioId, tipo_pedido]
       );
 
       await connection.commit();

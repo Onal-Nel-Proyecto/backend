@@ -1,4 +1,4 @@
-import { body, param, validationResult } from'express-validator';
+import { body, param, validationResult } from 'express-validator';
 
 export const crearDetalleValidator = [
   // Validación personalizada: solo uno de producto_id o producto puede estar presente
@@ -22,7 +22,8 @@ export const crearDetalleValidator = [
 
   // medidas: array
   body('medidas')
-    .isArray({ min: 1 })
+    .optional()
+    .isArray()
     .withMessage('Las medidas deben ser un arreglo con al menos un elemento'),
 
   // Cada medida debe tener medida_id y medida_valor
@@ -43,6 +44,7 @@ export const crearDetalleValidator = [
     .isFloat({ min: 0.01 })
     .withMessage('El precio debe ser un número positivo'),
   body('producto.categoria_id')
+    .optional({ nullable: true })
     .if(body('producto').exists())
     .isInt({ min: 1 })
     .withMessage('La categoría es requerida y debe ser un entero'),
@@ -51,20 +53,7 @@ export const crearDetalleValidator = [
   body('producto_id')
     .if(body('producto_id').exists())
     .notEmpty()
-    .withMessage('producto_id no puede estar vacío'),
-
-  // Middleware para formatear errores
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      const mensaje = errors.array().map(e => e.msg).join('. ');
-      return res.status(400).json({
-        status: false,
-        msg: mensaje
-      });
-    }
-    next();
-  }
+    .withMessage('producto_id no puede estar vacío')
 ];
 
 export const actualizarDetalleValidator = [
@@ -110,15 +99,4 @@ export const actualizarDetalleValidator = [
     .if(body('medidas').exists())
     .isNumeric()
     .withMessage('medida_valor debe ser numérico'),
-
-  (req, res, next) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        status: false,
-        msg: errors.array().map(e => e.msg).join('. ')
-      });
-    }
-    next();
-  }
 ];

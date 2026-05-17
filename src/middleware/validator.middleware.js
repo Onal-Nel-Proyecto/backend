@@ -15,8 +15,8 @@ const validateFields = (req, res, next) => {
     })
     // formatea los errores para que sean más legibles
     return res.status(400).json({
-      susses: false,
-      message: "Errores de validación",
+      status: false,
+      msg: "Errores de validación",
       errors: formatErr // devuelve un objeto con los campos y sus errores correspondientes
     });
   }

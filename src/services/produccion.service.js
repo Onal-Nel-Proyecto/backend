@@ -57,12 +57,14 @@ export const createNewProduction = async (
       detalleId
     );
 
-  // Total ya producido
-  const totalProduccion =
-    cantidadEnProduccion?.cantidad_total || 0;
-
-  // 6. Validar límite total
-  if (
+    
+    // Total ya producido
+    const totalProduccion =
+    Number(cantidadEnProduccion?.cantidad_total) || 0;
+    
+    // 6. Validar límite total
+    console.log(totalProduccion)
+    if (
     totalProduccion >= detalleActual.detPedCant
   ) {
     throw new Error(
