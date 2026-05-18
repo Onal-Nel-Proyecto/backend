@@ -4,6 +4,7 @@ import { PedidoModel } from '../models/pedido.models.js';
 import { toTitleCase } from '../utils/normalizacion_datos.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
 import { getDetallePedidoByIdPedido } from './dt_pedido.service.js';
+import { getPagosService } from './pagos.service.js';
 import db from "../config/db.js";
 
 // servicio para obtener todos los pedidos con paginacion
@@ -72,7 +73,7 @@ export const createNewPedido = async ({
     usuarioId,
     tipo_pedido
   });
-  console.log(result)
+  // console.log(result)
   if (!result || !result.status) {
     return { err: 'Error al crear el pedido', errorCode: 500 };
   }
@@ -89,7 +90,7 @@ export const getPedidoByIdService = async (id_pedido) => {
   const pedido = await PedidoModel.getById(id_pedido);
   if (!pedido) return { err: "Pedido no encontrado", errorCode: 404 }
   const detalles = await getDetallePedidoByIdPedido(id_pedido);
-  console.log(detalles)
+  // console.log(detalles)
   return {
     pedido_id: pedido[0].id,
     cliente: {
@@ -108,7 +109,7 @@ export const getPedidoByIdService = async (id_pedido) => {
     fecha_ingreso: pedido[0].f_ingreso != null ? pedido[0].f_ingreso.toISOString().split('T')[0] : pedido[0].f_ingreso,
     fotos_pedido: [], // para el modulo de adjuntar foto
     detalles_pedido: detalles.data ?? [],
-    pagos: [] // para el modulo de pagos
+    pagos: (await getPagosService({ pedido_id: pedido[0].id, pagina: 1, limite: 50 })).data
   }
 };
 
@@ -172,7 +173,7 @@ export const updatePedidoService = async (id, data) => {
   const setClause = Object.keys(fields)
     .map(key => `${key} = ${fields[key]}`)
     .join(', ');
-  console.log(setClause)
+  // console.log(setClause)
 
   await PedidoModel.update(id, setClause, values);
 
