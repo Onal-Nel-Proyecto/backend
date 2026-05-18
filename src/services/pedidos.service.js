@@ -1,0 +1,208 @@
+import { ClienteModel } from '../models/cliente.models.js';
+import { DetallePedidoModel } from '../models/dt_pedido.models.js';
+import { PedidoModel } from '../models/pedido.models.js';
+import { toTitleCase } from '../utils/normalizacion_datos.js';
+import { calculateTotalPages } from '../utils/paginacion.js';
+import { getDetallePedidoByIdPedido } from './dt_pedido.service.js';
+import db from "../config/db.js";
+
+// servicio para obtener todos los pedidos con paginacion
+export const getAllPedidosService = async (pag = 1, filtros = {}) => {
+
+  const limite = 15;
+
+  const rows = await PedidoModel.getAllPedidos(pag, limite, filtros);
+  const total = await PedidoModel.countPedidos();
+
+  const data = rows.map(e => ({
+    id: e.id,
+    descripcion: e.descripcion,
+    cliente_nombres: e.cliente_nombres,
+    fecha_entrega_estimada: e.fecha_estimada ? new Date(e.fecha_estimada).toLocaleDateString() : null,
+    estado: e.estado,
+    dias_faltantes: e.dias_faltantes
+  }));
+
+  return {
+    maxPag: calculateTotalPages(total, limite),
+    pagAct: Number(pag),
+    data
+  };
+};
+
+// servicio para crear un nuevo pedido
+export const createNewPedido = async ({
+  cliente_id,
+  fecha_estimada,
+  observaciones,
+  recordatorio,
+  descripcion,
+  usuarioId,
+  tipo_pedido
+}) => {
+
+  // // 🔹 1. Validaciones básicas
+  // if (!cliente_id || !fecha_estimada || !descripcion || !usuarioId) {
+  //   return { err: 'Campos obligatorios faltantes', errorCode: 400 };
+  // }
+
+  // // 🔹 2. Verificar cliente
+  const cliente = await ClienteModel.getById(cliente_id);
+  if (!cliente || !cliente.status) {
+    return { err: 'Cliente no encontrado', errorCode: 404 };
+  }
+
+  // // 🔹 3. Validar si está bloqueado
+  if (cliente.data.estado === 2) {
+    return { err: 'El cliente está bloqueado', errorCode: 403 };
+  }
+
+  // si la descripcion es null asignar un valor por defecto para evitar errores de validacion
+  if (!descripcion) {
+    // estructura nombre del cliente - fecha de registro del pedido
+    descripcion = `Pedido de ${toTitleCase(cliente.data.cliNom)} ${toTitleCase(cliente.data.cliApe)} - ${new Date().toLocaleDateString('es-CO')}`;
+  }
+  // 🔹 4. Crear pedido
+  const result = await PedidoModel.create({
+    cliente_id,
+    fecha_estimada,
+    observaciones,
+    recordatorio,
+    descripcion,
+    usuarioId,
+    tipo_pedido
+  });
+  console.log(result)
+  if (!result || !result.status) {
+    return { err: 'Error al crear el pedido', errorCode: 500 };
+  }
+  // 🔹 5. Respuesta exitosa
+  return {
+    data: {
+      pedido_id: result.insertId
+    }
+  };
+};
+
+// servicio para obtener un pedido por su id
+export const getPedidoByIdService = async (id_pedido) => {
+  const pedido = await PedidoModel.getById(id_pedido);
+  if (!pedido) return { err: "Pedido no encontrado", errorCode: 404 }
+  const detalles = await getDetallePedidoByIdPedido(id_pedido);
+  console.log(detalles)
+  return {
+    pedido_id: pedido[0].id,
+    cliente: {
+      cliente_id: pedido[0].cliente_id,
+      cliente_nombres: pedido[0].cliente_name
+    },
+    usuario_creador: {
+      user_id: pedido[0].user_id,
+      user_nombres: pedido[0].user_name,
+    },
+    descripcion: pedido[0].descripcion,
+    estado: pedido[0].estado,
+    observacion: pedido[0].obs,
+    fecha_estimada_entrega: pedido[0].f_estimada != null ? pedido[0].f_estimada.toISOString().split('T')[0] : pedido[0].f_estimada,
+    fecha_entrega: pedido[0].f_entrega != null ? pedido[0].f_entrega.toISOString().split('T')[0] : pedido[0].f_entrega,
+    fecha_ingreso: pedido[0].f_ingreso != null ? pedido[0].f_ingreso.toISOString().split('T')[0] : pedido[0].f_ingreso,
+    fotos_pedido: [], // para el modulo de adjuntar foto
+    detalles_pedido: detalles.data ?? [],
+    pagos: [] // para el modulo de pagos
+  }
+};
+
+// servicio para actualizar los datos iniciales de un pedido
+export const updatePedidoService = async (id, data) => {
+
+  const {
+    cliente_id,
+    descripcion,
+    observacion,
+    fecha_estimada_entrega,
+    recordatorio
+  } = data;
+
+  // 🔹 validar que exista el pedido
+  const pedido = await PedidoModel.getById(id);
+
+  if (!pedido) {
+    return { err: "Pedido no encontrado", errorCode: 404 };
+  }
+
+  // 🔹 construir update dinámico
+  const fields = {};
+  const values = [];
+
+  if (cliente_id !== undefined) {
+    const cliente = await ClienteModel.getById(cliente_id);
+  if (!cliente || !cliente.status) {
+    return { err: 'Cliente no encontrado', errorCode: 404 };
+  }
+    fields.pedCliIdFk = '?';
+    values.push(cliente_id);
+  }
+
+  if (descripcion !== undefined) {
+    fields.pedDesc = '?';
+    values.push(!descripcion ? `Pedido de ${toTitleCase(pedido[0].cliente_name)} - ${new Date(pedido[0].f_ingreso).toLocaleDateString('es-CO')}` : descripcion);
+  }
+
+  if (observacion !== undefined) {
+    fields.pedObs = '?';
+    values.push(observacion);
+  }
+
+  if (fecha_estimada_entrega !== undefined) {
+    fields.pedFecEst = '?';
+    values.push(fecha_estimada_entrega);
+  }
+
+  if (recordatorio !== undefined) {
+    fields.pedRecor = '?';
+    values.push(recordatorio);
+  }
+
+  // 🔴 si no viene nada para actualizar
+  if (values.length === 0) {
+    return { err: "No hay campos para actualizar", errorCode: 400 };
+  }
+
+  // 🔹 armar query dinámico
+  const setClause = Object.keys(fields)
+    .map(key => `${key} = ${fields[key]}`)
+    .join(', ');
+  console.log(setClause)
+
+  await PedidoModel.update(id, setClause, values);
+
+  return { status: true };
+};
+
+// cancelar un pedido
+
+export const cancelPedidoService = async (id, motivo, usuarioId) => {
+  const connection = await db.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // El SP sp_cancelar_pedido ya tiene control de errores implementado
+    const resultado = await PedidoModel.cancelar(connection, id, usuarioId, motivo);
+
+    if (resultado && resultado !== 'OK') {
+      await connection.rollback();
+      return { err: resultado, errorCode: 400 };
+    }
+
+    await connection.commit();
+
+    return { status: true };
+
+  } catch (error) {
+    await connection.rollback();
+    throw error;
+  } finally {
+    connection.release();
+  }
+};
