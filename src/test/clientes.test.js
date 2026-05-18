@@ -101,7 +101,7 @@ describe('GET /clientes', () => {
     const response = await request(app).get('/clientes');
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(response.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -196,7 +196,7 @@ describe('POST /clientes', () => {
       .send(clienteValido);
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ success: false, error: 'El usuario US999 no existe' });
+    expect(response.body).toEqual({ status: false, error: 'El usuario US999 no existe' });
   });
 
   test('debe retornar 500 si el service lanza error', async () => {
@@ -207,7 +207,7 @@ describe('POST /clientes', () => {
       .send(clienteValido);
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(response.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -237,7 +237,7 @@ describe('GET /clientes/:id', () => {
     const response = await request(app).get('/clientes/IDINEXISTENTE');
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ success: false, error: 'Cliente no encontrado' });
+    expect(response.body).toEqual({ status: false, error: 'Cliente no encontrado' });
   });
 
   test('debe retornar 500 si el service falla', async () => {
@@ -246,7 +246,7 @@ describe('GET /clientes/:id', () => {
     const response = await request(app).get('/clientes/CLI999');
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(response.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -304,7 +304,7 @@ describe('PUT /clientes/:id', () => {
       .send(datosActualizacion);
 
     expect(response.status).toBe(404);
-    expect(response.body).toEqual({ success: false, error: 'Cliente no encontrado' });
+    expect(response.body).toEqual({ status: false, error: 'Cliente no encontrado' });
   });
 
   test('debe retornar 500 si el service falla', async () => {
@@ -315,7 +315,7 @@ describe('PUT /clientes/:id', () => {
       .send(datosActualizacion);
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(response.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -379,7 +379,7 @@ describe('PATCH /clientes/:id/estado', () => {
       .send({ estado: 2 });
 
     expect(response.status).toBe(400);
-    expect(response.body).toEqual({ success: false, error: 'El cliente CLI999 no existe' });
+    expect(response.body).toEqual({ status: false, error: 'El cliente CLI999 no existe' });
   });
 
   test('debe retornar 500 si el cliente ya estaba eliminado (error no manejado)', async () => {
@@ -392,7 +392,7 @@ describe('PATCH /clientes/:id/estado', () => {
       .send({ estado: 2 });
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(response.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 
   test('debe retornar 500 si el service falla', async () => {
@@ -403,6 +403,6 @@ describe('PATCH /clientes/:id/estado', () => {
       .send({ estado: 2 });
 
     expect(response.status).toBe(500);
-    expect(response.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(response.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });

@@ -127,7 +127,7 @@ describe('GET /pedidos', () => {
     const res = await request(app).get('/pedidos');
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(res.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -140,7 +140,7 @@ describe('POST /pedidos', () => {
   beforeEach(() => { jest.clearAllMocks(); });
 
   const pedidoValido = {
-    id_cliente: CLIENTE_ID,
+    cliente_id: CLIENTE_ID,
     fecha_estimada: fechaFutura,
     observaciones: 'Sin observaciones',
     tipo_pedido: 'personalizado',
@@ -149,8 +149,9 @@ describe('POST /pedidos', () => {
 
   test('debe crear un pedido y retornar 201', async () => {
     pedidosService.createNewPedido.mockResolvedValue({
-      insertId: 'PD001',
-      status: true
+      data: {
+        pedido_id: 'PD001'
+      }
     });
 
     const res = await request(app)
@@ -158,10 +159,11 @@ describe('POST /pedidos', () => {
       .send(pedidoValido);
 
     expect(res.status).toBe(201);
-    expect(res.body.insertId).toBe('PD001');
+    expect(res.body.status).toBe(true);
+    expect(res.body.data).toBe('PD001');
   });
 
-  test('debe retornar 400 si falta id_cliente', async () => {
+  test('debe retornar 400 si falta cliente_id', async () => {
     const res = await request(app)
       .post('/pedidos')
       .send({ descripcion: 'Test' });
@@ -170,10 +172,10 @@ describe('POST /pedidos', () => {
     expect(res.body).toHaveProperty('errors');
   });
 
-  test('debe retornar 400 si id_cliente es muy corto', async () => {
+  test('debe retornar 400 si cliente_id es muy corto', async () => {
     const res = await request(app)
       .post('/pedidos')
-      .send({ id_cliente: 'C1' });
+      .send({ cliente_id: 'C1' });
 
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('errors');
@@ -183,7 +185,7 @@ describe('POST /pedidos', () => {
     const res = await request(app)
       .post('/pedidos')
       .send({
-        id_cliente: 'CLI001',
+        cliente_id: 'CLI001',
         tipo_pedido: 'inexistente'
       });
 
@@ -202,7 +204,7 @@ describe('POST /pedidos', () => {
       .send(pedidoValido);
 
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ success: false, error: 'Cliente no encontrado' });
+    expect(res.body).toEqual({ status: false, error: 'Cliente no encontrado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -213,7 +215,7 @@ describe('POST /pedidos', () => {
       .send(pedidoValido);
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(res.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -256,7 +258,7 @@ describe('GET /pedidos/:id', () => {
     const res = await request(app).get('/pedidos/INEXISTENTE');
 
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ success: false, error: 'Pedido no encontrado' });
+    expect(res.body).toEqual({ status: false, error: 'Pedido no encontrado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -265,7 +267,7 @@ describe('GET /pedidos/:id', () => {
     const res = await request(app).get('/pedidos/PD001');
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(res.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -278,7 +280,7 @@ describe('PUT /pedidos/:id', () => {
   beforeEach(() => { jest.clearAllMocks(); });
 
   const datosActualizacion = {
-    id_cliente: CLIENTE_ID,
+    cliente_id: CLIENTE_ID,
     descripcion: 'Pedido actualizado'
   };
 
@@ -307,7 +309,7 @@ describe('PUT /pedidos/:id', () => {
       .send(datosActualizacion);
 
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ success: false, error: 'Pedido no encontrado' });
+    expect(res.body).toEqual({ status: false, error: 'Pedido no encontrado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -318,7 +320,7 @@ describe('PUT /pedidos/:id', () => {
       .send(datosActualizacion);
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(res.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -364,7 +366,7 @@ describe('PATCH /pedidos/:id/cancelar', () => {
       .send({ motivo: 'Ya estaba cancelado' });
 
     expect(res.status).toBe(400);
-    expect(res.body).toEqual({ success: false, error: 'El pedido ya está cancelado' });
+    expect(res.body).toEqual({ status: false, error: 'El pedido ya está cancelado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -375,7 +377,7 @@ describe('PATCH /pedidos/:id/cancelar', () => {
       .send({ motivo: 'Prueba' });
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(res.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -568,7 +570,7 @@ describe('PATCH /pedidos/:id/detalles/:id_detalle/produccion/:id_produccion', ()
 
     const res = await request(app)
       .patch('/pedidos/PD001/detalles/DT001/produccion/PRD001')
-      .send({ estado: 'EN_PROCESO' });
+      .send({ estado: 'EN PROCESO' });
 
     expect(res.status).toBe(201);
     expect(res.body).toEqual({

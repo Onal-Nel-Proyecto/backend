@@ -81,7 +81,7 @@ describe('GET /usuarios', () => {
     const res = await request(app).get('/usuarios');
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(res.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -111,7 +111,7 @@ describe('GET /usuarios/:id', () => {
     const res = await request(app).get('/usuarios/INEXISTENTE');
 
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ success: false, error: 'Usuario no encontrado' });
+    expect(res.body).toEqual({ status: false, error: 'Usuario no encontrado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -120,7 +120,7 @@ describe('GET /usuarios/:id', () => {
     const res = await request(app).get('/usuarios/12345678');
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(res.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -202,7 +202,7 @@ describe('POST /usuarios', () => {
       .send(usuarioValido);
 
     expect(res.status).toBe(409);
-    expect(res.body).toEqual({ success: false, error: 'El correo ya está registrado' });
+    expect(res.body).toEqual({ status: false, error: 'El correo ya está registrado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -213,7 +213,7 @@ describe('POST /usuarios', () => {
       .send(usuarioValido);
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(res.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -257,7 +257,7 @@ describe('PUT /usuarios/:id', () => {
       .send(datosActualizacion);
 
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ success: false, error: 'Usuario no encontrado' });
+    expect(res.body).toEqual({ status: false, error: 'Usuario no encontrado' });
   });
 
   test('debe retornar 409 si el correo ya está en uso', async () => {
@@ -272,7 +272,7 @@ describe('PUT /usuarios/:id', () => {
 
     expect(res.status).toBe(409);
     expect(res.body).toEqual({
-      success: false,
+      status: false,
       error: 'El correo ya está en uso por otro usuario'
     });
   });
@@ -285,7 +285,7 @@ describe('PUT /usuarios/:id', () => {
       .send(datosActualizacion);
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(res.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
 
@@ -352,7 +352,7 @@ describe('PATCH /usuarios/:id/estado', () => {
       .send({ estado: 2 });
 
     expect(res.status).toBe(404);
-    expect(res.body).toEqual({ success: false, error: 'Usuario no encontrado' });
+    expect(res.body).toEqual({ status: false, error: 'Usuario no encontrado' });
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
@@ -363,6 +363,6 @@ describe('PATCH /usuarios/:id/estado', () => {
       .send({ estado: 2 });
 
     expect(res.status).toBe(500);
-    expect(res.body).toEqual({ success: false, error: 'Error interno del servidor' });
+    expect(res.body).toEqual({ status: false, error: 'Error interno del servidor' });
   });
 });
