@@ -238,6 +238,18 @@ src/
 | PUT | `/clientes/:id` | ✅ | Actualizar cliente |
 | PATCH | `/clientes/:id/estado` | ✅ | Activar/bloquear |
 
+### Proveedores (`/proveedores`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/proveedores` | ✅ | Listar proveedores (paginado) |
+| GET | `/proveedores?prov_nombre=...` | ✅ | Filtrar por nombre |
+| GET | `/proveedores?prov_tipo_suministro=...` | ✅ | Filtrar por tipo de suministro |
+| POST | `/proveedores` | ✅ | Crear proveedor (ID generado por SP) |
+| GET | `/proveedores/:id` | ✅ | Obtener proveedor + historial de abastecimiento |
+| PUT | `/proveedores/:id` | ✅ | Actualizar proveedor |
+| DELETE | `/proveedores/:id` | ✅ | Deshabilitar proveedor (→ INACTIVO) |
+
 ### Usuarios (`/usuarios`)
 
 | Método | Ruta | Auth | Descripción |
