@@ -98,7 +98,7 @@ export const anularFacturaService = async (factura_id) => {
     throw new AppError('Factura no encontrada', 404);
   }
 
-  if (factura.estado === 'ANULADO') {
+  if (factura.estado === 'ANULADA') {
     throw new AppError('La factura ya se encuentra anulada', 400);
   }
 
@@ -121,9 +121,9 @@ export const generarPdfFacturaService = async (venta_id) => {
   // Intentar obtener la factura existente
   try {
     data = await getFacturaService(venta_id);
-
+    console.log(data)
     // Si está anulada, intentar crear una nueva
-    if (data.estado === 'ANULADO') {
+    if (data.estado === 'ANULADA') {
       await createFacturaService(venta_id);
       data = await getFacturaService(venta_id);
     }

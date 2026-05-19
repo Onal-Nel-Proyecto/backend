@@ -248,6 +248,28 @@ src/
 | PUT | `/usuarios/:id` | ✅ + Admin | Actualizar usuario |
 | PATCH | `/usuarios/:id/estado` | ✅ + Admin | Activar/bloquear |
 
+### Ventas / Factura (`/ventas`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/ventas/:id/factura` | ✅ | Obtener datos de la factura (empresa, cliente, detalle, totales) |
+| POST | `/ventas/:id/factura` | ✅ | Crear factura para una venta |
+| PATCH | `/ventas/:id/factura/:id_factura/anular` | ✅ | Anular factura |
+| GET | `/ventas/:id/factura/pdf` | ✅ | Generar y descargar PDF de la factura |
+
+> **Nota**: `:id` corresponde al ID de la venta. `:id_factura` es el ID de la factura.  
+> La generación de PDF usa **Puppeteer** y crea la factura automáticamente si no existe.
+
+### Pagos (`/pagos`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/pagos` | ✅ | Listar pagos (filtro por `pedido_id` o `venta_id`, paginado) |
+| POST | `/pagos` | ✅ | Registrar un nuevo pago |
+| PATCH | `/pagos/:id/rechazar` | ✅ | Rechazar un pago |
+
+> **Métodos de pago válidos**: `EFECTIVO`, `TRANSFERENCIA`, `TARJETA`.
+
 ---
 
 ## 🧪 Tests

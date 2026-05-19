@@ -42,7 +42,7 @@ export class FacturaModel {
       JOIN cliente c 
         ON v.cliIdFk = c.cliId
 
-      WHERE f.facVenIdFk = ?`,
+      WHERE f.facVenIdFk = ? AND facEst <> "ANULADA"`,
       [venta_id]
     );
 
@@ -89,7 +89,7 @@ export class FacturaModel {
       JOIN cliente c 
         ON v.cliIdFk = c.cliId
 
-      WHERE f.facId = ?`,
+      WHERE f.facId = ? AND facEst <> "ANULADA"`,
       [factura_id]
     );
 
@@ -156,7 +156,7 @@ export class FacturaModel {
   /** Anular factura */
   static async anular(factura_id) {
     const [result] = await db.query(
-      "UPDATE factura SET facEst = 'ANULADO' WHERE facId = ? AND facEst <> 'ANULADO'",
+      "UPDATE factura SET facEst = 'ANULADA' WHERE facId = ? AND facEst <> 'ANULADO'",
       [factura_id]
     );
     return result.affectedRows > 0;
@@ -174,7 +174,7 @@ export class FacturaModel {
   /** Validar que una venta no tenga ya una factura */
   static async validarFacturaExistente(venta_id) {
     const [[row]] = await db.query(
-      'SELECT facId FROM factura WHERE facVenIdFk = ?',
+      'SELECT facId FROM factura WHERE facVenIdFk = ? AND facEst <> "ANULADA"',
       [venta_id]
     );
     return row || null;
