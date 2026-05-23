@@ -128,7 +128,7 @@ export const crearDetalle = async (pedidoId, data) => {
       observacion: data.observacion || null,
       cantidad: data.cantidad
     };
-    console.log(detalleData);
+    // console.log(detalleData);
     
     await detallePedidoModel.insertarDetalle(detalleData);
 
@@ -171,7 +171,7 @@ export const eliminarDetalle = async (pedidoId, detalleId) => {
 
     // 2. Verificar que el detalle pertenezca al pedido
     const detalleData = await detalleModel.getDetalle(detalleId);
-    console.log(detalleData.pedidoId !== pedidoId, detalleData)
+    // console.log(detalleData.pedidoId !== pedidoId, detalleData)
     if (!detalleData || detalleData.pedIdFk !== pedidoId) {
       throw new Error('El detalle no pertenece al pedido especificado');
     }
