@@ -72,7 +72,7 @@ export const createNewPedido = async ({
     usuarioId,
     tipo_pedido
   });
-  console.log(result)
+  // console.log(result)
   if (!result || !result.status) {
     return { err: 'Error al crear el pedido', errorCode: 500 };
   }
@@ -89,7 +89,7 @@ export const getPedidoByIdService = async (id_pedido) => {
   const pedido = await PedidoModel.getById(id_pedido);
   if (!pedido) return { err: "Pedido no encontrado", errorCode: 404 }
   const detalles = await getDetallePedidoByIdPedido(id_pedido);
-  console.log(detalles)
+  // console.log(detalles)
   return {
     pedido_id: pedido[0].id,
     cliente: {
@@ -172,7 +172,7 @@ export const updatePedidoService = async (id, data) => {
   const setClause = Object.keys(fields)
     .map(key => `${key} = ${fields[key]}`)
     .join(', ');
-  console.log(setClause)
+  // console.log(setClause)
 
   await PedidoModel.update(id, setClause, values);
 

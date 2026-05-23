@@ -4,6 +4,10 @@ dotenv.config();
 // desectructurando las variables de entorno
 const {
   PORT = 3000, // si no existe la variable de entorno PORT, se asigna el valor 3000 por defecto
+
+  // variables de entorno para CORS
+  FRONT_URL_PROD,
+  FRONT_URL_DEV,
   
   // variables de entorno para la conexión a la base de datos MySQL
   MYSQL_HOST,
@@ -28,5 +32,7 @@ export {
   ACCESS_TOKEN_KEY,
   ACCESS_TOKEN_EXPIRES_IN,
   REFRESH_TOKEN_KEY,
-  REFRESH_TOKEN_EXPIRES_IN
+  REFRESH_TOKEN_EXPIRES_IN,
+  FRONT_URL_PROD,
+  FRONT_URL_DEV
 }

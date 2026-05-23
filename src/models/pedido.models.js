@@ -10,7 +10,7 @@ export class PedidoModel {
   static async getAllPedidos(pag = 1, limite = 15, filtros = {}) {
     // variables de paginacion
     const indice = limite * (pag - 1);
-    console.log(pag, limite, filtros);
+    // console.log(pag, limite, filtros);
 
     // construir WHERE dinámico según filtros
     const whereClauses = [];
@@ -105,9 +105,9 @@ export class PedidoModel {
       SELECT 
       p.pedId AS id,
       p.pedCliIdFk AS cliente_id,
-      CONCAT_WS(" ", c.cliNom, c.cliApe) AS cliente_name,
+      CONCAT_WS(' ', c.cliNom, c.cliApe) AS cliente_name,
       p.pedUsuIdFk AS user_id,
-      CONCAT_WS(" ", u.usuNom, u.usuApe) AS user_name,
+      CONCAT_WS(' ', u.usuNom, u.usuApe) AS user_name,
       p.pedDesc AS descripcion,
       p.pedEst AS estado,
       p.pedObs AS obs,
@@ -128,7 +128,7 @@ export class PedidoModel {
       SET ${setClause}
       WHERE pedId = ?
     `;
-    console.log(values)
+    // console.log(values)
     await db.query(query, [...values, id]);
   }
 
@@ -141,17 +141,18 @@ export class PedidoModel {
     const [[{ result }]] = await connection.query("SELECT @result AS result");
     return result;
   }
-  static async updateStatus({pedidoId, usu_id, estado}) {
+  static async updateStatus({pedidoId, usu_id, estado, motivo}) {
     const sql = `
     CALL sp_cambiar_estado_pedido(
-      ?, ?, ?, @result
+      ?, ?, ?, ?, @result
     )
   `;
 
     const values = [
       pedidoId,
       estado,
-      usu_id
+      usu_id,
+      motivo ?? `la poduccion cambio el estado del pedido a ${estado}`
     ];
 
     // Ejecutar procedimiento
@@ -161,7 +162,7 @@ export class PedidoModel {
     const [[result]] = await db.query(
       'SELECT @result AS resultado'
     );
-    console.log(result, estado)
+    // console.log(result, estado)
     // Validar resultado
     if (!result) {
       throw new Error(
