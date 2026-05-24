@@ -24,4 +24,6 @@ dist-ssr
 *.sw?
 
 .env
+.env.dev
+.env.prod
 instrucciones.txt
