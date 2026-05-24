@@ -4,23 +4,23 @@ import { loginUser, refreshTokenService } from '../services/auth.service.js';
 const ctlLog = async (req, res, next) => {
   try {
     const { email, pass } = req.body;
+    console.log("BODY:", req.body);
 
     const result = await loginUser({ email, pass });
 
     if (result.err) {
       return next(new AppError(result.err, result.errorCode));
     }
-
     res.status(200)
       .cookie('token', result.token, {
         httpOnly: true,
         sameSite: 'strict',
-        // secure: process.env.NODE_ENV === 'production',
+        secure: true,
       })
       .cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
         sameSite: 'strict',
-        // secure: process.env.NODE_ENV === 'production',
+        secure: true,
       })
       .json({
         user_id: result.user_id,
@@ -28,6 +28,7 @@ const ctlLog = async (req, res, next) => {
         apellidos: result.apellidos,
         rol: result.rol
       });
+      console.log("LOGIN OK");
 
   } catch (error) {
     next(new AppError(error.message, 500));
