@@ -15,7 +15,8 @@ app.use(cors({
     const ACCEPTED_ORIGINS = [
       "http://localhost:5173",
       "https://sp78zgqw-5173.use2.devtunnels.ms",
-      "https://frontend-fvjd3c5f8-wilfridos-projects-463d535a.vercel.app"
+      FRONT_URL_PROD,
+      FRONT_URL_DEV
     ]
     if(ACCEPTED_ORIGINS.includes(origin)) {
       console.log(origin)
