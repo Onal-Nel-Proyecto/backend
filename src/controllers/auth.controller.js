@@ -14,13 +14,15 @@ const ctlLog = async (req, res, next) => {
     res.status(200)
       .cookie('token', result.token, {
         httpOnly: true,
-        sameSite: 'strict',
         secure: true,
+        sameSite: "none",
+        credentials: true
       })
       .cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
-        sameSite: 'strict',
         secure: true,
+        sameSite: "none",
+        credentials: true
       })
       .json({
         user_id: result.user_id,
@@ -28,7 +30,7 @@ const ctlLog = async (req, res, next) => {
         apellidos: result.apellidos,
         rol: result.rol
       });
-      console.log("LOGIN OK");
+    console.log("LOGIN OK");
 
   } catch (error) {
     next(new AppError(error.message, 500));
