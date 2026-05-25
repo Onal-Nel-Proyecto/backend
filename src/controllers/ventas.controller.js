@@ -1,4 +1,3 @@
-import { AppError } from '../utils/appError.js';
 import { normalizeEmptyStrings } from '../utils/normalizacion_datos.js';
 import {
   getVentasService,
@@ -29,7 +28,9 @@ export const getVentasController = async (req, res, next) => {
     res.status(200).json(result);
   } catch (error) {
     console.error('Error en getVentasController:', error);
-    next(error instanceof AppError ? error : new AppError('Error interno del servidor', 500));
+    const status = error.statusCode || 500;
+    const message = error.statusCode ? error.message : 'Error interno del servidor';
+    res.status(status).json({ status: false, error: message });
   }
 };
 
@@ -42,7 +43,9 @@ export const getVentaByIdController = async (req, res, next) => {
     res.status(200).json(result);
   } catch (error) {
     console.error('Error en getVentaByIdController:', error);
-    next(error instanceof AppError ? error : new AppError('Error interno del servidor', 500));
+    const status = error.statusCode || 500;
+    const message = error.statusCode ? error.message : 'Error interno del servidor';
+    res.status(status).json({ status: false, error: message });
   }
 };
 
@@ -57,10 +60,9 @@ export const createVentaController = async (req, res, next) => {
     res.status(201).json(result);
   } catch (error) {
     console.error('Error en createVentaController:', error);
-    if (error.code === 'ER_SIGNAL_EXCEPTION' || error.code === 'ER_BAD_NULL_ERROR') {
-      return next(new AppError(error.sqlMessage || error.message, 400));
-    }
-    next(error instanceof AppError ? error : new AppError('Error interno del servidor', 500));
+    const status = error.statusCode || 500;
+    const message = error.statusCode ? error.message : 'Error interno del servidor';
+    res.status(status).json({ status: false, error: message });
   }
 };
 
@@ -75,7 +77,9 @@ export const updateVentaController = async (req, res, next) => {
     res.status(200).json(result);
   } catch (error) {
     console.error('Error en updateVentaController:', error);
-    next(error instanceof AppError ? error : new AppError('Error interno del servidor', 500));
+    const status = error.statusCode || 500;
+    const message = error.statusCode ? error.message : 'Error interno del servidor';
+    res.status(status).json({ status: false, error: message });
   }
 };
 
@@ -88,7 +92,9 @@ export const anularVentaController = async (req, res, next) => {
     res.status(200).json(result);
   } catch (error) {
     console.error('Error en anularVentaController:', error);
-    next(error instanceof AppError ? error : new AppError('Error interno del servidor', 500));
+    const status = error.statusCode || 500;
+    const message = error.statusCode ? error.message : 'Error interno del servidor';
+    res.status(status).json({ status: false, error: message });
   }
 };
 

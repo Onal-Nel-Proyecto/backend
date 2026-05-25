@@ -1,10 +1,9 @@
-import { AppError } from '../utils/appError.js';
 import {
   createDetalleService,
   deleteDetalleService
 } from '../services/dt_venta.service.js';
 
-export const createDetalleController = async (req, res, next) => {
+export const createDetalleController = async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -13,7 +12,9 @@ export const createDetalleController = async (req, res, next) => {
     res.status(201).json(result);
   } catch (error) {
     console.error('Error en createDetalleController:', error);
-    next(error instanceof AppError ? error : new AppError('Error interno del servidor', 500));
+    const status = error.statusCode || 500;
+    const message = error.statusCode ? error.message : 'Error interno del servidor';
+    res.status(status).json({ status: false, error: message });
   }
 };
 
@@ -27,6 +28,8 @@ export const deleteDetalleController = async (req, res, next) => {
     res.status(200).json(result);
   } catch (error) {
     console.error('Error en deleteDetalleController:', error);
-    next(error instanceof AppError ? error : new AppError('Error interno del servidor', 500));
+    const status = error.statusCode || 500;
+    const message = error.statusCode ? error.message : 'Error interno del servidor';
+    res.status(status).json({ status: false, error: message });
   }
 };

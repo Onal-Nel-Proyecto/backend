@@ -113,14 +113,54 @@ src/
 │   ├── config.js              # Variables de entorno
 │   ├── db.js                  # Pool MySQL
 │   └── server.js              # Inicio del servidor
-├── controllers/               # Handlers de rutas
+├── controllers/
+│   ├── cliente.controller.js
+│   ├── dashboard.controller.js
+│   ├── dt_pedido.controller.js
+│   ├── dt_venta.controller.js      # Detalles de venta
+│   ├── factura.controller.js
+│   ├── pagos.controller.js
+│   ├── pedidos.controller.js
+│   ├── produccion.controller.js
+│   ├── user.controller.js
+│   └── ventas.controller.js        # Módulo de ventas
 ├── middleware/
 │   ├── auth.middleware.js     # JWT + roles
 │   ├── err.middleware.js      # Error global (AppError)
 │   └── validator.middleware.js
-├── models/                    # Consultas SQL
-├── routes/                    # Definición de rutas
-├── services/                  # Lógica de negocio
+├── models/
+│   ├── cliente.models.js
+│   ├── dashboard.models.js
+│   ├── dt_pedido.models.js
+│   ├── dt_venta.models.js          # Detalle de venta (CRUD + SP ID)
+│   ├── factura.models.js
+│   ├── pagos.models.js
+│   ├── pedido.models.js
+│   ├── produccion.models.js
+│   ├── producto.models.js
+│   ├── user.models.js
+│   └── ventas.models.js            # Ventas (filtros, SP, paginación)
+├── routes/
+│   ├── cliente.route.js
+│   ├── dashboard.route.js
+│   ├── index.route.js
+│   ├── log.route.js
+│   ├── pagos.route.js
+│   ├── pedidos.route.js
+│   ├── user.route.js
+│   └── ventas.route.js             # Rutas de ventas + factura
+├── services/
+│   ├── auth.service.js
+│   ├── clientes.service.js
+│   ├── dashboard.service.js
+│   ├── dt_pedido.service.js
+│   ├── dt_venta.service.js         # Lógica de detalles de venta
+│   ├── factura.service.js
+│   ├── pagos.service.js
+│   ├── pedidos.service.js
+│   ├── produccion.service.js
+│   ├── user.services.js
+│   └── ventas.service.js           # Lógica de ventas
 ├── test/                      # Tests unitarios (Jest)
 ├── utils/
 │   ├── appError.js            # Clase AppError
@@ -248,7 +288,24 @@ src/
 | PUT | `/usuarios/:id` | ✅ + Admin | Actualizar usuario |
 | PATCH | `/usuarios/:id/estado` | ✅ + Admin | Activar/bloquear |
 
-### Ventas / Factura (`/ventas`)
+### Ventas (`/ventas`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/ventas` | ✅ | Listar ventas (paginado + filtros por `fecha_registro`, `fecha_limite_pago`, `cliente`) |
+| POST | `/ventas` | ✅ | Registrar venta con SP `sp_registrar_venta` (detalles + pagos opcionales) |
+| GET | `/ventas/:id` | ✅ | Obtener venta por ID (incluye cliente, usuario, y detalles paginados) |
+| PATCH | `/ventas/:id` | ✅ | Actualizar descuento y/o fecha límite de pago |
+| DELETE | `/ventas/:id` | ✅ | Anular venta (cambia estado a `ANULADO`) |
+
+**Detalles de venta** (`/ventas/:id/detalles`):
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| POST | `/ventas/:id/detalles` | ✅ | Agregar detalle a venta (producto, cantidad, precio) |
+| DELETE | `/ventas/:id/detalles/:id_detalle` | ✅ | Eliminar detalle (con auditoría: `SET @usuActual`) |
+
+### Factura (`/ventas/:id/factura`)
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
@@ -257,8 +314,14 @@ src/
 | PATCH | `/ventas/:id/factura/:id_factura/anular` | ✅ | Anular factura |
 | GET | `/ventas/:id/factura/pdf` | ✅ | Generar y descargar PDF de la factura |
 
-> **Nota**: `:id` corresponde al ID de la venta. `:id_factura` es el ID de la factura.  
-> La generación de PDF usa **Puppeteer** y crea la factura automáticamente si no existe.
+> **Nota**: La generación de PDF usa **Puppeteer** y crea la factura automáticamente si no existe.
+
+### Validaciones de fecha (`/pedidos`)
+
+La fecha estimada (`fecha_estimada`) en pedidos tiene dos restricciones:
+- **No puede ser anterior a hoy** (impide fechas pasadas)
+- **No puede superar 1 año a partir de hoy** (impide fechas excesivamente lejanas)
+- Comparación con **fecha local** del servidor (evita problemas de zona horaria con `.toISOString()`)
 
 ### Pagos (`/pagos`)
 
@@ -283,6 +346,22 @@ cd frontend && npm test
 ```
 
 Los tests del backend no dependen de la base de datos (servicios mockeados).
+
+### Tests de ventas (`src/test/ventas.test.js`)
+
+41 tests que cubren:
+
+| Ruta | Tests | Cobertura |
+|------|-------|-----------|
+| `GET /ventas` | 5 | Paginación, filtros, validación query, errores |
+| `POST /ventas` | 11 | Creación con/sin pagos, validaciones detalle, validaciones pago, errores |
+| `GET /ventas/:id` | 3 | Venta por ID con estructura completa, 404, 500 |
+| `PATCH /ventas/:id` | 6 | Actualización, validaciones, 404, 500 |
+| `DELETE /ventas/:id` | 3 | Anular venta, 404, 500 |
+| `POST /ventas/:id/detalles` | 8 | Crear detalle, campos requeridos, valores inválidos, 404, 500 |
+| `DELETE /ventas/:id/detalles/:id_detalle` | 4 | Eliminar detalle, auditoría (userId), 404, 500 |
+
+> Los tests usan `jest.unstable_mockModule` para mockear servicios y `supertest` para peticiones HTTP.
 
 ---
 

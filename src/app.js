@@ -40,6 +40,6 @@ app.use(cookieParser())
 app.use('/', routes)
 
 // Middleware global de errores (debe ir después de las rutas)
-// app.use(errorMiddleware);
+app.use(errorMiddleware);
 
 export default app
