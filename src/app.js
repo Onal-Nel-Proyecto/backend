@@ -9,21 +9,32 @@ const app = express();
 
 // configuración de middlewares
 app.use(express.json());
-const allowedOrigins = [
-  FRONT_URL_DEV ?? 'http://localhost:5173',
-  FRONT_URL_PROD
-];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error("No permitido por CORS"));
+    const ACCEPTED_ORIGINS = [
+      "http://localhost:5173",
+      "https://sp78zgqw-5173.use2.devtunnels.ms",
+      "https://frontend-nine-vert-24.vercel.app"
+    ]
+    if(ACCEPTED_ORIGINS.includes(origin)) {
+      console.log(origin)
+      return callback(null, true)
     }
+    if(!origin) return callback(null, true)
+    return callback(new Error("Not allowed by CORS"))
   },
-  credentials: true,
-}));
+  credentials: true
+}
+))
+app.use((err, req, res, next) => {
+  console.error("ERROR GLOBAL:", err);
+
+  res.status(500).json({
+    status: false,
+    error: err.message
+  });
+});
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 app.use('/', routes)

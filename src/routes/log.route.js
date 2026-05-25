@@ -16,10 +16,18 @@ router.post("/login",
 
 // ruta para salir de la sesión
 router.post("/logout", (req, res) => {
-   // eliminar el token del cliente de la cookie
+  // eliminar el token del cliente de la cookie
   res
-    .clearCookie('token')
-    .clearCookie('refreshToken')
+    .clearCookie('token', {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none"
+    })
+    .clearCookie('refreshToken', {
+      httpOnly: true,
+      secure: true,
+      sameSite: "none"
+    })
     .status(200)
     .json({ msg: 'Sesión cerrada' })
 })
