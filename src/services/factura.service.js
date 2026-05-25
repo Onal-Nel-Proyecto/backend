@@ -6,9 +6,9 @@ import { generarPDF, generarHTMLFactura } from '../utils/pdfGenerator.js';
 /** Datos fijos de la empresa (provisional) */
 const EMPRESA = {
   nombre: 'Confecciones Onal & Nel',
-  eslogan: 'Calidad y confianza en cada prenda',
-  NIT: '123456789-0',
-  direccion: 'Av. Principal #123, Santa Lucia',
+  // eslogan: 'Calidad y confianza en cada prenda',
+  // NIT: '123456789-0',
+  direccion_empresa: 'Calle 8 #604, Santa Lucia',
   telefono: '+51 987 654 321',
 };
 
@@ -23,7 +23,7 @@ export const getFacturaService = async (venta_id) => {
   const detalles = await FacturaModel.getDetalles(venta_id);
   const metodosPago = await FacturaModel.getMetodosPago(venta_id);
   const resumen = await PagosModel.getResumenVenta(venta_id);
-
+  // console.log(EMPRESA)
   return {
     // datos de la empresa
     ...EMPRESA,
@@ -37,7 +37,7 @@ export const getFacturaService = async (venta_id) => {
     nombres: factura.nombres,
     apellidos: factura.apellidos,
     documento: factura.cliente_id,
-    direccion: factura.direccion || null,
+    direccio_cliente: factura.direccion || null,
     telefono: factura.telefono || null,
     correo: factura.correo || null,
 
@@ -121,7 +121,7 @@ export const generarPdfFacturaService = async (venta_id) => {
   // Intentar obtener la factura existente
   try {
     data = await getFacturaService(venta_id);
-    console.log(data)
+    // console.log(data, 'data')
     // Si está anulada, intentar crear una nueva
     if (data.estado === 'ANULADA') {
       await createFacturaService(venta_id);
