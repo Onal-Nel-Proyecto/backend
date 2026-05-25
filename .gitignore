@@ -25,3 +25,5 @@ dist-ssr
 
 .env
 instrucciones.txt
+.env.dev
+.env.prod

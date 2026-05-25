@@ -15,14 +15,22 @@ export const basePedidoValidator = [
     .isISO8601()
     .withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
     .custom(value => {
-      // console.log(value) 
-      const hoy = new Date().toISOString().split('T')[0]; // obtener solo año, mes y día
-      const fecha = new Date(value).toISOString().split('T')[0]; // convertir la fecha ingresada al mismo formato
+      // Obtener la fecha local actual en formato YYYY-MM-DD
+      const ahora = new Date();
+      const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
 
-      // console.log(hoy, fecha);
-
-      if (fecha < hoy) {
+      // value ya viene como YYYY-MM-DD validado por isISO8601
+      if (value < hoy) {
         throw new Error('La fecha no puede ser anterior a hoy');
+      }
+
+      // Calcular fecha máxima (1 año a partir de hoy)
+      const fechaMax = new Date(ahora);
+      fechaMax.setFullYear(fechaMax.getFullYear() + 1);
+      const maxStr = `${fechaMax.getFullYear()}-${String(fechaMax.getMonth() + 1).padStart(2, '0')}-${String(fechaMax.getDate()).padStart(2, '0')}`;
+
+      if (value > maxStr) {
+        throw new Error('La fecha estimada no puede superar un año a partir de hoy');
       }
 
       return true;
@@ -96,11 +104,22 @@ export const updateValidator = [
     .isISO8601()
     .withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
     .custom(value => {
-      const hoy = new Date().toISOString().split('T')[0];
-      const fecha = new Date(value).toISOString().split('T')[0];
+      // Obtener la fecha local actual en formato YYYY-MM-DD
+      const ahora = new Date();
+      const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
 
-      if (fecha < hoy) {
+      // value ya viene como YYYY-MM-DD validado por isISO8601
+      if (value < hoy) {
         throw new Error('La fecha no puede ser anterior a hoy');
+      }
+
+      // Calcular fecha máxima (1 año a partir de hoy)
+      const fechaMax = new Date(ahora);
+      fechaMax.setFullYear(fechaMax.getFullYear() + 1);
+      const maxStr = `${fechaMax.getFullYear()}-${String(fechaMax.getMonth() + 1).padStart(2, '0')}-${String(fechaMax.getDate()).padStart(2, '0')}`;
+
+      if (value > maxStr) {
+        throw new Error('La fecha estimada no puede superar un año a partir de hoy');
       }
 
       return true;
