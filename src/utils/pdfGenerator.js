@@ -52,19 +52,19 @@ const formatearMoneda = (valor) => {
  */
 export const generarHTMLFactura = (data) => {
   const {
-    nombre: empresaNombre,
+    nombre_empresa,
     eslogan,
     NIT,
-    direccion: empresaDireccion,
-    telefono: empresaTelefono,
+    direccion_empresa,
+    telefono_empresa,
     factura_id,
     fecha_emision,
     estado,
     nombres,
     apellidos,
     documento,
-    direccion: clienteDireccion,
-    telefono: clienteTelefono,
+    direccion_cliente,
+    telefono_cliente,
     correo,
     pedido_id,
     venta_id,
@@ -282,7 +282,7 @@ const fechaFormateada = fecha_emision
     <!-- Header -->
     <div class="header">
       <div class="header-left">
-        <h1>${empresaNombre || 'Empresa'}</h1>
+        <h1>${nombre_empresa|| 'Empresa'}</h1>
         ${eslogan ? `<p class="eslogan">${eslogan}</p>` : ''}
         <p class="nit">NIT: ${NIT || '-'}</p>
       </div>
@@ -297,15 +297,15 @@ const fechaFormateada = fecha_emision
     <div class="info-grid">
       <div class="info-box">
         <h3>Empresa</h3>
-        <p><strong>Dirección:</strong> ${empresaDireccion || '-'}</p>
-        <p><strong>Teléfono:</strong> ${empresaTelefono || '-'}</p>
+        <p><strong>Dirección:</strong> ${direccion_empresa || '-'}</p>
+        <p><strong>Teléfono:</strong> ${telefono_empresa || '-'}</p>
       </div>
       <div class="info-box">
         <h3>Cliente</h3>
         <p><strong>${clienteNombre || '-'}</strong></p>
         <p><strong>Doc:</strong> ${documento || '-'}</p>
-        <p><strong>Dirección:</strong> ${clienteDireccion || '-'}</p>
-        <p><strong>Tel:</strong> ${clienteTelefono || '-'}</p>
+        <p><strong>Dirección:</strong> ${direccion_cliente || '-'}</p>
+        <p><strong>Tel:</strong> ${telefono_cliente || '-'}</p>
         <p><strong>Email:</strong> ${correo || '-'}</p>
       </div>
       <div class="info-box">
@@ -368,7 +368,7 @@ const fechaFormateada = fecha_emision
     <!-- Footer -->
     <div class="footer">
       <p>Documento generado electrónicamente</p>
-      <p class="empresa-info">${empresaDireccion || ''} | Tel: ${empresaTelefono || ''} | NIT: ${NIT || ''}</p>
+      <p class="empresa-info">${direccion_empresa || ''} | Tel: ${telefono_empresa || ''} | NIT: ${NIT || ''}</p>
     </div>
   </div>
 </body>
