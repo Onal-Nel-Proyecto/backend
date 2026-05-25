@@ -5,9 +5,7 @@ import {
   getVentaByIdService,
   createVentaService,
   updateVentaService,
-  anularVentaService,
-  createDetalleService,
-  deleteDetalleService
+  anularVentaService
 } from '../services/ventas.service.js';
 
 export const getVentasController = async (req, res, next) => {
@@ -94,28 +92,4 @@ export const anularVentaController = async (req, res, next) => {
   }
 };
 
-export const createDetalleController = async (req, res, next) => {
-  try {
-    const { id } = req.params;
 
-    const result = await createDetalleService(id, req.body);
-
-    res.status(201).json(result);
-  } catch (error) {
-    console.error('Error en createDetalleController:', error);
-    next(error instanceof AppError ? error : new AppError('Error interno del servidor', 500));
-  }
-};
-
-export const deleteDetalleController = async (req, res, next) => {
-  try {
-    const { id, id_detalle } = req.params;
-
-    const result = await deleteDetalleService(id, id_detalle);
-
-    res.status(200).json(result);
-  } catch (error) {
-    console.error('Error en deleteDetalleController:', error);
-    next(error instanceof AppError ? error : new AppError('Error interno del servidor', 500));
-  }
-};

@@ -22,10 +22,13 @@ import {
   getVentaByIdController,
   createVentaController,
   updateVentaController,
-  anularVentaController,
+  anularVentaController
+} from '../controllers/ventas.controller.js';
+
+import {
   createDetalleController,
   deleteDetalleController
-} from '../controllers/ventas.controller.js';
+} from '../controllers/dt_venta.controller.js';
 
 import {
   getVentasValidator,

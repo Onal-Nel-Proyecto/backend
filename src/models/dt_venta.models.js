@@ -35,7 +35,12 @@ export class DetalleVentaModel {
   /**
    * Eliminar un detalle de venta
    */
-  static async delete(ventaId, detalleId) {
+  static async delete(ventaId, detalleId, usuarioId = null) {
+    // Establecer variable de sesión para auditoría
+    if (usuarioId) {
+      await db.query('SET @usuActual = ?', [usuarioId]);
+    }
+
     const [result] = await db.query(
       'DELETE FROM det_venta WHERE idVenFk = ? AND detVenId = ?',
       [ventaId, detalleId]
