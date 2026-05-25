@@ -25,3 +25,7 @@ dist-ssr
 
 .env
 instrucciones.txt
+
+.env.dev
+.gitignore
+.env.prod
