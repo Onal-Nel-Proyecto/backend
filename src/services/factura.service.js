@@ -121,7 +121,7 @@ export const generarPdfFacturaService = async (venta_id) => {
   // Intentar obtener la factura existente
   try {
     data = await getFacturaService(venta_id);
-    console.log(data, 'data')
+    // console.log(data, 'data')
     // Si está anulada, intentar crear una nueva
     if (data.estado === 'ANULADA') {
       await createFacturaService(venta_id);
