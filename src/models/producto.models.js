@@ -14,7 +14,7 @@ export class ProductoModel {
     const [result] = await this.connection.execute(sql, [
       productoData.producto_id,
       productoData.nombre,
-      productoData.stock ?? 0,
+      0,
       productoData.precio,
       productoData.descripcion ?? null,
       productoData.genero ?? null,
