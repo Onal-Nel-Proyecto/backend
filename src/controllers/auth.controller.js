@@ -4,7 +4,7 @@ import { loginUser, refreshTokenService } from '../services/auth.service.js';
 const ctlLog = async (req, res, next) => {
   try {
     const { email, pass } = req.body;
-    console.log("BODY:", req.body);
+    // console.log("BODY:", req.body);
 
     const result = await loginUser({ email, pass });
 
