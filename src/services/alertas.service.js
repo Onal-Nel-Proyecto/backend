@@ -74,9 +74,12 @@ export const ejecutarVerificacionPagos = async () => {
 
     for (const row of registros) {
       // Determinar el ID de referencia y tipo de origen
-      const referenciaId = String(row.id_venta || row.id_pedido || row.pedIdFk || '');
-      console.log(referenciaId)
+      // Si tiene pedido → referencia = id del pedido; si no → referencia = id de la venta
       const tipoOrigen = row.tipo_origen || (row.pedIdFk ? 'PEDIDO' : 'VENTA');
+      const referenciaId = tipoOrigen === 'PEDIDO'
+        ? String(row.pedIdFk || row.id_pedido || '')
+        : String(row.venId || row.id_venta || '');
+      // console.log(referenciaId)
       const categoria = tipoOrigen === 'PEDIDO' ? 'PAGO_PENDIENTE_PEDIDO' : 'PAGO_PENDIENTE_VENTAS';
       const montoPendiente = parseFloat(row.monto_pendiente ?? row.saldo_pendiente ?? 0);
       const fechaLimite = row.fecha_limite ?? row.venFecVenLimit ?? null;
@@ -98,13 +101,17 @@ export const ejecutarVerificacionPagos = async () => {
       const alertaExistente = await AlertasModel.findByReferenciaYCategoria(referenciaId, categoria);
 
       const fechaVencida = fechaLimite && new Date(fechaLimite) < new Date();
+      console.log(alertaExistente, montoPendiente)
 
-      if (montoPendiente >= 0 && fechaVencida) {
+      if (montoPendiente > 0 && fechaVencida) {
         // — Deuda vencida: crear alerta si no existe —
         if (!alertaExistente) {
           const esPedido = tipoOrigen === 'PEDIDO';
           const titulo = `Pago pendiente - ${esPedido ? 'Pedido' : 'Venta'} #${referenciaId}`;
-          const mensaje = `El ${esPedido ? 'pedido' : 'venta'} #${referenciaId} tiene un monto pendiente de S/${montoPendiente.toFixed(2)} con fecha límite ${fechaLimite}`;
+          const fechaLocal = typeof fechaLimite === 'object' && fechaLimite instanceof Date
+            ? fechaLimite.toLocaleDateString('es-PE')
+            : new Date(fechaLimite).toLocaleDateString('es-PE');
+          const mensaje = `El ${esPedido ? 'pedido' : 'venta'} #${referenciaId} tiene un monto pendiente de $ ${montoPendiente.toFixed(2)} con fecha límite ${fechaLocal}`;
 
           const insertId = await AlertasModel.create({
             altTitulo: titulo,

@@ -55,6 +55,10 @@ export class AlertasModel {
       params.push(filtros.categoria);
     }
 
+    whereClauses.push('altEstado != ?');
+    params.push("RESUELTO");
+
+
     const whereSQL = whereClauses.length > 0
       ? `WHERE ${whereClauses.join(' AND ')}`
       : '';
@@ -105,6 +109,9 @@ export class AlertasModel {
       params.push(filtros.categoria);
     }
 
+    whereClauses.push('altEstado != ?');
+    params.push("RESUELTO");
+
     const whereSQL = whereClauses.length > 0
       ? `WHERE ${whereClauses.join(' AND ')}`
       : '';
@@ -122,8 +129,8 @@ export class AlertasModel {
    */
   static async findByReferenciaYCategoria(altReferenciaId, altCategoria) {
     const [[row]] = await db.query(
-      'SELECT * FROM alertas WHERE altReferenciaId = ? AND altCategoria = ?',
-      [altReferenciaId, altCategoria]
+      'SELECT * FROM alertas WHERE altReferenciaId = ? AND altCategoria = ? AND altEstado != ?',
+      [altReferenciaId, altCategoria, "RESUELTO"]
     );
     return row || null;
   }
