@@ -1,240 +1,181 @@
-# 🧵 Onal & Nel — Sistema de Gestión Textil
+# 🧵 Onal & Nel — Sistema de Gestión Textil (API REST)
 
-Sistema integral para la gestión de pedidos, clientes, usuarios y producción de una sastrería/modistería.  
-Consta de un **backend API REST** (Node.js + Express 5 + MySQL) y un **frontend SPA** (React + Vite).
+Sistema integral para la gestión de pedidos, clientes, usuarios, ventas, facturación y producción de una sastrería/modistería.  
+**API REST** construida con Node.js + Express 5 + MySQL, con arquitectura MVC, notificaciones en tiempo real (Socket.IO) y generación de PDF (Puppeteer).
 
 ---
 
 ## 📦 Stack tecnológico
 
-### Backend (`/backend`)
-
 | Dependencia | Versión | Propósito |
 |-------------|---------|-----------|
 | `express` | ^5.2.1 | Framework HTTP |
-| `mysql2` | ^3.22.2 | Conexión a MySQL (pool) |
+| `mysql2` | ^3.22.2 | Conexión a MySQL (pool con promesas) |
 | `jsonwebtoken` | ^9.0.3 | JWT (access + refresh tokens) |
 | `bcryptjs` | ^3.0.3 | Hash de contraseñas |
-| `cookie-parser` | ^1.4.7 | Cookies httpOnly |
+| `cookie-parser` | ^1.4.7 | Cookies httpOnly para tokens |
 | `cors` | ^2.8.6 | CORS para frontend |
-| `express-validator` | ^7.3.2 | Validación de inputs |
+| `express-validator` | ^7.3.2 | Validación de inputs por ruta |
 | `dotenv` | ^17.4.2 | Variables de entorno |
-| `helmet` | ^8.1.0 | Seguridad HTTP |
-| `morgan` | ^1.10.1 | Logs de peticiones |
-| `uuid` | ^14.0.0 | Generación de IDs |
+| `helmet` | ^8.1.0 | Seguridad HTTP (cabeceras) |
+| `morgan` | ^1.10.1 | Logs de peticiones HTTP |
+| `uuid` | ^14.0.0 | Generación de IDs alfanuméricos |
+| `socket.io` | ^4.8.3 | Notificaciones en tiempo real (alertas) |
+| `puppeteer` | ^25.0.2 | Generación de PDF de facturas |
+| `node-cron` | ^4.2.1 | Programación de tareas (job de alertas c/15 min) |
+| `nodemon` | ^3.1.14 | Recarga automática en desarrollo |
 
-**Dev**: `jest` + `supertest` (tests).
-
-### Frontend (`/frontend`)
-
-| Dependencia | Versión | Propósito |
-|-------------|---------|-----------|
-| `react` | ^19.2.5 | UI |
-| `react-router-dom` | ^7.15.0 | Enrutamiento |
-| `axios` | ^1.15.2 | HTTP client |
-| `framer-motion` | ^12.38.0 | Animaciones |
-| `react-icons` | ^5.6.0 | Iconos (Feather) |
-| `react-hook-form` | ^7.74.0 | Formularios |
-| `react-toastify` | ^11.1.0 | Toast notifications |
-
-**Dev**: `vite` + `@vitejs/plugin-react`.
+**Dev**: `jest` ^30.3.0 + `supertest` ^7.2.2 (tests), `only-allow` ^1.2.2 (forzar pnpm).
 
 ---
 
 ## 🚀 Instalación y ejecución
 
-### Backend
-
 ```bash
-cd backend
-npm install
+# El proyecto usa pnpm — instalar globalmente si no lo tienes
+npm install -g pnpm
+
+# Instalar dependencias
+pnpm install
 ```
 
-Crear archivo `.env`:
+Crear archivo `.env` en la raíz:
 
 ```env
 PORT=3000
 MYSQL_HOST=localhost
 MYSQL_PORT=3306
 MYSQL_USER=root
-MYSQL_PASS=
+MYSQL_PASSWORD=
 MYSQL_DATABASE=onal&nel-db-v5
 
-ACCESS_TOKEN_KEY= <clave-secreta>
+ACCESS_TOKEN_KEY=<clave-secreta>
 ACCESS_TOKEN_EXPIRES_IN=2h
-REFRESH_TOKEN_KEY= <clave-secreta>
+REFRESH_TOKEN_KEY=<clave-secreta>
 REFRESH_TOKEN_EXPIRES_IN=7d
+
+FRONT_URL_DEV=http://localhost:5173
+FRONT_URL_PROD=https://tudominio.com
 ```
 
 ```bash
-npm run dev    # desarrollo (nodemon)
-npm start      # producción
-npm test       # tests (Jest + Supertest)
-```
-
-### Frontend
-
-```bash
-cd frontend
-npm install
-```
-
-Crear archivo `.env`:
-
-```env
-VITE_API_URL=http://localhost:3000/
-```
-
-```bash
-npm run dev      # desarrollo (Vite)
-npm run build    # build producción
-npm run preview  # preview del build
+pnpm dev       # desarrollo (nodemon)
+pnpm start     # producción
+pnpm test      # tests (Jest + Supertest)
 ```
 
 ---
 
-## 🐳 Docker (backend)
+## 🐳 Docker
 
 ```bash
-docker build -t backend-onal-nel ./backend
-docker run -p 4000:3000 --env-file ./backend/.env backend-onal-nel
+docker build -t onal-nel-api .
+docker run -p 4000:3000 --env-file ./.env onal-nel-api
 ```
 
 ---
 
 ## 📁 Estructura del proyecto
 
-### Backend (`backend/src/`)
-
 ```
 src/
-├── app.js                     # Configuración Express
+├── app.js                        # Configuración Express (CORS, cookies, rutas, error middleware)
 ├── config/
-│   ├── config.js              # Variables de entorno
-│   ├── db.js                  # Pool MySQL
-│   └── server.js              # Inicio del servidor
+│   ├── config.js                 # Variables de entorno validadas
+│   ├── db.js                     # Pool MySQL (mysql2/promise) + connectDB()
+│   ├── server.js                 # Punto de entrada: HTTP server + Socket.IO + cron jobs
+│   └── socket.js                 # Inicialización y acceso a Socket.IO (initSocket / getIO)
 ├── controllers/
-│   ├── cliente.controller.js
-│   ├── dashboard.controller.js
-│   ├── dt_pedido.controller.js
-│   ├── dt_venta.controller.js      # Detalles de venta
-│   ├── factura.controller.js
-│   ├── pagos.controller.js
-│   ├── pedidos.controller.js
-│   ├── produccion.controller.js
-│   ├── user.controller.js
-│   └── ventas.controller.js        # Módulo de ventas
+│   ├── alertas.controller.js     # Listar alertas con filtros (GET)
+│   ├── auth.controller.js        # Login, refresh token, perfil
+│   ├── cliente.controller.js     # CRUD clientes
+│   ├── dashboard.controller.js   # KPIs, actividades, gráficos
+│   ├── dt_pedido.controller.js   # Detalles de pedido
+│   ├── dt_venta.controller.js    # Detalles de venta
+│   ├── factura.controller.js     # Factura CRUD + PDF
+│   ├── pagos.controller.js       # Pagos CRUD + rechazo
+│   ├── pedidos.controller.js     # Pedidos CRUD + cancelación
+│   ├── produccion.controller.js  # Producción asociada a detalles
+│   ├── user.controller.js        # CRUD usuarios (admin)
+│   └── ventas.controller.js      # Ventas CRUD + anulación
+├── jobs/
+│   └── alertas.job.js            # Job programado (node-cron) cada 15 min — verifica pagos vencidos
 ├── middleware/
-│   ├── auth.middleware.js     # JWT + roles
-│   ├── err.middleware.js      # Error global (AppError)
-│   └── validator.middleware.js
+│   ├── auth.middleware.js        # JWT validation + role guards (authValidator, isAdmin)
+│   ├── err.middleware.js         # Captura global de errores (AppError)
+│   └── validator.middleware.js   # Ejecuta validaciones de express-validator
 ├── models/
-│   ├── cliente.models.js
-│   ├── dashboard.models.js
-│   ├── dt_pedido.models.js
-│   ├── dt_venta.models.js          # Detalle de venta (CRUD + SP ID)
-│   ├── factura.models.js
-│   ├── pagos.models.js
-│   ├── pedido.models.js
-│   ├── produccion.models.js
-│   ├── producto.models.js
-│   ├── user.models.js
-│   └── ventas.models.js            # Ventas (filtros, SP, paginación)
+│   ├── alertas.models.js         # Alertas: crear, listar (paginado + filtros), actualizar estado
+│   ├── cliente.models.js         # Clientes CRUD
+│   ├── dashboard.models.js       # KPIs, pedidos por estado, top clientes
+│   ├── dt_pedido.models.js       # Detalles de pedido
+│   ├── dt_venta.models.js        # Detalles de venta (CRUD + SP ID)
+│   ├── factura.models.js         # Factura CRUD (incluye anulación)
+│   ├── pagos.models.js           # Pagos: registrar, listar, rechazar
+│   ├── pedido.models.js          # Pedidos CRUD + SP cancelación
+│   ├── produccion.models.js      # Producción (asignada a detalle de pedido)
+│   ├── producto.models.js        # Productos: CRUD con generación de ID y control de stock
+│   ├── user.models.js            # Usuarios CRUD (admin)
+│   └── ventas.models.js          # Ventas CRUD + SP registro con detalles y pagos
 ├── routes/
-│   ├── cliente.route.js
-│   ├── dashboard.route.js
-│   ├── index.route.js
-│   ├── log.route.js
-│   ├── pagos.route.js
-│   ├── pedidos.route.js
-│   ├── user.route.js
-│   └── ventas.route.js             # Rutas de ventas + factura
+│   ├── alertas.route.js          # [GET /alertas] — listado paginado con filtros
+│   ├── cliente.route.js          # CRUD /clientes
+│   ├── dashboard.route.js        # /dashboard/resumen
+│   ├── index.route.js            # Agrupador de todas las rutas
+│   ├── log.route.js              # /auth (login, logout, refresh, perfil)
+│   ├── pagos.route.js            # /pagos
+│   ├── pedidos.route.js          # /pedidos + /pedidos/:id/detalles + producción
+│   ├── user.route.js             # /usuarios (admin)
+│   └── ventas.route.js           # /ventas + /ventas/:id/detalles + /ventas/:id/factura
 ├── services/
-│   ├── auth.service.js
-│   ├── clientes.service.js
-│   ├── dashboard.service.js
-│   ├── dt_pedido.service.js
-│   ├── dt_venta.service.js         # Lógica de detalles de venta
-│   ├── factura.service.js
-│   ├── pagos.service.js
-│   ├── pedidos.service.js
-│   ├── produccion.service.js
-│   ├── user.services.js
-│   └── ventas.service.js           # Lógica de ventas
-├── test/                      # Tests unitarios (Jest)
+│   ├── alertas.service.js        # Lógica de negocio: listar alertas + verificación pagos vencidos
+│   ├── auth.service.js           # Login con JWT + refresh token
+│   ├── clientes.service.js       # CRUD clientes
+│   ├── dashboard.service.js      # KPIs y estadísticas
+│   ├── dt_pedido.service.js      # Detalles de pedido
+│   ├── dt_venta.service.js       # Detalles de venta
+│   ├── factura.service.js        # Factura: CRUD + obtención de datos para PDF
+│   ├── pagos.service.js          # Registro y consulta de pagos
+│   ├── pedidos.service.js        # Pedidos con filtros y paginación
+│   ├── produccion.service.js     # Lógica de producción
+│   ├── user.services.js          # CRUD usuarios
+│   └── ventas.service.js         # Ventas con filtros, SP, paginación
+├── test/                         # Tests unitarios (Jest + Supertest)
+│   ├── alertas.test.js           # 10+ tests — alertas paginadas, filtros
+│   ├── auth.test.js              # Login, refresh, perfil, logout
+│   ├── clientes.test.js          # CRUD clientes
+│   ├── factura.test.js           # Factura CRUD + PDF
+│   ├── pagos.test.js             # Pagos CRUD + rechazo
+│   ├── pedidos.test.js           # Pedidos CRUD + cancelación
+│   ├── user.test.js              # CRUD usuarios (admin)
+│   └── ventas.test.js            # 41 tests — cobertura completa de ventas
 ├── utils/
-│   ├── appError.js            # Clase AppError
-│   ├── genId.js               # Generador de IDs
-│   ├── normalizacion_datos.js
-│   └── paginacion.js
-└── validators/                # Reglas express-validator
-```
-
-### Frontend (`frontend/src/`)
-
-```
-src/
-├── api/
-│   ├── axiosInstance.js       # Axios + interceptor refresh
-│   └── endpoints/             # Endpoints por módulo
-├── components/
-│   ├── common/                # Card, Button, Input
-│   └── ui/
-│       ├── feedback/          # Alert, InConstruction, LoadingPages
-│       ├── Header/            # Header, NavTabs, UserDropdown, Notifications
-│       └── Sidebar/           # Sidebar con roles
-├── features/
-│   ├── auth/                  # Login, sesión, hooks
-│   └── pedidos/               # (en desarrollo)
-├── hooks/                     # useDocumentTitle
-├── layout/
-│   └── MainLayout/            # Layout principal (Header + Sidebar + NavTabs)
-├── page/                      # Páginas del sistema
-├── routes/                    # Router, PrivateRoute, PublicRoute, AdminRoute
-└── utils/                     # session.js (getStoredUser, isAdmin)
+│   ├── appError.js               # Clase AppError para errores controlados
+│   ├── genId.js                  # Generador de IDs con prefijo (SP en BD)
+│   ├── normalizacion_datos.js    # Normalización de inputs (nombres, mayúsculas)
+│   ├── paginacion.js             # Helper calculateTotalPages
+│   └── pdfGenerator.js           # Generación de PDF con Puppeteer + HTML template
+└── validators/                   # Reglas de validación por módulo (express-validator)
+    ├── auth.validator.js         # Login: email, password
+    ├── cliente.validator.js      # Cliente: nombres, documento, teléfono
+    ├── dt_pedido.validator.js    # Detalles de pedido
+    ├── factura.validator.js      # Factura
+    ├── pagos.validator.js        # Pagos: monto, método, referencia
+    ├── pedido.validator.js       # Pedido: fechas, cliente, servicios
+    ├── produccion.validator.js   # Producción: fecha, responsable
+    ├── user.validator.js         # Usuario: email, rol, contraseña
+    └── ventas.validator.js       # Venta: descuento, detalles, pagos
 ```
 
 ---
 
 ## 🔐 Autenticación
 
-- **Login**: `POST /auth/login` → cookie `token` (access) + `refreshToken`
-- **Refresh automático**: El interceptor de Axios captura `401` y llama a `POST /auth/refresh`
-- **Logout**: `POST /auth/logout` (limpia cookies)
-- **Roles**: `ADMINISTRADOR` (acceso total), otros roles con permisos limitados
-
-### Rutas protegidas
-
-| Tipo | Componente | Redirección |
-|------|-----------|-------------|
-| Públicas | `PublicRoute` | Si autenticado → `/dashboard` |
-| Privadas | `PrivateRoute` | Si no autenticado → `/login` |
-| Admin | `AdminRoute` | Si no admin → `/dashboard` |
-
----
-
-## 🧭 Rutas del frontend
-
-### Públicas
-| Ruta | Página |
-|------|--------|
-| `/login` | Inicio de sesión |
-
-### Privadas (requieren autenticación)
-| Ruta | Página | Descripción |
-|------|--------|-------------|
-| `/dashboard` | Dashboard | KPIs, actividades, gráfico, stock |
-| `/pedidos/dash` | Inicio Pedidos | Dashboard de pedidos |
-| `/pedidos` | Listado | Tabla de pedidos con búsqueda y filtros |
-| `/pedidos/:id` | Detalle | Detalle del pedido |
-| `/pedidos/entregas` | Entregas | Gestión de entregas |
-| `/gestion-personal` | Gestión | Clientes + Usuarios (admin) |
-| `/gestion-clientes` | Clientes | CRUD de clientes |
-| `/config` | Configuración | Categorías, Medidas, Copia seguridad |
-| `/config/categorias` | Categorías | Administrar categorías |
-| `/config/medidas` | Medidas | Administrar medidas |
-| `/config/copia-seguridad` | Copia seguridad | Backups |
-| `/gestion-usuarios` | Usuarios (admin) | CRUD de usuarios |
+- **Login**: `POST /auth/login` → cookies `token` (access) + `refreshToken` (httpOnly, secure, SameSite=None)
+- **Refresh**: `POST /auth/refresh` → lee `refreshToken` de cookie, devuelve nuevo `token`
+- **Logout**: `POST /auth/logout` → limpia ambas cookies
+- **Perfil**: `GET /auth/perfil` → datos del usuario autenticado
+- **Roles**: `ADMINISTRADOR` (acceso total), otros roles con permisos limitados vía middleware `isAdmin`
 
 ---
 
@@ -244,10 +185,24 @@ src/
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| POST | `/auth/login` | ❌ | Iniciar sesión |
+| POST | `/auth/login` | ❌ | Iniciar sesión (email + pass) → cookies httpOnly |
 | POST | `/auth/logout` | ❌ | Cerrar sesión (limpia cookies) |
-| POST | `/auth/refresh` | ❌ | Refrescar access token |
-| GET | `/auth/perfil` | ✅ | Perfil del usuario |
+| POST | `/auth/refresh` | ❌ | Refrescar access token desde refreshToken cookie |
+| GET | `/auth/perfil` | ✅ | Perfil del usuario autenticado |
+
+### Alertas (`/alertas`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/alertas` | ✅ | Listar alertas (paginado + filtros: `estado`, `tipo`, `categoria`) |
+
+> Las alertas se generan automáticamente cada 15 min vía **node-cron** — verifican pagos vencidos desde la vista `vw_pagos_pendientes`. Se emiten en tiempo real por **Socket.IO**.
+
+### Dashboard (`/dashboard`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/dashboard/resumen` | ✅ | KPIs, pedidos por estado, top clientes |
 
 ### Pedidos (`/pedidos`)
 
@@ -262,11 +217,7 @@ src/
 **Detalles**: `POST/DELETE/PATCH /pedidos/:id/detalles[/:id_detalle]`  
 **Producción**: `POST/PATCH/DELETE /pedidos/:id/detalles/:id_detalle/produccion[/:id_produccion]`
 
-### Dashboard (`/dashboard`)
-
-| Método | Ruta | Auth | Descripción |
-|--------|------|------|-------------|
-| GET | `/dashboard/resumen` | ✅ | KPIs, pedidos por estado, top clientes |
+> La fecha estimada (`fecha_estimada`) en pedidos tiene dos restricciones: no puede ser anterior a hoy ni superar 1 año desde hoy (comparación con fecha local del servidor).
 
 ### Clientes (`/clientes`)
 
@@ -294,7 +245,7 @@ src/
 |--------|------|------|-------------|
 | GET | `/ventas` | ✅ | Listar ventas (paginado + filtros por `fecha_registro`, `fecha_limite_pago`, `cliente`) |
 | POST | `/ventas` | ✅ | Registrar venta con SP `sp_registrar_venta` (detalles + pagos opcionales) |
-| GET | `/ventas/:id` | ✅ | Obtener venta por ID (incluye cliente, usuario, y detalles paginados) |
+| GET | `/ventas/:id` | ✅ | Obtener venta por ID (incluye cliente, usuario y detalles paginados) |
 | PATCH | `/ventas/:id` | ✅ | Actualizar descuento y/o fecha límite de pago |
 | DELETE | `/ventas/:id` | ✅ | Anular venta (cambia estado a `ANULADO`) |
 
@@ -314,14 +265,7 @@ src/
 | PATCH | `/ventas/:id/factura/:id_factura/anular` | ✅ | Anular factura |
 | GET | `/ventas/:id/factura/pdf` | ✅ | Generar y descargar PDF de la factura |
 
-> **Nota**: La generación de PDF usa **Puppeteer** y crea la factura automáticamente si no existe.
-
-### Validaciones de fecha (`/pedidos`)
-
-La fecha estimada (`fecha_estimada`) en pedidos tiene dos restricciones:
-- **No puede ser anterior a hoy** (impide fechas pasadas)
-- **No puede superar 1 año a partir de hoy** (impide fechas excesivamente lejanas)
-- Comparación con **fecha local** del servidor (evita problemas de zona horaria con `.toISOString()`)
+> La generación de PDF usa **Puppeteer** con un template HTML minimalista (estilo factura). Si la factura no existe, la crea automáticamente antes de generar el PDF.
 
 ### Pagos (`/pagos`)
 
@@ -338,46 +282,53 @@ La fecha estimada (`fecha_estimada`) en pedidos tiene dos restricciones:
 ## 🧪 Tests
 
 ```bash
-# Backend (Jest + Supertest)
-cd backend && npm test
-
-# Frontend (si se implementan)
-cd frontend && npm test
+pnpm test
 ```
 
-Los tests del backend no dependen de la base de datos (servicios mockeados).
+Los tests no dependen de la base de datos (servicios mockeados con `jest.unstable_mockModule`).  
+Usan **Jest** + **Supertest** para peticiones HTTP simuladas.
 
-### Tests de ventas (`src/test/ventas.test.js`)
+### Cobertura de tests (8 archivos)
 
-41 tests que cubren:
-
-| Ruta | Tests | Cobertura |
-|------|-------|-----------|
-| `GET /ventas` | 5 | Paginación, filtros, validación query, errores |
-| `POST /ventas` | 11 | Creación con/sin pagos, validaciones detalle, validaciones pago, errores |
-| `GET /ventas/:id` | 3 | Venta por ID con estructura completa, 404, 500 |
-| `PATCH /ventas/:id` | 6 | Actualización, validaciones, 404, 500 |
-| `DELETE /ventas/:id` | 3 | Anular venta, 404, 500 |
-| `POST /ventas/:id/detalles` | 8 | Crear detalle, campos requeridos, valores inválidos, 404, 500 |
-| `DELETE /ventas/:id/detalles/:id_detalle` | 4 | Eliminar detalle, auditoría (userId), 404, 500 |
-
-> Los tests usan `jest.unstable_mockModule` para mockear servicios y `supertest` para peticiones HTTP.
+| Archivo | Tests | Cobertura |
+|---------|-------|-----------|
+| `ventas.test.js` | **41** | CRUD ventas, detalles, filtros, paginación, anulación, validaciones |
+| `alertas.test.js` | ~10 | Listado paginado, filtros por estado/tipo/categoría |
+| `auth.test.js` | ~8 | Login exitoso/fallido, refresh token, perfil, logout |
+| `clientes.test.js` | ~10 | CRUD clientes, activar/bloquear |
+| `factura.test.js` | ~8 | CRUD factura, anulación, generación PDF |
+| `pagos.test.js` | ~8 | CRUD pagos, rechazo, filtros |
+| `pedidos.test.js` | ~10 | CRUD pedidos, cancelación, validaciones de fecha |
+| `user.test.js` | ~8 | CRUD usuarios (admin), activar/bloquear |
 
 ---
 
 ## ⚙️ Configuración
 
 ### CORS
-Backend permite origen `http://localhost:5173` (frontend Vite).  
-Ajustar en `src/app.js` según entorno.
+Backend permite orígenes desde `src/app.js`:
+- `http://localhost:5173` (frontend Vite en desarrollo)
+- `https://frontend-nine-vert-24.vercel.app` (producción)
+- Devtunnel de MS y otros según `FRONT_URL_DEV` / `FRONT_URL_PROD`
+
+### Socket.IO
+Los eventos en tiempo real se emiten desde `src/config/socket.js`.  
+Usado para notificar creación/resolución de alertas (`nueva-alerta`, `alerta-resuelta`).
+
+### Job programado (cron)
+`src/jobs/alertas.job.js` ejecuta `ejecutarVerificacionPagos()` cada **15 minutos**:
+1. Consulta la vista `vw_pagos_pendientes`
+2. Si hay monto pendiente vencido → crea alerta (evita duplicados por referencia + categoría)
+3. Si ya no hay deuda y hay alerta activa → marca como `RESUELTO`
+4. Emite eventos Socket.IO en ambos casos
 
 ### Middleware de errores
 Todos los controladores usan `next(new AppError(mensaje, código))`.  
 El middleware `err.middleware.js` captura y responde con:
 ```json
-{ "success": false, "error": "mensaje" }
+{ "status": false, "error": "mensaje" }
 ```
-Los errores internos (MySQL, etc.) solo se muestran en consola.
+Los errores internos (MySQL, etc.) se loguean en consola sin exponerse al cliente.
 
 ---
 

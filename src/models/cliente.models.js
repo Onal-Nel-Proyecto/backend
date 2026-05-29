@@ -6,7 +6,22 @@ export class ClienteModel {
     if (rows.length === 0) return false
     return { status: true, data: rows[0] }
   }
-  static async getAll(limit = 15, offset = 0) {
+  static async getAll(limit = 15, offset = 0, filtros = {}) {
+    const whereClauses = [];
+    const values = [];
+
+    if (filtros.search) {
+      whereClauses.push("(c.cliId LIKE ? OR c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
+      const like = `%${filtros.search}%`;
+      values.push(like, like, like, like);
+    }
+
+    const whereSQL = whereClauses.length > 0
+      ? `WHERE ${whereClauses.join(" AND ")}`
+      : "";
+
+    values.push(limit, offset);
+
     const sql = `
       SELECT 
         c.cliId,
@@ -17,16 +32,30 @@ export class ClienteModel {
         c.cliEst,
         c.cliFecReg
       FROM cliente c
+      ${whereSQL}
       ORDER BY cliFecReg DESC
       LIMIT ? OFFSET ?
     `;
-    const [rows] = await db.query(sql, [limit, offset]);
+    const [rows] = await db.query(sql, values);
     return rows;
   }
 
-  static async getTotalClientes() {
-    const sql = 'SELECT COUNT(*) AS total FROM cliente';
-    const [rows] = await db.query(sql);
+  static async getTotalClientes(filtros = {}) {
+    const whereClauses = [];
+    const values = [];
+
+    if (filtros.search) {
+      whereClauses.push("(cliId LIKE ? OR cliNom LIKE ? OR cliApe LIKE ? OR CONCAT_WS(' ', cliNom, cliApe) LIKE ?)");
+      const like = `%${filtros.search}%`;
+      values.push(like, like, like, like);
+    }
+
+    const whereSQL = whereClauses.length > 0
+      ? `WHERE ${whereClauses.join(" AND ")}`
+      : "";
+
+    const sql = `SELECT COUNT(*) AS total FROM cliente ${whereSQL}`;
+    const [rows] = await db.query(sql, values);
     return rows[0].total;
   }
   static async getTelefonoByClienteId(id) {

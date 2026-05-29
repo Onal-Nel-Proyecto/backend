@@ -69,6 +69,7 @@ export const parametroValidator = [
 
   check('estado')
     .optional()
+    .toLowerCase()
     .isIn(["pendiente", "terminado", "cancelado", "en_proceso"])
     .withMessage("el estado debe ser: pendiente | terminado | cancelado | en_proceso"),
 
@@ -90,8 +91,30 @@ export const parametroValidator = [
   check('tipo_pedido')
     .optional()
     .isIn(["personalizado", "retoques", "modificaciones"])
-    .withMessage("tipo_pedido debe ser: personalizado | retoques | modificaciones")
-]
+    .withMessage("tipo_pedido debe ser: personalizado | retoques | modificaciones"),
+
+  check('estado_pago')
+    .optional()
+    .isIn(["SIN PAGAR", "ABONADO", "PAGADO"])
+    .withMessage("estado_pago debe ser: SIN PAGAR | ABONADO | PAGADO"),
+
+  check('fecha_entrega_desde')
+    .optional()
+    .isISO8601()
+    .withMessage("fecha_entrega_desde debe tener formato válido (YYYY-MM-DD)"),
+
+  check('fecha_entrega_hasta')
+    .optional()
+    .isISO8601()
+    .withMessage("fecha_entrega_hasta debe tener formato válido (YYYY-MM-DD)"),
+
+  check('descripcion')
+    .optional()
+    .isString()
+    .withMessage("descripcion debe ser texto")
+    .isLength({ max: 100 })
+    .withMessage("descripcion no puede tener más de 100 caracteres")
+]    
 
 export const updateValidator = [
   body("cliente_id")
