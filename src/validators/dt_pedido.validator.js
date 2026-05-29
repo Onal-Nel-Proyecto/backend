@@ -23,8 +23,20 @@ export const crearDetalleValidator = [
   // medidas: array
   body('medidas')
     .optional()
-    .isArray()
-    .withMessage('Las medidas deben ser un arreglo con al menos un elemento'),
+    .custom((value) => {
+
+      // permitir array vacío
+      if (Array.isArray(value) && value.length === 0) {
+        return true;
+      }
+
+      // validar que sea arreglo
+      if (!Array.isArray(value)) {
+        throw new Error('medidas debe ser un arreglo');
+      }
+
+      return true;
+    }),
 
   // Cada medida debe tener medida_id y medida_valor
   body('medidas.*.medida_id')
@@ -89,8 +101,20 @@ export const actualizarDetalleValidator = [
   // medidas: opcional, si se envía debe ser array con estructura válida
   body('medidas')
     .optional()
-    .isArray({ min: 1 })
-    .withMessage('medidas debe ser un arreglo con al menos un elemento'),
+    .custom((value) => {
+
+      // permitir array vacío
+      if (Array.isArray(value) && value.length === 0) {
+        return true;
+      }
+
+      // validar que sea arreglo
+      if (!Array.isArray(value)) {
+        throw new Error('medidas debe ser un arreglo');
+      }
+
+      return true;
+    }),
   body('medidas.*.medida_id')
     .if(body('medidas').exists())
     .notEmpty()

@@ -13,7 +13,7 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
   const limite = 15;
 
   const rows = await PedidoModel.getAllPedidos(pag, limite, filtros);
-  const total = await PedidoModel.countPedidos();
+  const total = await PedidoModel.countPedidos(filtros);
 
   const data = rows.map(e => ({
     id: e.id,
@@ -21,6 +21,7 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
     cliente_nombres: e.cliente_nombres,
     fecha_entrega_estimada: e.fecha_estimada ? new Date(e.fecha_estimada).toLocaleDateString() : null,
     estado: e.estado,
+    estado_pago: e.estado_pago,
     dias_faltantes: e.dias_faltantes
   }));
 
@@ -103,7 +104,9 @@ export const getPedidoByIdService = async (id_pedido) => {
     },
     descripcion: pedido[0].descripcion,
     estado: pedido[0].estado,
+    estado_pago: pedido[0].estado_pago,
     observacion: pedido[0].obs,
+    recordatorio: pedido[0].recordatorio,
     fecha_estimada_entrega: pedido[0].f_estimada != null ? pedido[0].f_estimada.toISOString().split('T')[0] : pedido[0].f_estimada,
     fecha_entrega: pedido[0].f_entrega != null ? pedido[0].f_entrega.toISOString().split('T')[0] : pedido[0].f_entrega,
     fecha_ingreso: pedido[0].f_ingreso != null ? pedido[0].f_ingreso.toISOString().split('T')[0] : pedido[0].f_ingreso,
