@@ -1,6 +1,5 @@
-import { body, check } from 'express-validator';
+import { body, check, param } from 'express-validator';
 const tipoPedido = ["personalizado", "retoques", "modificaciones",]
-const estadoPedido = ["pendiente", "retoques", "modificaciones",]
 
 // validacion basica para registro de pedido
 export const basePedidoValidator = [
@@ -70,8 +69,8 @@ export const parametroValidator = [
   check('estado')
     .optional()
     .toLowerCase()
-    .isIn(["pendiente", "terminado", "cancelado", "en_proceso"])
-    .withMessage("el estado debe ser: pendiente | terminado | cancelado | en_proceso"),
+    .isIn(["pendiente", "terminado", "cancelado", "en_proceso", "entregado", "completados"])
+    .withMessage("el estado debe ser: pendiente | terminado | cancelado | en_proceso | entregado | completados"),
 
   check('fecha_desde')
     .optional()
@@ -171,6 +170,13 @@ export const updateValidator = [
     .isLength({ max: 100 })
     .withMessage("La descripción no puede tener más de 100 caracteres"),
 
+];
+
+export const entregarPedidoValidator = [
+  param('id')
+    .notEmpty()
+    .isString()
+    .withMessage('ID de pedido requerido'),
 ];
 
 export const cancelPedidoValidator = [

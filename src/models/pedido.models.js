@@ -6,12 +6,13 @@ export class PedidoModel {
     const whereClauses = [];
     const values = [];
 
-    // Por defecto excluir cancelados (a menos que se filtre explícitamente)
+    // Por defecto: solo pedidos activos (pendiente + en_proceso)
+    // Si se pasa ?estado=completados → trae terminado + entregado
     if (!filtros.estado) {
-      whereClauses.push("pedEst <> 'cancelado'");
-    }
-
-    if (filtros.estado) {
+      whereClauses.push("pedEst IN ('pendiente', 'en_proceso')");
+    } else if (filtros.estado === 'completados') {
+      whereClauses.push("pedEst IN ('terminado', 'entregado')");
+    } else {
       whereClauses.push("pedEst = ?");
       values.push(filtros.estado);
     }
@@ -101,12 +102,13 @@ export class PedidoModel {
     const whereClauses = [];
     const values = [];
 
-    // Por defecto excluir cancelados (a menos que se filtre explícitamente)
+    // Por defecto: solo pedidos activos (pendiente + en_proceso)
+    // Si se pasa ?estado=completados → trae terminado + entregado
     if (!filtros.estado) {
-      whereClauses.push("pedEst <> 'cancelado'");
-    }
-
-    if (filtros.estado) {
+      whereClauses.push("pedEst IN ('pendiente', 'en_proceso')");
+    } else if (filtros.estado === 'completados') {
+      whereClauses.push("pedEst IN ('terminado', 'entregado')");
+    } else {
       whereClauses.push("pedEst = ?");
       values.push(filtros.estado);
     }
@@ -289,6 +291,94 @@ export class PedidoModel {
     const [[{ result }]] = await connection.query("SELECT @result AS result");
     return result;
   }
+  /**
+   * Entregar un pedido: cambia estado a ENTREGADO y registra fecha de entrega
+   * @param {string} pedidoId - ID del pedido
+   * @param {string} usuarioId - ID del usuario que entrega
+   * @returns {Promise<object>} { status: true } o lanza error
+   */
+  /**
+   * Entregar un pedido: llama al SP y registra la fecha de entrega
+   * @param {string} pedidoId - ID del pedido
+   * @param {string} usuarioId - ID del usuario que entrega
+   * @param {object} connection - Conexión (transaction desde el service)
+   * @returns {Promise<object>} Resultado del SP
+   */
+  static async entregar(pedidoId, usuarioId, connection) {
+    // 1. Llamar al SP que valida y cambia el estado
+    await connection.query(
+      `CALL sp_cambiar_estado_pedido(?, 'ENTREGADO', ?, 'Pedido entregado al cliente', @result)`,
+      [pedidoId, usuarioId]
+    );
+
+    const [[{ result }]] = await connection.query('SELECT @result AS result');
+
+    if (result !== 'OK') {
+      throw new Error(result || 'Error al cambiar estado del pedido');
+    }
+
+    // 2. Registrar la fecha de entrega real
+    await connection.query(
+      `UPDATE pedidos SET pedFecEnt = NOW() WHERE pedId = ?`,
+      [pedidoId]
+    );
+
+    return { status: true };
+  }
+
+  /**
+   * Obtener pedidos completados (TERMINADO + ENTREGADO) con paginación
+   * @param {number} pag - Número de página
+   * @param {number} limite - Registros por página
+   * @returns {Promise<Array>} Lista de pedidos
+   */
+  static async getAllEntregas(pag = 1, limite = 15) {
+    const indice = limite * (pag - 1);
+
+    const [rows] = await db.query(
+      `
+      SELECT
+        p.pedId AS id,
+        p.pedDesc AS descripcion,
+        CONCAT_WS(' ', c.cliNom, c.cliApe) AS cliente_nombres,
+        DATE(p.pedFecEst) AS fecha_estimada,
+        DATE(p.pedFecEnt) AS fecha_entrega,
+        p.pedEst AS estado,
+        CASE
+          WHEN COALESCE(pag.total_pagado, 0) >= p.pedTolEst AND p.pedTolEst > 0 THEN 'PAGADO'
+          WHEN COALESCE(pag.total_pagado, 0) > 0 THEN 'ABONADO'
+          ELSE 'SIN PAGAR'
+        END AS estado_pago
+      FROM pedidos p
+      JOIN cliente c ON c.cliId = p.pedCliIdFk
+      LEFT JOIN (
+        SELECT
+          pagPedIdFk,
+          COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
+        FROM pagos
+        GROUP BY pagPedIdFk
+      ) pag ON pag.pagPedIdFk = p.pedId
+      WHERE p.pedEst IN ('TERMINADO', 'ENTREGADO')
+      ORDER BY p.pedFecEnt DESC, p.pedFecEst DESC
+      LIMIT ? OFFSET ?
+      `,
+      [limite, indice]
+    );
+
+    return rows;
+  }
+
+  /**
+   * Contar pedidos completados (TERMINADO + ENTREGADO)
+   * @returns {Promise<number>}
+   */
+  static async countEntregas() {
+    const [[{ total }]] = await db.query(
+      `SELECT COUNT(*) AS total FROM pedidos WHERE pedEst IN ('TERMINADO', 'ENTREGADO')`
+    );
+    return Number(total);
+  }
+
   static async updateStatus({pedidoId, usu_id, estado, motivo}) {
     const sql = `
     CALL sp_cambiar_estado_pedido(

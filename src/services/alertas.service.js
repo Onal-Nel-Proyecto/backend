@@ -3,6 +3,8 @@ import { calculateTotalPages } from '../utils/paginacion.js';
 import db from '../config/db.js';
 import { getIO } from '../config/socket.js';
 
+const CATEGORIA_PEDIDO_PENDIENTE = 'PEDIDO_PENDIENTE';
+
 /**
  * Obtener alertas paginadas con filtros
  */
@@ -164,5 +166,128 @@ export const ejecutarVerificacionPagos = async () => {
     console.log('[ALERTAS] Verificación completada');
   } catch (error) {
     console.error('[ALERTAS] Error en verificación de pagos:', error);
+  }
+};
+
+/**
+ * Ejecutar verificación de pedidos activos con recordatorio pendiente
+ *
+ * Lee la vista vw_pedidos_activos y para cada pedido con necesitaRecordatorio = 1:
+ *  - Si no existe alerta ACTIVA → la crea (tipo WARNING, categoria PEDIDO_PENDIENTE)
+ *  - Si el pedido ya no está en la vista (o ya no necesita recordatorio) y tiene alerta ACTIVA → la resuelve
+ */
+export const ejecutarVerificacionPedidos = async () => {
+  try {
+    console.log('[ALERTAS] Ejecutando verificación de pedidos con recordatorio...');
+
+    // 1. Obtener pedidos activos que necesitan recordatorio
+    const [pedidosPendientes] = await db.query(
+      `SELECT 
+        pedId, 
+        pedFecEnt, 
+        pedEst, 
+        nombreCliente,
+        diasRestantes
+      FROM vw_pedidos_activos 
+      WHERE necesitaRecordatorio = 1`
+    );
+
+    const pedidosConAlerta = pedidosPendientes.length;
+    console.log(`[ALERTAS] ${pedidosConAlerta} pedido(s) necesitan recordatorio`);
+
+    // ── 2. Crear alertas para pedidos que aún no tienen ──
+    const idsConRecordatorio = [];
+
+    for (const row of pedidosPendientes) {
+      const referenciaId = String(row.pedId);
+      idsConRecordatorio.push(referenciaId);
+
+      // Verificar si ya existe alerta activa para este pedido
+      const alertaExistente = await AlertasModel.findByReferenciaYCategoria(
+        referenciaId,
+        CATEGORIA_PEDIDO_PENDIENTE
+      );
+
+      if (!alertaExistente) {
+        const fechaEntrega = row.pedFecEnt
+          ? new Date(row.pedFecEnt).toLocaleDateString('es-PE')
+          : 'sin fecha';
+
+        const infoExtra = {
+          cliente: row.nombreCliente || null,
+          fecha_entrega: row.pedFecEnt || null,
+          dias_restantes: row.diasRestantes ?? null,
+          tipo_origen: 'PEDIDO'
+        };
+
+        const titulo = `Pedido #${referenciaId} pendiente de entrega`;
+        const mensaje = row.diasRestantes !== null && row.diasRestantes <= 0
+          ? `El pedido #${referenciaId} de ${row.nombreCliente || 'cliente'} venció hace ${Math.abs(row.diasRestantes)} día(s) — fecha acordada: ${fechaEntrega}`
+          : `El pedido #${referenciaId} de ${row.nombreCliente || 'cliente'} tiene entrega pendiente — fecha acordada: ${fechaEntrega}`;
+
+        const insertId = await AlertasModel.create({
+          altTitulo: titulo,
+          altMensaje: mensaje,
+          altTipo: 'WARNING',
+          altModulo: 'PEDIDOS',
+          altReferenciaId: referenciaId,
+          altCategoria: CATEGORIA_PEDIDO_PENDIENTE,
+          altInfoExtra: infoExtra
+        });
+
+        // Emitir evento socket
+        try {
+          getIO().emit('nueva-alerta', {
+            id_alerta: insertId,
+            titulo,
+            tipo: 'WARNING',
+            categoria: CATEGORIA_PEDIDO_PENDIENTE,
+            referencia_id: referenciaId,
+            info_extra: infoExtra,
+            accion: {
+              url: `/pedidos/${referenciaId}`,
+              texto: 'Ir a pedido'
+            }
+          });
+        } catch (e) {
+          console.warn('[ALERTAS] Socket no disponible para emitir nueva-alerta');
+        }
+
+        console.log(`[ALERTAS] Alerta creada para pedido #${referenciaId}`);
+      }
+    }
+
+    // ── 3. Resolver alertas de pedidos que ya no necesitan recordatorio ──
+    // Buscar alertas ACTIVAS de tipo PEDIDO_PENDIENTE cuyo pedId ya no esté
+    // en la lista de ids que necesitan recordatorio
+    const [alertasActivas] = await db.query(
+      `SELECT altId, altReferenciaId
+       FROM alertas
+       WHERE altCategoria = ? AND altEstado = 'ACTIVO'`,
+      [CATEGORIA_PEDIDO_PENDIENTE]
+    );
+
+    for (const alerta of alertasActivas) {
+      if (!idsConRecordatorio.includes(alerta.altReferenciaId)) {
+        // Este pedido ya no necesita recordatorio → resolver alerta
+        await AlertasModel.updateEstado(alerta.altId, 'RESUELTO');
+
+        try {
+          getIO().emit('alerta-resuelta', {
+            id_alerta: alerta.altId,
+            referencia_id: alerta.altReferenciaId,
+            categoria: CATEGORIA_PEDIDO_PENDIENTE
+          });
+        } catch (e) {
+          console.warn('[ALERTAS] Socket no disponible para emitir alerta-resuelta');
+        }
+
+        console.log(`[ALERTAS] Alerta resuelta para pedido #${alerta.altReferenciaId} (ya no necesita recordatorio)`);
+      }
+    }
+
+    console.log('[ALERTAS] Verificación de pedidos completada');
+  } catch (error) {
+    console.error('[ALERTAS] Error en verificación de pedidos:', error);
   }
 };

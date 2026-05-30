@@ -1,5 +1,5 @@
 import { AppError } from '../utils/appError.js';
-import { cancelPedidoService, createNewPedido, getAllPedidosService, getPedidoByIdService, updatePedidoService } from "../services/pedidos.service.js";
+import { cancelPedidoService, createNewPedido, getAllEntregasService, getAllPedidosService, getPedidoByIdService, entregarPedidoService, updatePedidoService } from "../services/pedidos.service.js";
 import { normalizeEmptyStrings } from "../utils/normalizacion_datos.js";
 
 export const getAllPedidosController = async (req, res, next) => {
@@ -76,6 +76,42 @@ export const updatePedidoController = async (req, res, next) => {
     res.status(200).json({
       status: true,
       msg: "Se actualizó con éxito el pedido"
+    });
+  } catch (error) {
+    console.error(error);
+    next(new AppError('Error interno del servidor', 500));
+  }
+};
+
+export const getAllEntregasController = async (req, res, next) => {
+  try {
+    const { pag = 1 } = req.query;
+
+    const result = await getAllEntregasService(pag);
+
+    res.status(200).json(result);
+  } catch (error) {
+    console.error(error);
+    next(new AppError('Error interno del servidor', 500));
+  }
+};
+
+export const entregarPedidoController = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const usuarioId = req.user.user_id;
+    console.log(usuarioId);
+    
+
+    const result = await entregarPedidoService(id, usuarioId);
+
+    if (result.err) {
+      return next(new AppError(result.err, result.errorCode));
+    }
+
+    res.status(200).json({
+      status: true,
+      msg: `Pedido #${id} marcado como ENTREGADO`
     });
   } catch (error) {
     console.error(error);
