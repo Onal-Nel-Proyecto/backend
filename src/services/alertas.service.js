@@ -184,7 +184,7 @@ export const ejecutarVerificacionPedidos = async () => {
     const [pedidosPendientes] = await db.query(
       `SELECT 
         pedId, 
-        pedFecEnt, 
+        pedFecEst, 
         pedEst, 
         nombreCliente,
         diasRestantes
@@ -209,13 +209,16 @@ export const ejecutarVerificacionPedidos = async () => {
       );
 
       if (!alertaExistente) {
-        const fechaEntrega = row.pedFecEnt
-          ? new Date(row.pedFecEnt).toLocaleDateString('es-PE')
+        const fechaEntrega = row.pedFecEst
+          ? new Date(row.pedFecEst).toLocaleDateString('es-CO', {
+            timeZone: 'UTC'
+          })
           : 'sin fecha';
-
+          console.log(fechaEntrega);
+          
         const infoExtra = {
           cliente: row.nombreCliente || null,
-          fecha_entrega: row.pedFecEnt || null,
+          fecha_entrega: fechaEntrega|| null,
           dias_restantes: row.diasRestantes ?? null,
           tipo_origen: 'PEDIDO'
         };

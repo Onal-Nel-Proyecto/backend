@@ -4,7 +4,6 @@ import { PedidoModel } from '../models/pedido.models.js';
 import { toTitleCase } from '../utils/normalizacion_datos.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
 import { getDetallePedidoByIdPedido } from './dt_pedido.service.js';
-import { getPagosService } from './pagos.service.js';
 import db from "../config/db.js";
 
 // servicio para obtener todos los pedidos con paginacion
@@ -22,7 +21,8 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
     fecha_entrega_estimada: e.fecha_estimada ? new Date(e.fecha_estimada).toLocaleDateString() : null,
     estado: e.estado,
     estado_pago: e.estado_pago,
-    dias_faltantes: e.dias_faltantes
+    dias_faltantes: e.dias_faltantes,
+    precio_total: e.total_pedido
   }));
 
   return {
@@ -91,7 +91,7 @@ export const getPedidoByIdService = async (id_pedido) => {
   const pedido = await PedidoModel.getById(id_pedido);
   if (!pedido) return { err: "Pedido no encontrado", errorCode: 404 }
   const detalles = await getDetallePedidoByIdPedido(id_pedido);
-  // console.log(detalles)
+  // console.log(pedido[0])
   return {
     pedido_id: pedido[0].id,
     cliente: {
@@ -107,12 +107,13 @@ export const getPedidoByIdService = async (id_pedido) => {
     estado_pago: pedido[0].estado_pago,
     observacion: pedido[0].obs,
     recordatorio: pedido[0].recordatorio,
+    precio_total: pedido[0].total_pedido,
     fecha_estimada_entrega: pedido[0].f_estimada != null ? pedido[0].f_estimada.toISOString().split('T')[0] : pedido[0].f_estimada,
     fecha_entrega: pedido[0].f_entrega != null ? pedido[0].f_entrega.toISOString().split('T')[0] : pedido[0].f_entrega,
     fecha_ingreso: pedido[0].f_ingreso != null ? pedido[0].f_ingreso.toISOString().split('T')[0] : pedido[0].f_ingreso,
     fotos_pedido: [], // para el modulo de adjuntar foto
     detalles_pedido: detalles.data ?? [],
-    pagos: (await getPagosService({ pedido_id: pedido[0].id, pagina: 1, limite: 50 })).data
+    venta_id: pedido[0].venta_id
   }
 };
 

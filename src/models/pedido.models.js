@@ -172,7 +172,8 @@ export class PedidoModel {
         sub.fecha_estimada,
         sub.estado,
         sub.dias_faltantes,
-        sub.estado_pago
+        sub.estado_pago,
+        sub.total_pedido
       FROM (
         SELECT
           p.pedId AS id,
@@ -180,6 +181,7 @@ export class PedidoModel {
           CONCAT_WS(' ', c.cliNom, c.cliApe) AS cliente_nombres,
           DATE(p.pedFecEst) AS fecha_estimada,
           p.pedEst AS estado,
+          p.pedTolEst AS total_pedido,
           fn_dias_restantes_pedido(p.pedId) AS dias_faltantes,
           CASE
             WHEN COALESCE(pag.total_pagado, 0) >= p.pedTolEst AND p.pedTolEst > 0 THEN 'PAGADO'
@@ -252,6 +254,8 @@ export class PedidoModel {
         p.pedFecEnt AS f_entrega,
         p.pedFecIng AS f_ingreso,
         p.pedRecor AS recordatorio,
+        p.pedTolEst AS total_pedido,
+        v.venId AS venta_id,
         CASE 
           WHEN COALESCE(pag.total_pagado, 0) >= p.pedTolEst AND p.pedTolEst > 0 THEN 'PAGADO'
           WHEN COALESCE(pag.total_pagado, 0) > 0 THEN 'ABONADO'
@@ -260,6 +264,7 @@ export class PedidoModel {
       FROM pedidos p
       LEFT JOIN cliente c ON c.cliId = p.pedCliIdFk
       LEFT JOIN usuario u ON u.usuId = p.pedUsuIdFk
+      LEFT JOIN ventas v ON v.pedIdFk = p.pedId
       LEFT JOIN (
         SELECT
           pagPedIdFk,
