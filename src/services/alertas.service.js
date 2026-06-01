@@ -103,7 +103,7 @@ export const ejecutarVerificacionPagos = async () => {
       const alertaExistente = await AlertasModel.findByReferenciaYCategoria(referenciaId, categoria);
 
       const fechaVencida = fechaLimite && new Date(fechaLimite) < new Date();
-      console.log(alertaExistente, montoPendiente)
+      // console.log(alertaExistente, montoPendiente)
 
       if (montoPendiente > 0 && fechaVencida) {
         // — Deuda vencida: crear alerta si no existe —
@@ -214,7 +214,7 @@ export const ejecutarVerificacionPedidos = async () => {
             timeZone: 'UTC'
           })
           : 'sin fecha';
-          console.log(fechaEntrega);
+          // console.log(fechaEntrega);
           
         const infoExtra = {
           cliente: row.nombreCliente || null,

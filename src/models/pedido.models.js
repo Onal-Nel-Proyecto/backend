@@ -332,13 +332,56 @@ export class PedidoModel {
   }
 
   /**
-   * Obtener pedidos completados (TERMINADO + ENTREGADO) con paginación
+   * Construir WHERE dinámico para consultas de entregas
+   * @param {object} filtros - { cliente, fecha_desde, fecha_hasta, estado, mes }
+   * @param {Array} values - Array de valores (se modifica por referencia)
+   * @returns {string} Cláusula WHERE
+   */
+  static _buildWhereEntregas(filtros, values) {
+    const whereClauses = ["p.pedEst IN ('TERMINADO', 'ENTREGADO')"];
+
+    if (filtros.estado) {
+      whereClauses.push("p.pedEst = ?");
+      values.push(filtros.estado);
+    }
+
+    if (filtros.cliente) {
+      whereClauses.push("(c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
+      const like = `%${filtros.cliente}%`;
+      values.push(like, like, like);
+    }
+
+    if (filtros.fecha_desde) {
+      whereClauses.push("DATE(p.pedFecEnt) >= ?");
+      values.push(filtros.fecha_desde);
+    }
+
+    if (filtros.fecha_hasta) {
+      whereClauses.push("DATE(p.pedFecEnt) <= ?");
+      values.push(filtros.fecha_hasta);
+    }
+
+    if (filtros.mes) {
+      whereClauses.push("MONTH(p.pedFecEnt) = ?");
+      values.push(Number(filtros.mes));
+    }
+
+    return whereClauses.length > 0 ? `WHERE ${whereClauses.join(' AND ')}` : '';
+  }
+
+  /**
+   * Obtener pedidos completados (TERMINADO + ENTREGADO) con paginación y filtros
    * @param {number} pag - Número de página
    * @param {number} limite - Registros por página
+   * @param {object} filtros - { cliente, fecha_desde, fecha_hasta, estado, mes }
    * @returns {Promise<Array>} Lista de pedidos
    */
-  static async getAllEntregas(pag = 1, limite = 15) {
+  static async getAllEntregas(pag = 1, limite = 15, filtros = {}) {
     const indice = limite * (pag - 1);
+    const values = [];
+    const whereSQL = this._buildWhereEntregas(filtros, values);
+
+    values.push(limite, indice);
 
     const [rows] = await db.query(
       `
@@ -349,11 +392,13 @@ export class PedidoModel {
         DATE(p.pedFecEst) AS fecha_estimada,
         DATE(p.pedFecEnt) AS fecha_entrega,
         p.pedEst AS estado,
+        p.pedTolEst AS precio_total,
         CASE
           WHEN COALESCE(pag.total_pagado, 0) >= p.pedTolEst AND p.pedTolEst > 0 THEN 'PAGADO'
           WHEN COALESCE(pag.total_pagado, 0) > 0 THEN 'ABONADO'
           ELSE 'SIN PAGAR'
-        END AS estado_pago
+        END AS estado_pago,
+        (COALESCE(p.pedTolEst, 0) - COALESCE(pag.total_pagado, 0)) AS saldo
       FROM pedidos p
       JOIN cliente c ON c.cliId = p.pedCliIdFk
       LEFT JOIN (
@@ -363,25 +408,71 @@ export class PedidoModel {
         FROM pagos
         GROUP BY pagPedIdFk
       ) pag ON pag.pagPedIdFk = p.pedId
-      WHERE p.pedEst IN ('TERMINADO', 'ENTREGADO')
+      ${whereSQL}
       ORDER BY p.pedFecEnt DESC, p.pedFecEst DESC
       LIMIT ? OFFSET ?
       `,
-      [limite, indice]
+      values
     );
 
     return rows;
   }
 
   /**
-   * Contar pedidos completados (TERMINADO + ENTREGADO)
+   * Contar pedidos completados con filtros
+   * @param {object} filtros - { cliente, fecha_desde, fecha_hasta, estado, mes }
    * @returns {Promise<number>}
    */
-  static async countEntregas() {
+  static async countEntregas(filtros = {}) {
+    const values = [];
+    const whereSQL = this._buildWhereEntregas(filtros, values);
+
     const [[{ total }]] = await db.query(
-      `SELECT COUNT(*) AS total FROM pedidos WHERE pedEst IN ('TERMINADO', 'ENTREGADO')`
+      `SELECT COUNT(*) AS total
+       FROM pedidos p
+       JOIN cliente c ON c.cliId = p.pedCliIdFk
+       ${whereSQL}`,
+      values
     );
     return Number(total);
+  }
+
+  /**
+   * Obtener resumen de pedidos completados con los mismos filtros
+   * @param {object} filtros - { cliente, fecha_desde, fecha_hasta, estado, mes }
+   * @returns {Promise<object>} { totalEntregados, totalTerminados, saldoPendiente, valorTotal }
+   */
+  static async getResumenEntregas(filtros = {}) {
+    const values = [];
+    const whereSQL = this._buildWhereEntregas(filtros, values);
+
+    const [[row]] = await db.query(
+      `
+      SELECT
+        SUM(CASE WHEN p.pedEst = 'ENTREGADO' THEN 1 ELSE 0 END) AS totalEntregados,
+        SUM(CASE WHEN p.pedEst = 'TERMINADO' THEN 1 ELSE 0 END) AS totalTerminados,
+        COALESCE(SUM(p.pedTolEst), 0) AS valorTotal,
+        COALESCE(SUM(COALESCE(p.pedTolEst, 0) - COALESCE(pag.total_pagado, 0)), 0) AS saldoPendiente
+      FROM pedidos p
+      JOIN cliente c ON c.cliId = p.pedCliIdFk
+      LEFT JOIN (
+        SELECT
+          pagPedIdFk,
+          COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
+        FROM pagos
+        GROUP BY pagPedIdFk
+      ) pag ON pag.pagPedIdFk = p.pedId
+      ${whereSQL}
+      `,
+      values
+    );
+
+    return {
+      totalEntregados: Number(row?.totalEntregados ?? 0),
+      totalTerminados: Number(row?.totalTerminados ?? 0),
+      valorTotal: Number(row?.valorTotal ?? 0),
+      saldoPendiente: Number(row?.saldoPendiente ?? 0)
+    };
   }
 
   static async updateStatus({pedidoId, usu_id, estado, motivo}) {

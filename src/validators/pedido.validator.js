@@ -112,7 +112,12 @@ export const parametroValidator = [
     .isString()
     .withMessage("descripcion debe ser texto")
     .isLength({ max: 100 })
-    .withMessage("descripcion no puede tener más de 100 caracteres")
+    .withMessage("descripcion no puede tener más de 100 caracteres"),
+
+  check('mes')
+    .optional()
+    .isInt({ min: 1, max: 12 })
+    .withMessage("mes debe ser un número entre 1 y 12"),
 ]    
 
 export const updateValidator = [

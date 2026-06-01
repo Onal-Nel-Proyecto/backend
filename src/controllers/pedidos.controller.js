@@ -85,9 +85,18 @@ export const updatePedidoController = async (req, res, next) => {
 
 export const getAllEntregasController = async (req, res, next) => {
   try {
-    const { pag = 1 } = req.query;
+    const {
+      pag = 1,
+      cliente,
+      fecha_desde,
+      fecha_hasta,
+      estado,
+      mes
+    } = req.query;
 
-    const result = await getAllEntregasService(pag);
+    const filtros = { cliente, fecha_desde, fecha_hasta, estado, mes };
+
+    const result = await getAllEntregasService(pag, filtros);
 
     res.status(200).json(result);
   } catch (error) {

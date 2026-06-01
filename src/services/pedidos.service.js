@@ -226,12 +226,13 @@ export const entregarPedidoService = async (pedidoId, usuarioId) => {
 // ─────────────────────────────────────────────
 //  Servicio: listar pedidos completados (TERMINADO + ENTREGADO)
 // ─────────────────────────────────────────────
-export const getAllEntregasService = async (pag = 1) => {
+export const getAllEntregasService = async (pag = 1, filtros = {}) => {
   const limite = 15;
 
-  const [rows, total] = await Promise.all([
-    PedidoModel.getAllEntregas(pag, limite),
-    PedidoModel.countEntregas()
+  const [rows, total, resumen] = await Promise.all([
+    PedidoModel.getAllEntregas(pag, limite, filtros),
+    PedidoModel.countEntregas(filtros),
+    PedidoModel.getResumenEntregas(filtros)
   ]);
 
   const data = rows.map(e => ({
@@ -241,13 +242,16 @@ export const getAllEntregasService = async (pag = 1) => {
     fecha_entrega_estimada: e.fecha_estimada ? new Date(e.fecha_estimada).toLocaleDateString() : null,
     fecha_entrega_real: e.fecha_entrega ? new Date(e.fecha_entrega).toLocaleDateString() : null,
     estado: e.estado,
-    estado_pago: e.estado_pago
+    precio_total: Number(e.precio_total ?? 0),
+    estado_pago: e.estado_pago,
+    saldo: Number(e.saldo ?? 0)
   }));
 
   return {
     maxPag: calculateTotalPages(total, limite),
     pagAct: Number(pag),
-    data
+    data,
+    resumen
   };
 };
 
