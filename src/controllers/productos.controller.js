@@ -6,12 +6,16 @@ import {
   changeProductoEstadoService
 } from '../services/productos.service.js';
 
-// Obtener todos los productos
+// Obtener todos los productos con paginación y filtros opcionales por query params
 const ctlGetAllProductos = async (req, res) => {
   try {
-    const result = await getAllProductosService();
+    const pagina = parseInt(req.query.pagina) || 1;
+    const limite = parseInt(req.query.limite) || 15;
+    const { nombre, estado, categoria, tipoProducto } = req.query;
+
+    const result = await getAllProductosService({ pagina, limite, nombre, estado, categoria, tipoProducto });
     if (result.err) return res.status(result.errorCode).json({ err: result.err });
-    res.status(200).json(result.data);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ err: error.message });
   }
@@ -29,21 +33,20 @@ const ctlGetProductoById = async (req, res) => {
   }
 };
 
-// Crear producto
+// Crear producto 
 const ctlCreateProducto = async (req, res) => {
   try {
-    const { id, nombre, stock, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, proveedorId, costo } = req.body;
-    const usuarioId = req.user.user_id;
+    const { nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla } = req.body;
 
-    const result = await createProductoService({ id, nombre, stock, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, proveedorId, costo, usuarioId });
+    const result = await createProductoService({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla });
     if (result.err) return res.status(result.errorCode).json({ err: result.err });
-    res.status(201).json({ msg: result.msg });
+    res.status(201).json({ msg: result.msg, id: result.id });
   } catch (error) {
     res.status(500).json({ err: error.message });
   }
 };
 
-// Actualizar producto
+// Actualizar producto 
 const ctlUpdateProducto = async (req, res) => {
   try {
     const { id } = req.params;

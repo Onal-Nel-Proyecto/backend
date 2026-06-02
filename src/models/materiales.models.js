@@ -2,8 +2,29 @@ import db from "../config/db.js";
 
 export class MaterialesModel {
 
-  // Obtener todos los materiales
-  static async getAllMateriales() {
+  // Obtener todos los materiales con paginación y filtros
+  static async getAllMateriales({ pagina = 1, limite = 15, nombre, estado, tipoMaterial }) {
+    const offset = (pagina - 1) * limite;
+    const filtros = [];
+    const valores = [];
+
+    // Aplicar filtros opcionales según los query params recibidos
+    if (nombre) {
+      filtros.push('matNom LIKE ?');
+      valores.push(`%${nombre}%`);
+    }
+    if (estado) {
+      filtros.push('matEst = ?');
+      valores.push(estado.toUpperCase());
+    }
+    if (tipoMaterial) {
+      filtros.push('matTipMat = ?');
+      valores.push(tipoMaterial.toUpperCase());
+    }
+
+    const where = filtros.length > 0 ? `WHERE ${filtros.join(' AND ')}` : '';
+
+    // Consulta principal con paginación
     const [rows] = await db.query(
       `SELECT
         matId AS id,
@@ -14,9 +35,19 @@ export class MaterialesModel {
         matCantDisp AS cantidadDisponible,
         matUniMed AS unidadMedida,
         matTipMat AS tipoMaterial
-      FROM materiales`
+      FROM materiales
+      ${where}
+      LIMIT ? OFFSET ?`,
+      [...valores, limite, offset]
     );
-    return rows;
+
+    // Total para calcular páginas
+    const [[{ total }]] = await db.query(
+      `SELECT COUNT(*) AS total FROM materiales ${where}`,
+      valores
+    );
+
+    return { rows, total };
   }
 
   // Obtener un material por su ID
@@ -40,13 +71,13 @@ export class MaterialesModel {
   }
 
   // Crear un nuevo material
-  static async createMaterial({ nombre, descripcion, umbralMinimo, cantidadInicial, unidadMedida, tipoMaterial }) {
+  static async createMaterial({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial }) {
     const [result] = await db.query(
       `INSERT INTO materiales (matNom, matEst, matDesc, matUmbMin, matCantDisp, matUniMed, matTipMat)
-       VALUES (?, 'DISPONIBLE', ?, ?, ?, ?, ?)`,
-      [nombre, descripcion || null, umbralMinimo, cantidadInicial, unidadMedida || null, tipoMaterial]
+       VALUES (?, 'DISPONIBLE', ?, ?, 0, ?, ?)`,
+      [nombre, descripcion || null, umbralMinimo, unidadMedida || null, tipoMaterial.toUpperCase()]
     );
-    return result.insertId; // retorna el ID autoincremental generado
+    return result.insertId;
   }
 
   // Actualizar datos de un material
@@ -59,42 +90,17 @@ export class MaterialesModel {
         matUniMed = ?,
         matTipMat = ?
       WHERE matId = ?`,
-      [nombre, descripcion || null, umbralMinimo, unidadMedida || null, tipoMaterial, id]
+      [nombre, descripcion || null, umbralMinimo, unidadMedida || null, tipoMaterial.toUpperCase(), id]
     );
     return result;
   }
 
-  // Cambiar estado del material: DISPONIBLE, AGOTADO, ELIMINADO
+  // Cambiar estado del material
   static async changeEstado({ id, estado }) {
     const [result] = await db.query(
       'UPDATE materiales SET matEst = ? WHERE matId = ?',
-      [estado, id]
+      [estado.toUpperCase(), id]
     );
     return result;
-  }
-
-  // Registrar abastecimiento inicial al crear un material
-  static async registrarAbastecimiento({ proveedorId, usuarioId, materialId, cantidad, costo }) {
-    // Crear encabezado del abastecimiento
-    const [encabezado] = await db.query(
-      'INSERT INTO abastecimiento (provIdFk, usuIdFk) VALUES (?, ?)',
-      [proveedorId, usuarioId]
-    );
-    const abastecimientoId = encabezado.insertId;
-
-    // Crear detalle del abastecimiento
-    await db.query(
-      `INSERT INTO detalle_abastecimiento (detAbsId, absIdFk, detAbsTip, detAbsRefId, detAbsCant, detAbsCos)
-       VALUES (?, ?, 'MATERIAL', ?, ?, ?)`,
-      [abastecimientoId, abastecimientoId, String(materialId), cantidad, costo || null]
-    );
-  }
-
-  // ==================== VALIDACIONES ====================
-
-  // Verificar si un proveedor existe
-  static async proveedorExists({ proveedorId }) {
-    const [rows] = await db.query('SELECT provId FROM proveedor WHERE provId = ?', [proveedorId]);
-    return rows.length > 0;
   }
 }

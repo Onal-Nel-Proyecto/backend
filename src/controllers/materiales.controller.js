@@ -6,12 +6,16 @@ import {
   changeMaterialEstadoService
 } from '../services/materiales.service.js';
 
-// Obtener todos los materiales
+// Obtener todos los materiales con paginación y filtros opcionales
 const ctlGetAllMateriales = async (req, res) => {
   try {
-    const result = await getAllMaterialesService();
+    const pagina = parseInt(req.query.pagina) || 1;
+    const limite = parseInt(req.query.limite) || 15;
+    const { nombre, estado, tipoMaterial } = req.query;
+
+    const result = await getAllMaterialesService({ pagina, limite, nombre, estado, tipoMaterial });
     if (result.err) return res.status(result.errorCode).json({ err: result.err });
-    res.status(200).json(result.data);
+    res.status(200).json(result);
   } catch (error) {
     res.status(500).json({ err: error.message });
   }
@@ -29,21 +33,20 @@ const ctlGetMaterialById = async (req, res) => {
   }
 };
 
-// Crear material
+// Crear material 
 const ctlCreateMaterial = async (req, res) => {
   try {
-    const { nombre, descripcion, umbralMinimo, cantidadInicial, unidadMedida, tipoMaterial, proveedorId, costo } = req.body;
-    const usuarioId = req.user.user_id;
+    const { nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial } = req.body;
 
-    const result = await createMaterialService({ nombre, descripcion, umbralMinimo, cantidadInicial, unidadMedida, tipoMaterial, proveedorId, costo, usuarioId });
+    const result = await createMaterialService({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial });
     if (result.err) return res.status(result.errorCode).json({ err: result.err });
-    res.status(201).json({ msg: result.msg });
+    res.status(201).json({ msg: result.msg, id: result.id });
   } catch (error) {
     res.status(500).json({ err: error.message });
   }
 };
 
-// Actualizar material
+// Actualizar material — ID viene de req.params
 const ctlUpdateMaterial = async (req, res) => {
   try {
     const { id } = req.params;

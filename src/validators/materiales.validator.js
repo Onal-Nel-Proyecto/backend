@@ -15,24 +15,13 @@ export const createMaterialValidator = [
     .notEmpty().withMessage('El umbral mínimo es requerido')
     .isInt({ min: 0 }).withMessage('El umbral mínimo debe ser un número entero mayor o igual a 0'),
 
-  body('cantidadInicial')
-    .notEmpty().withMessage('La cantidad inicial es requerida')
-    .isInt({ min: 1 }).withMessage('La cantidad inicial debe ser un número entero mayor a 0'),
-
   body('unidadMedida')
     .optional({ nullable: true })
     .isLength({ max: 30 }).withMessage('La unidad de medida no puede superar 30 caracteres'),
 
   body('tipoMaterial')
     .notEmpty().withMessage('El tipo de material es requerido')
-    .isIn(['TELA', 'HERRAMIENTAS']).withMessage('El tipo debe ser TELA o HERRAMIENTAS'),
-
-  body('proveedorId')
-    .notEmpty().withMessage('El proveedor es requerido'),
-
-  body('costo')
-    .optional({ nullable: true })
-    .isDecimal().withMessage('El costo debe ser un número decimal válido')
+    .isIn(['TELA', 'tela', 'HERRAMIENTAS', 'herramientas']).withMessage('El tipo debe ser TELA o HERRAMIENTAS')
 ];
 
 // Validaciones para actualizar un material
@@ -57,7 +46,7 @@ export const updateMaterialValidator = [
 
   body('tipoMaterial')
     .notEmpty().withMessage('El tipo de material es requerido')
-    .isIn(['TELA', 'HERRAMIENTAS']).withMessage('El tipo debe ser TELA o HERRAMIENTAS')
+    .isIn(['TELA', 'tela', 'HERRAMIENTAS', 'herramientas']).withMessage('El tipo debe ser TELA o HERRAMIENTAS')
 ];
 
 // Validaciones para cambiar estado de un material
@@ -66,5 +55,6 @@ export const changeMaterialEstadoValidator = [
 
   body('estado')
     .notEmpty().withMessage('El estado es requerido')
-    .isIn(['DISPONIBLE', 'AGOTADO', 'ELIMINADO']).withMessage('El estado debe ser DISPONIBLE, AGOTADO o ELIMINADO')
+    .isIn(['DISPONIBLE', 'disponible', 'AGOTADO', 'agotado', 'ELIMINADO', 'eliminado'])
+    .withMessage('El estado debe ser DISPONIBLE, AGOTADO o ELIMINADO')
 ];
