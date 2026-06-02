@@ -22,7 +22,13 @@ import {
   getVentaByIdController,
   createVentaController,
   updateVentaController,
-  anularVentaController
+  anularVentaController,
+  getReporteVentasMensualController,
+  getReporteVentasPeriodoController,
+  exportarReporteMensualPDFController,
+  exportarReportePeriodoPDFController,
+  exportarReporteMensualExcelController,
+  exportarReportePeriodoExcelController
 } from '../controllers/ventas.controller.js';
 
 import {
@@ -37,7 +43,9 @@ import {
   updateVentaValidator,
   anularVentaValidator,
   createDetalleValidator,
-  deleteDetalleValidator
+  deleteDetalleValidator,
+  reporteMensualValidator,
+  reportePeriodoValidator
 } from '../validators/ventas.validator.js';
 
 export const router = Router();
@@ -100,6 +108,58 @@ router.delete(
   authValidator,
   [...deleteDetalleValidator, validateFields],
   deleteDetalleController
+);
+
+// ============================================================
+// RUTAS DE REPORTES DE VENTAS
+// ============================================================
+
+// [GET] /ventas/reportes/mensual - Reporte mensual de ventas
+router.get(
+  '/reportes/mensual',
+  authValidator,
+  [...reporteMensualValidator, validateFields],
+  getReporteVentasMensualController
+);
+
+// [GET] /ventas/reportes/periodo - Reporte de ventas por periodo
+router.get(
+  '/reportes/periodo',
+  authValidator,
+  [...reportePeriodoValidator, validateFields],
+  getReporteVentasPeriodoController
+);
+
+// [GET] /ventas/reportes/mensual/pdf - Exportar PDF mensual
+router.get(
+  '/reportes/mensual/pdf',
+  authValidator,
+  [...reporteMensualValidator, validateFields],
+  exportarReporteMensualPDFController
+);
+
+// [GET] /ventas/reportes/periodo/pdf - Exportar PDF por periodo
+router.get(
+  '/reportes/periodo/pdf',
+  authValidator,
+  [...reportePeriodoValidator, validateFields],
+  exportarReportePeriodoPDFController
+);
+
+// [GET] /ventas/reportes/mensual/excel - Exportar Excel mensual
+router.get(
+  '/reportes/mensual/excel',
+  authValidator,
+  [...reporteMensualValidator, validateFields],
+  exportarReporteMensualExcelController
+);
+
+// [GET] /ventas/reportes/periodo/excel - Exportar Excel por periodo
+router.get(
+  '/reportes/periodo/excel',
+  authValidator,
+  [...reportePeriodoValidator, validateFields],
+  exportarReportePeriodoExcelController
 );
 
 // ============================================================
