@@ -16,7 +16,6 @@ app.use(cors({
       "http://localhost:5173",
       "https://sp78zgqw-5173.use2.devtunnels.ms",  
       "https://frontend-nine-vert-24.vercel.app",
-      'http://10.2.129.229:5173',
       "http://192.168.18.65:5173"
     ]
     console.log(origin)
@@ -29,14 +28,6 @@ app.use(cors({
   credentials: true
 }
 ))
-// app.use((err, req, res, next) => {
-//   console.error("ERROR GLOBAL:", err);
-
-//   res.status(500).json({
-//     status: false,
-//     error: err.message
-//   });
-// });
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 app.use('/', routes)

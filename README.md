@@ -1,7 +1,7 @@
 # 🧵 Onal & Nel — Sistema de Gestión Textil (API REST)
 
-Sistema integral para la gestión de pedidos, clientes, usuarios, ventas, facturación y producción de una sastrería/modistería.  
-**API REST** construida con Node.js + Express 5 + MySQL, con arquitectura MVC, notificaciones en tiempo real (Socket.IO) y generación de PDF (Puppeteer).
+Sistema integral para la gestión de pedidos, clientes, usuarios, ventas, facturación, producción, inventario y alertas de una sastrería/modistería.  
+**API REST** construida con Node.js + Express 5 + MySQL, con arquitectura MVC, notificaciones en tiempo real (Socket.IO) y generación de PDF/Excel.
 
 ---
 
@@ -90,66 +90,75 @@ src/
 │   ├── alertas.controller.js     # Listar alertas con filtros (GET)
 │   ├── auth.controller.js        # Login, refresh token, perfil
 │   ├── cliente.controller.js     # CRUD clientes
-│   ├── dashboard.controller.js   # KPIs, actividades, gráficos
+│   ├── dashboard.controller.js   # KPIs, dashboard de pedidos
 │   ├── dt_pedido.controller.js   # Detalles de pedido
 │   ├── dt_venta.controller.js    # Detalles de venta
 │   ├── factura.controller.js     # Factura CRUD + PDF
+│   ├── materiales.controller.js  # CRUD materiales
 │   ├── pagos.controller.js       # Pagos CRUD + rechazo
 │   ├── pedidos.controller.js     # Pedidos CRUD + cancelación
 │   ├── produccion.controller.js  # Producción asociada a detalles
+│   ├── productos.controller.js   # CRUD productos
 │   ├── user.controller.js        # CRUD usuarios (admin)
-│   └── ventas.controller.js      # Ventas CRUD + anulación
+│   └── ventas.controller.js      # Ventas CRUD + reportes + exportación
 ├── jobs/
-│   └── alertas.job.js            # Job programado (node-cron) cada 15 min — verifica pagos vencidos
+│   └── alertas.job.js            # Job programado (node-cron) cada 15 min
 ├── middleware/
 │   ├── auth.middleware.js        # JWT validation + role guards (authValidator, isAdmin)
 │   ├── err.middleware.js         # Captura global de errores (AppError)
 │   └── validator.middleware.js   # Ejecuta validaciones de express-validator
 ├── models/
-│   ├── alertas.models.js         # Alertas: crear, listar (paginado + filtros), actualizar estado
+│   ├── alertas.models.js         # Alertas CRUD
 │   ├── cliente.models.js         # Clientes CRUD
-│   ├── dashboard.models.js       # KPIs, pedidos por estado, top clientes
+│   ├── dashboard.models.js       # KPIs, pedidos, dashboard pedidos
 │   ├── dt_pedido.models.js       # Detalles de pedido
-│   ├── dt_venta.models.js        # Detalles de venta (CRUD + SP ID)
-│   ├── factura.models.js         # Factura CRUD (incluye anulación)
-│   ├── pagos.models.js           # Pagos: registrar, listar, rechazar
+│   ├── dt_venta.models.js        # Detalles de venta
+│   ├── factura.models.js         # Factura CRUD
+│   ├── materiales.models.js      # Materiales CRUD
+│   ├── pagos.models.js           # Pagos CRUD
 │   ├── pedido.models.js          # Pedidos CRUD + SP cancelación
-│   ├── produccion.models.js      # Producción (asignada a detalle de pedido)
-│   ├── producto.models.js        # Productos: CRUD con generación de ID y control de stock
-│   ├── user.models.js            # Usuarios CRUD (admin)
-│   └── ventas.models.js          # Ventas CRUD + SP registro con detalles y pagos
+│   ├── produccion.models.js      # Producción
+│   ├── producto.models.js        # Productos CRUD
+│   ├── user.models.js            # Usuarios CRUD
+│   └── ventas.models.js          # Ventas CRUD + SP + reportes
 ├── routes/
-│   ├── alertas.route.js          # [GET /alertas] — listado paginado con filtros
+│   ├── alertas.route.js          # [GET /alertas]
 │   ├── cliente.route.js          # CRUD /clientes
-│   ├── dashboard.route.js        # /dashboard/resumen
+│   ├── dashboard.route.js        # /dashboard/*
 │   ├── index.route.js            # Agrupador de todas las rutas
-│   ├── log.route.js              # /auth (login, logout, refresh, perfil)
+│   ├── log.route.js              # /auth/*
+│   ├── materiales.route.js       # CRUD /materiales
 │   ├── pagos.route.js            # /pagos
-│   ├── pedidos.route.js          # /pedidos + /pedidos/:id/detalles + producción
-│   ├── user.route.js             # /usuarios (admin)
-│   └── ventas.route.js           # /ventas + /ventas/:id/detalles + /ventas/:id/factura
+│   ├── pedidos.route.js          # /pedidos + detalles + producción
+│   ├── productos.route.js        # CRUD /productos
+│   ├── user.route.js             # /usuarios
+│   └── ventas.route.js           # /ventas + reportes + factura
 ├── services/
-│   ├── alertas.service.js        # Lógica de negocio: listar alertas + verificación pagos vencidos
-│   ├── auth.service.js           # Login con JWT + refresh token
+│   ├── alertas.service.js        # Lógica de alertas + verificación pagos
+│   ├── auth.service.js           # Login JWT + refresh
 │   ├── clientes.service.js       # CRUD clientes
-│   ├── dashboard.service.js      # KPIs y estadísticas
+│   ├── dashboard.service.js      # KPIs y dashboard pedidos
 │   ├── dt_pedido.service.js      # Detalles de pedido
 │   ├── dt_venta.service.js       # Detalles de venta
-│   ├── factura.service.js        # Factura: CRUD + obtención de datos para PDF
-│   ├── pagos.service.js          # Registro y consulta de pagos
-│   ├── pedidos.service.js        # Pedidos con filtros y paginación
+│   ├── factura.service.js        # Factura CRUD + datos PDF
+│   ├── materiales.service.js     # CRUD materiales
+│   ├── pagos.service.js          # Pagos
+│   ├── pedidos.service.js        # Pedidos con filtros
 │   ├── produccion.service.js     # Lógica de producción
+│   ├── productos.service.js      # CRUD productos
 │   ├── user.services.js          # CRUD usuarios
-│   └── ventas.service.js         # Ventas con filtros, SP, paginación
-├── test/                         # Tests unitarios (Jest + Supertest)
-│   ├── alertas.test.js           # 10+ tests — alertas paginadas, filtros
-│   ├── auth.test.js              # Login, refresh, perfil, logout
-│   ├── clientes.test.js          # CRUD clientes
-│   ├── factura.test.js           # Factura CRUD + PDF
-│   ├── pagos.test.js             # Pagos CRUD + rechazo
-│   ├── pedidos.test.js           # Pedidos CRUD + cancelación
-│   ├── user.test.js              # CRUD usuarios (admin)
-│   └── ventas.test.js            # 41 tests — cobertura completa de ventas
+│   └── ventas.service.js         # Ventas + reportes
+├── test/                         # Tests unitarios (Jest + Supertest — 150+ tests)
+│   ├── alertas.test.js
+│   ├── auth.test.js
+│   ├── clientes.test.js
+│   ├── factura.test.js
+│   ├── materiales.test.js
+│   ├── pagos.test.js
+│   ├── pedidos.test.js
+│   ├── productos.test.js
+│   ├── user.test.js
+│   └── ventas.test.js
 ├── utils/
 │   ├── appError.js               # Clase AppError para errores controlados
 │   ├── genId.js                  # Generador de IDs con prefijo (SP en BD)
@@ -163,9 +172,11 @@ src/
     ├── cliente.validator.js      # Cliente: nombres, documento, teléfono
     ├── dt_pedido.validator.js    # Detalles de pedido
     ├── factura.validator.js      # Factura
+    ├── materiales.validator.js   # Materiales
     ├── pagos.validator.js        # Pagos: monto, método, referencia
     ├── pedido.validator.js       # Pedido: fechas, cliente, servicios
     ├── produccion.validator.js   # Producción: fecha, responsable
+    ├── productos.validator.js    # Productos
     ├── user.validator.js         # Usuario: email, rol, contraseña
     └── ventas.validator.js       # Venta: descuento, detalles, pagos
 ```
@@ -199,13 +210,14 @@ src/
 |--------|------|------|-------------|
 | GET | `/alertas` | ✅ | Listar alertas (paginado + filtros: `estado`, `tipo`, `categoria`) |
 
-> Las alertas se generan automáticamente cada 15 min vía **node-cron** — verifican pagos vencidos desde la vista `vw_pagos_pendientes`. Se emiten en tiempo real por **Socket.IO**.
+> Las alertas se generan automáticamente cada 15 min vía **node-cron** — verifican pagos vencidos. Se emiten en tiempo real por **Socket.IO**.
 
 ### Dashboard (`/dashboard`)
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
 | GET | `/dashboard/resumen` | ✅ | KPIs, pedidos por estado, top clientes |
+| GET | `/dashboard/pedidos` | ✅ | Dashboard de pedidos (indicadores, calendario, producción activa, últimos pedidos) |
 
 ### Pedidos (`/pedidos`)
 
@@ -216,11 +228,31 @@ src/
 | GET | `/pedidos/:id` | ✅ | Obtener pedido por ID |
 | PUT | `/pedidos/:id` | ✅ | Actualizar pedido |
 | PATCH | `/pedidos/:id/cancelar` | ✅ | Cancelar pedido (usa SP) |
+| PATCH | `/pedidos/:id/entregar` | ✅ | Entregar pedido (TERMINADO → ENTREGADO) |
+| GET | `/pedidos/entregas` | ✅ | Listar pedidos completados |
 
 **Detalles**: `POST/DELETE/PATCH /pedidos/:id/detalles[/:id_detalle]`  
 **Producción**: `POST/PATCH/DELETE /pedidos/:id/detalles/:id_detalle/produccion[/:id_produccion]`
 
-> La fecha estimada (`fecha_estimada`) en pedidos tiene dos restricciones: no puede ser anterior a hoy ni superar 1 año desde hoy (comparación con fecha local del servidor).
+### Productos (`/productos`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/productos` | ✅ | Listar productos (paginado + filtros: `nombre`, `estado`, `categoria`, `tipoProducto`) |
+| GET | `/productos/:id` | ✅ | Obtener producto por ID |
+| POST | `/productos` | ✅ + Admin | Crear producto |
+| PUT | `/productos/:id` | ✅ + Admin | Actualizar producto |
+| PATCH | `/productos/:id/estado` | ✅ + Admin | Cambiar estado (1=activo, 2=agotado, 3=inactivo) |
+
+### Materiales (`/materiales`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/materiales` | ✅ | Listar materiales (paginado + filtros: `nombre`, `estado`, `tipoMaterial`) |
+| GET | `/materiales/:id` | ✅ | Obtener material por ID |
+| POST | `/materiales` | ✅ + Admin | Crear material |
+| PUT | `/materiales/:id` | ✅ + Admin | Actualizar material |
+| PATCH | `/materiales/:id/estado` | ✅ + Admin | Cambiar estado (DISPONIBLE, AGOTADO, ELIMINADO) |
 
 ### Clientes (`/clientes`)
 
@@ -267,19 +299,30 @@ src/
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| POST | `/ventas/:id/detalles` | ✅ | Agregar detalle a venta (producto, cantidad, precio) |
-| DELETE | `/ventas/:id/detalles/:id_detalle` | ✅ | Eliminar detalle (con auditoría: `SET @usuActual`) |
+| POST | `/ventas/:id/detalles` | ✅ | Agregar detalle a venta |
+| DELETE | `/ventas/:id/detalles/:id_detalle` | ✅ | Eliminar detalle |
+
+**Reportes y exportación** (`/ventas/reportes`):
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/ventas/reportes/mensual` | ✅ | Reporte mensual (`?mes=&anio=`) |
+| GET | `/ventas/reportes/periodo` | ✅ | Reporte por periodo (`?fechaInicio=&fechaFin=`) |
+| GET | `/ventas/reportes/mensual/pdf` | ✅ | Exportar PDF reporte mensual |
+| GET | `/ventas/reportes/periodo/pdf` | ✅ | Exportar PDF reporte por periodo |
+| GET | `/ventas/reportes/mensual/excel` | ✅ | Exportar Excel reporte mensual |
+| GET | `/ventas/reportes/periodo/excel` | ✅ | Exportar Excel reporte por periodo |
 
 ### Factura (`/ventas/:id/factura`)
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| GET | `/ventas/:id/factura` | ✅ | Obtener datos de la factura (empresa, cliente, detalle, totales) |
+| GET | `/ventas/:id/factura` | ✅ | Obtener datos de la factura |
 | POST | `/ventas/:id/factura` | ✅ | Crear factura para una venta |
 | PATCH | `/ventas/:id/factura/:id_factura/anular` | ✅ | Anular factura |
 | GET | `/ventas/:id/factura/pdf` | ✅ | Generar y descargar PDF de la factura |
 
-> La generación de PDF usa **Puppeteer** con un template HTML minimalista (estilo factura). Si la factura no existe, la crea automáticamente antes de generar el PDF.
+> La generación de PDF usa **Puppeteer**. Si la factura no existe, la crea automáticamente antes de generar el PDF.
 
 ### Pagos (`/pagos`)
 
@@ -296,24 +339,36 @@ src/
 ## 🧪 Tests
 
 ```bash
+# Ejecutar todos los tests
 pnpm test
+
+# Ejecutar tests de un módulo específico
+node --experimental-vm-modules node_modules/jest/bin/jest.js src/test/productos.test.js
+node --experimental-vm-modules node_modules/jest/bin/jest.js src/test/materiales.test.js
 ```
 
 Los tests no dependen de la base de datos (servicios mockeados con `jest.unstable_mockModule`).  
-Usan **Jest** + **Supertest** para peticiones HTTP simuladas.
-
-### Cobertura de tests (8 archivos)
+Usan **Jest** + **Supertest** para peticiones HTTP simuladas (150+ tests).
 
 | Archivo | Tests | Cobertura |
 |---------|-------|-----------|
 | `ventas.test.js` | **65** | CRUD ventas, detalles, reportes, exportación PDF/Excel, validaciones |
-| `alertas.test.js` | ~10 | Listado paginado, filtros por estado/tipo/categoría |
-| `auth.test.js` | ~8 | Login exitoso/fallido, refresh token, perfil, logout |
-| `clientes.test.js` | ~10 | CRUD clientes, activar/bloquear |
-| `factura.test.js` | ~8 | CRUD factura, anulación, generación PDF |
-| `pagos.test.js` | ~8 | CRUD pagos, rechazo, filtros |
+| `productos.test.js` | **32** | CRUD productos, filtros, validaciones, estado |
+| `materiales.test.js` | **32** | CRUD materiales, filtros, validaciones, estado |
 | `pedidos.test.js` | ~10 | CRUD pedidos, cancelación, validaciones de fecha |
-| `user.test.js` | ~8 | CRUD usuarios (admin), activar/bloquear |
+| `clientes.test.js` | ~10 | CRUD clientes, activar/bloquear |
+| `alertas.test.js` | ~10 | Listado paginado, filtros |
+| `auth.test.js` | ~8 | Login, refresh, perfil, logout |
+| `factura.test.js` | ~8 | CRUD factura, anulación, PDF |
+| `pagos.test.js` | ~8 | CRUD pagos, rechazo, filtros |
+| `user.test.js` | ~8 | CRUD usuarios, activar/bloquear |
+| `pedidos.test.js` | ~10 | CRUD pedidos, cancelación, validaciones de fecha |
+| `clientes.test.js` | ~10 | CRUD clientes, activar/bloquear |
+| `alertas.test.js` | ~10 | Listado paginado, filtros |
+| `auth.test.js` | ~8 | Login, refresh, perfil, logout |
+| `factura.test.js` | ~8 | CRUD factura, anulación, PDF |
+| `pagos.test.js` | ~8 | CRUD pagos, rechazo, filtros |
+| `user.test.js` | ~8 | CRUD usuarios, activar/bloquear |
 
 ---
 
@@ -332,7 +387,7 @@ Usado para notificar creación/resolución de alertas (`nueva-alerta`, `alerta-r
 ### Job programado (cron)
 `src/jobs/alertas.job.js` ejecuta `ejecutarVerificacionPagos()` cada **15 minutos**:
 1. Consulta la vista `vw_pagos_pendientes`
-2. Si hay monto pendiente vencido → crea alerta (evita duplicados por referencia + categoría)
+2. Si hay monto pendiente vencido → crea alerta (evita duplicados)
 3. Si ya no hay deuda y hay alerta activa → marca como `RESUELTO`
 4. Emite eventos Socket.IO en ambos casos
 
