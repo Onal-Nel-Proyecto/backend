@@ -21,7 +21,8 @@ Sistema integral para la gestión de pedidos, clientes, usuarios, ventas, factur
 | `morgan` | ^1.10.1 | Logs de peticiones HTTP |
 | `uuid` | ^14.0.0 | Generación de IDs alfanuméricos |
 | `socket.io` | ^4.8.3 | Notificaciones en tiempo real (alertas) |
-| `puppeteer` | ^25.0.2 | Generación de PDF de facturas |
+| `puppeteer` | ^25.0.2 | Generación de PDF (facturas y reportes) |
+| `exceljs` | ^4.4.0 | Generación de Excel (.xlsx) |
 | `node-cron` | ^4.2.1 | Programación de tareas (job de alertas c/15 min) |
 | `nodemon` | ^3.1.14 | Recarga automática en desarrollo |
 
@@ -154,7 +155,9 @@ src/
 │   ├── genId.js                  # Generador de IDs con prefijo (SP en BD)
 │   ├── normalizacion_datos.js    # Normalización de inputs (nombres, mayúsculas)
 │   ├── paginacion.js             # Helper calculateTotalPages
-│   └── pdfGenerator.js           # Generación de PDF con Puppeteer + HTML template
+│   ├── pdfGenerator.js           # Generación de PDF con Puppeteer + HTML template
+│   ├── reportesPdf.js            # PDF de reportes de ventas
+│   └── reportesExcel.js          # Excel de reportes de ventas
 └── validators/                   # Reglas de validación por módulo (express-validator)
     ├── auth.validator.js         # Login: email, password
     ├── cliente.validator.js      # Cliente: nombres, documento, teléfono
@@ -249,6 +252,17 @@ src/
 | PATCH | `/ventas/:id` | ✅ | Actualizar descuento y/o fecha límite de pago |
 | DELETE | `/ventas/:id` | ✅ | Anular venta (cambia estado a `ANULADO`) |
 
+**Reportes y exportación** (`/ventas/reportes`):
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/ventas/reportes/mensual` | ✅ | Reporte mensual (`?mes=&anio=`) |
+| GET | `/ventas/reportes/periodo` | ✅ | Reporte por periodo (`?fechaInicio=&fechaFin=`) |
+| GET | `/ventas/reportes/mensual/pdf` | ✅ | Exportar PDF reporte mensual |
+| GET | `/ventas/reportes/periodo/pdf` | ✅ | Exportar PDF reporte por periodo |
+| GET | `/ventas/reportes/mensual/excel` | ✅ | Exportar Excel reporte mensual |
+| GET | `/ventas/reportes/periodo/excel` | ✅ | Exportar Excel reporte por periodo |
+
 **Detalles de venta** (`/ventas/:id/detalles`):
 
 | Método | Ruta | Auth | Descripción |
@@ -292,7 +306,7 @@ Usan **Jest** + **Supertest** para peticiones HTTP simuladas.
 
 | Archivo | Tests | Cobertura |
 |---------|-------|-----------|
-| `ventas.test.js` | **41** | CRUD ventas, detalles, filtros, paginación, anulación, validaciones |
+| `ventas.test.js` | **65** | CRUD ventas, detalles, reportes, exportación PDF/Excel, validaciones |
 | `alertas.test.js` | ~10 | Listado paginado, filtros por estado/tipo/categoría |
 | `auth.test.js` | ~8 | Login exitoso/fallido, refresh token, perfil, logout |
 | `clientes.test.js` | ~10 | CRUD clientes, activar/bloquear |

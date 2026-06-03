@@ -29,7 +29,9 @@ jest.unstable_mockModule('../services/ventas.service.js', () => ({
   getVentaByIdService: jest.fn(),
   createVentaService: jest.fn(),
   updateVentaService: jest.fn(),
-  anularVentaService: jest.fn()
+  anularVentaService: jest.fn(),
+  getReporteVentasMensualService: jest.fn(),
+  getReporteVentasPeriodoService: jest.fn()
 }));
 
 jest.unstable_mockModule('../services/dt_venta.service.js', () => ({
@@ -42,6 +44,14 @@ jest.unstable_mockModule('../services/factura.service.js', () => ({
   createFacturaService: jest.fn(),
   anularFacturaService: jest.fn(),
   generarPdfFacturaService: jest.fn()
+}));
+
+jest.unstable_mockModule('../utils/reportesPdf.js', () => ({
+  generarReportePDF: jest.fn()
+}));
+
+jest.unstable_mockModule('../utils/reportesExcel.js', () => ({
+  generarReporteExcel: jest.fn()
 }));
 
 // =====================================================
@@ -741,5 +751,288 @@ describe('DELETE /ventas/:id/detalles/:id_detalle', () => {
       status: false,
       error: 'Error interno del servidor'
     });
+  });
+});
+
+// =====================================================
+// 8. TESTS: GET /ventas/reportes/mensual
+// =====================================================
+
+describe('GET /ventas/reportes/mensual', () => {
+
+  beforeEach(() => { jest.clearAllMocks(); });
+
+  const datosReporte = {
+    summary: { num_ventas: 15, total_vendido: 1250000 },
+    topProductos: [{ producto: 'Camisa', cantidad: 10, total: 500000 }],
+    ventasPorDia: [{ fecha: '2026-07-01', cantidad: 3, total: 250000 }]
+  };
+
+  test('debe retornar reporte mensual con 200', async () => {
+    ventasService.getReporteVentasMensualService.mockResolvedValue(datosReporte);
+
+    const res = await request(app).get('/ventas/reportes/mensual?mes=7&anio=2026');
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe(true);
+    expect(res.body.data.summary).toBeDefined();
+    expect(res.body.data.topProductos).toHaveLength(1);
+    expect(res.body.data.ventasPorDia).toHaveLength(1);
+  });
+
+  test('debe pasar mes y anio al servicio', async () => {
+    ventasService.getReporteVentasMensualService.mockResolvedValue(datosReporte);
+
+    await request(app).get('/ventas/reportes/mensual?mes=12&anio=2026');
+
+    expect(ventasService.getReporteVentasMensualService).toHaveBeenCalledWith('12', '2026');
+  });
+
+  test('debe retornar 400 si falta mes', async () => {
+    const res = await request(app).get('/ventas/reportes/mensual?anio=2026');
+
+    expect(res.status).toBe(400);
+    expect(res.body.errors).toHaveProperty('mes');
+  });
+
+  test('debe retornar 400 si falta anio', async () => {
+    const res = await request(app).get('/ventas/reportes/mensual?mes=7');
+
+    expect(res.status).toBe(400);
+  });
+
+  test('debe retornar 400 si mes está fuera de rango', async () => {
+    const res = await request(app).get('/ventas/reportes/mensual?mes=13&anio=2026');
+
+    expect(res.status).toBe(400);
+  });
+
+  test('debe retornar 400 si anio no es numérico', async () => {
+    const res = await request(app).get('/ventas/reportes/mensual?mes=7&anio=abc');
+
+    expect(res.status).toBe(400);
+  });
+
+  test('debe retornar error del servicio', async () => {
+    ventasService.getReporteVentasMensualService.mockRejectedValue(
+      new AppError('Error al generar reporte', 500)
+    );
+
+    const res = await request(app).get('/ventas/reportes/mensual?mes=7&anio=2026');
+
+    expect(res.status).toBe(500);
+    expect(res.body).toEqual({ status: false, error: 'Error al generar reporte' });
+  });
+});
+
+// =====================================================
+// 9. TESTS: GET /ventas/reportes/periodo
+// =====================================================
+
+describe('GET /ventas/reportes/periodo', () => {
+
+  beforeEach(() => { jest.clearAllMocks(); });
+
+  const datosReporte = {
+    summary: { num_ventas: 8, total_vendido: 950000 },
+    topProductos: [{ producto: 'Pantalón', cantidad: 5, total: 300000 }],
+    ventasPorDia: [{ fecha: '2026-05-01', cantidad: 2, total: 150000 }]
+  };
+
+  test('debe retornar reporte por periodo con 200', async () => {
+    ventasService.getReporteVentasPeriodoService.mockResolvedValue(datosReporte);
+
+    const res = await request(app).get('/ventas/reportes/periodo?fechaInicio=2026-05-01&fechaFin=2026-05-31');
+
+    expect(res.status).toBe(200);
+    expect(res.body.status).toBe(true);
+    expect(res.body.data.summary).toBeDefined();
+  });
+
+  test('debe pasar fechas al servicio', async () => {
+    ventasService.getReporteVentasPeriodoService.mockResolvedValue(datosReporte);
+
+    await request(app).get('/ventas/reportes/periodo?fechaInicio=2026-01-01&fechaFin=2026-01-31');
+
+    expect(ventasService.getReporteVentasPeriodoService).toHaveBeenCalledWith('2026-01-01', '2026-01-31');
+  });
+
+  test('debe retornar 400 si falta fechaInicio', async () => {
+    const res = await request(app).get('/ventas/reportes/periodo?fechaFin=2026-05-31');
+
+    expect(res.status).toBe(400);
+  });
+
+  test('debe retornar 400 si fechaInicio no es ISO', async () => {
+    const res = await request(app).get('/ventas/reportes/periodo?fechaInicio=01-01-2026&fechaFin=2026-05-31');
+
+    expect(res.status).toBe(400);
+  });
+
+  test('debe retornar 400 si fechaFin es anterior a fechaInicio', async () => {
+    ventasService.getReporteVentasPeriodoService.mockRejectedValue(
+      new AppError('La fecha de inicio no puede ser mayor que la fecha fin', 400)
+    );
+
+    const res = await request(app).get('/ventas/reportes/periodo?fechaInicio=2026-06-01&fechaFin=2026-05-01');
+
+    expect(res.status).toBe(400);
+  });
+
+  test('debe retornar 400 si el periodo supera 366 días', async () => {
+    ventasService.getReporteVentasPeriodoService.mockRejectedValue(
+      new AppError('El periodo del reporte no puede superar un año', 400)
+    );
+
+    const res = await request(app).get('/ventas/reportes/periodo?fechaInicio=2025-01-01&fechaFin=2026-06-01');
+
+    expect(res.status).toBe(400);
+  });
+
+  test('debe retornar error del servicio', async () => {
+    ventasService.getReporteVentasPeriodoService.mockRejectedValue(
+      new AppError('Error al generar reporte', 500)
+    );
+
+    const res = await request(app).get('/ventas/reportes/periodo?fechaInicio=2026-05-01&fechaFin=2026-05-31');
+
+    expect(res.status).toBe(500);
+  });
+});
+
+// =====================================================
+// 10. TESTS: GET /ventas/reportes/mensual/pdf
+// =====================================================
+
+describe('GET /ventas/reportes/mensual/pdf', () => {
+
+  beforeEach(() => { jest.clearAllMocks(); });
+
+  test('debe descargar PDF con 200 y Content-Type application/pdf', async () => {
+    ventasService.getReporteVentasMensualService.mockResolvedValue({
+      summary: {}, topProductos: [], ventasPorDia: []
+    });
+    const { generarReportePDF } = await import('../utils/reportesPdf.js');
+    generarReportePDF.mockResolvedValue(Buffer.from('%PDF-1.4 test'));
+
+    const res = await request(app).get('/ventas/reportes/mensual/pdf?mes=7&anio=2026');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toBe('application/pdf');
+    expect(res.headers['content-disposition']).toContain('attachment');
+    expect(res.headers['content-disposition']).toContain('reporte_ventas_mensual_07_2026.pdf');
+  });
+
+  test('debe retornar 400 si falta mes', async () => {
+    const res = await request(app).get('/ventas/reportes/mensual/pdf?anio=2026');
+
+    expect(res.status).toBe(400);
+  });
+});
+
+// =====================================================
+// 11. TESTS: GET /ventas/reportes/periodo/pdf
+// =====================================================
+
+describe('GET /ventas/reportes/periodo/pdf', () => {
+
+  beforeEach(() => { jest.clearAllMocks(); });
+
+  test('debe descargar PDF con 200', async () => {
+    ventasService.getReporteVentasPeriodoService.mockResolvedValue({
+      summary: {}, topProductos: [], ventasPorDia: []
+    });
+    const { generarReportePDF } = await import('../utils/reportesPdf.js');
+    generarReportePDF.mockResolvedValue(Buffer.from('%PDF-1.4 test'));
+
+    const res = await request(app).get('/ventas/reportes/periodo/pdf?fechaInicio=2026-05-01&fechaFin=2026-05-31');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toBe('application/pdf');
+    expect(res.headers['content-disposition']).toContain('reporte_ventas_periodo');
+  });
+
+  test('debe retornar 400 si falta fechaInicio', async () => {
+    const res = await request(app).get('/ventas/reportes/periodo/pdf?fechaFin=2026-05-31');
+
+    expect(res.status).toBe(400);
+  });
+});
+
+// =====================================================
+// 12. TESTS: GET /ventas/reportes/mensual/excel
+// =====================================================
+
+describe('GET /ventas/reportes/mensual/excel', () => {
+
+  beforeEach(() => { jest.clearAllMocks(); });
+
+  test('debe descargar Excel con 200 y Content-Type application/vnd.openxmlformats', async () => {
+    ventasService.getReporteVentasMensualService.mockResolvedValue({
+      summary: {}, topProductos: [], ventasPorDia: []
+    });
+    const { generarReporteExcel } = await import('../utils/reportesExcel.js');
+    generarReporteExcel.mockResolvedValue(Buffer.from('PK\x03\x04 excel test'));
+
+    const res = await request(app).get('/ventas/reportes/mensual/excel?mes=7&anio=2026');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect(res.headers['content-disposition']).toContain('reporte_ventas_mensual_07_2026.xlsx');
+  });
+
+  test('debe retornar 400 si falta anio', async () => {
+    const res = await request(app).get('/ventas/reportes/mensual/excel?mes=7');
+
+    expect(res.status).toBe(400);
+  });
+
+  test('debe retornar error del servicio', async () => {
+    ventasService.getReporteVentasMensualService.mockRejectedValue(
+      new AppError('Error', 500)
+    );
+
+    const res = await request(app).get('/ventas/reportes/mensual/excel?mes=7&anio=2026');
+
+    expect(res.status).toBe(500);
+  });
+});
+
+// =====================================================
+// 13. TESTS: GET /ventas/reportes/periodo/excel
+// =====================================================
+
+describe('GET /ventas/reportes/periodo/excel', () => {
+
+  beforeEach(() => { jest.clearAllMocks(); });
+
+  test('debe descargar Excel con 200', async () => {
+    ventasService.getReporteVentasPeriodoService.mockResolvedValue({
+      summary: {}, topProductos: [], ventasPorDia: []
+    });
+    const { generarReporteExcel } = await import('../utils/reportesExcel.js');
+    generarReporteExcel.mockResolvedValue(Buffer.from('PK\x03\x04 excel test'));
+
+    const res = await request(app).get('/ventas/reportes/periodo/excel?fechaInicio=2026-05-01&fechaFin=2026-05-31');
+
+    expect(res.status).toBe(200);
+    expect(res.headers['content-type']).toBe('application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    expect(res.headers['content-disposition']).toContain('reporte_ventas_periodo_2026-05-01_2026-05-31.xlsx');
+  });
+
+  test('debe retornar 400 con fechas inválidas', async () => {
+    const res = await request(app).get('/ventas/reportes/periodo/excel?fechaInicio=invalida&fechaFin=2026-05-31');
+
+    expect(res.status).toBe(400);
+  });
+
+  test('debe retornar error del servicio', async () => {
+    ventasService.getReporteVentasPeriodoService.mockRejectedValue(
+      new AppError('Error', 500)
+    );
+
+    const res = await request(app).get('/ventas/reportes/periodo/excel?fechaInicio=2026-05-01&fechaFin=2026-05-31');
+
+    expect(res.status).toBe(500);
   });
 });
