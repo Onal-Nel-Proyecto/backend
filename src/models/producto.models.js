@@ -1,6 +1,6 @@
 import db from "../config/db.js";
 
-export class ProductosModel {
+export class ProductoModel {
 
   // Obtener todos los productos con paginación y filtros
   static async getAllProductos({ pagina = 1, limite = 15, nombre, estado, categoria, tipoProducto }) {

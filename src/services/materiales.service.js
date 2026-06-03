@@ -16,7 +16,7 @@ export const getAllMaterialesService = async ({ pagina, limite, nombre, estado, 
       }
     };
   } catch (error) {
-    return { err: error.message, errorCode: 500 };
+    return { err: 'Error al listar materiales', errorCode: 500 };
   }
 };
 
@@ -27,7 +27,7 @@ export const getMaterialByIdService = async ({ id }) => {
     if (!material) return { err: 'Material no encontrado', errorCode: 404 };
     return { data: material };
   } catch (error) {
-    return { err: error.message, errorCode: 500 };
+    return { err: 'Error al obtener material', errorCode: 500 };
   }
 };
 
@@ -37,7 +37,7 @@ export const createMaterialService = async ({ nombre, descripcion, umbralMinimo,
     const id = await MaterialesModel.createMaterial({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial });
     return { msg: 'Material creado correctamente', id };
   } catch (error) {
-    return { err: error.message, errorCode: 500 };
+    return { err: 'Error al crear material', errorCode: 500 };
   }
 };
 
@@ -50,7 +50,7 @@ export const updateMaterialService = async ({ id, nombre, descripcion, umbralMin
     await MaterialesModel.updateMaterial({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial });
     return { msg: 'Material actualizado correctamente' };
   } catch (error) {
-    return { err: error.message, errorCode: 500 };
+    return { err: 'Error al actualizar material', errorCode: 500 };
   }
 };
 
@@ -63,6 +63,6 @@ export const changeMaterialEstadoService = async ({ id, estado }) => {
     await MaterialesModel.changeEstado({ id, estado });
     return { msg: `Material marcado como ${estado.toLowerCase()}` };
   } catch (error) {
-    return { err: error.message, errorCode: 500 };
+    return { err: 'Error al cambiar estado del material', errorCode: 500 };
   }
 };

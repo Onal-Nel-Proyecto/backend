@@ -22,6 +22,8 @@ Consta de un **backend API REST** (Node.js + Express 5 + MySQL) y un **frontend 
 | `helmet` | ^8.1.0 | Seguridad HTTP |
 | `morgan` | ^1.10.1 | Logs de peticiones |
 | `uuid` | ^14.0.0 | Generación de IDs |
+| `puppeteer` | ^25.0.2 | Generación de PDFs |
+| `exceljs` | ^4.4.0 | Generación de Excel |
 
 **Dev**: `jest` + `supertest` (tests).
 
@@ -121,12 +123,15 @@ src/
 ├── models/                    # Consultas SQL
 ├── routes/                    # Definición de rutas
 ├── services/                  # Lógica de negocio
-├── test/                      # Tests unitarios (Jest)
+├── test/                      # Tests unitarios (Jest + Supertest)
 ├── utils/
 │   ├── appError.js            # Clase AppError
 │   ├── genId.js               # Generador de IDs
 │   ├── normalizacion_datos.js
-│   └── paginacion.js
+│   ├── paginacion.js
+│   ├── pdfGenerator.js        # Generación de PDFs (Puppeteer)
+│   ├── reportesPdf.js         # PDF de reportes de ventas
+│   └── reportesExcel.js       # Excel de reportes de ventas
 └── validators/                # Reglas express-validator
 ```
 
@@ -227,6 +232,27 @@ src/
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
 | GET | `/dashboard/resumen` | ✅ | KPIs, pedidos por estado, top clientes |
+| GET | `/dashboard/pedidos` | ✅ | Dashboard completo de pedidos (indicadores, calendario, producción activa, últimos pedidos) |
+
+### Productos (`/productos`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/productos` | ✅ | Listar productos (paginado + filtros) |
+| GET | `/productos/:id` | ✅ | Obtener producto por ID |
+| POST | `/productos` | ✅ + Admin | Crear producto |
+| PUT | `/productos/:id` | ✅ + Admin | Actualizar producto |
+| PATCH | `/productos/:id/estado` | ✅ + Admin | Cambiar estado (1=activo, 2=agotado, 3=inactivo) |
+
+### Materiales (`/materiales`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/materiales` | ✅ | Listar materiales (paginado + filtros) |
+| GET | `/materiales/:id` | ✅ | Obtener material por ID |
+| POST | `/materiales` | ✅ + Admin | Crear material |
+| PUT | `/materiales/:id` | ✅ + Admin | Actualizar material |
+| PATCH | `/materiales/:id/estado` | ✅ + Admin | Cambiar estado (DISPONIBLE, AGOTADO, ELIMINADO) |
 
 ### Clientes (`/clientes`)
 
@@ -237,6 +263,27 @@ src/
 | GET | `/clientes/:id` | ✅ | Obtener cliente |
 | PUT | `/clientes/:id` | ✅ | Actualizar cliente |
 | PATCH | `/clientes/:id/estado` | ✅ | Activar/bloquear |
+
+### Ventas (`/ventas`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/ventas` | ✅ | Listar ventas (paginado + filtros) |
+| POST | `/ventas` | ✅ | Crear venta |
+| GET | `/ventas/:id` | ✅ | Obtener venta por ID |
+| PATCH | `/ventas/:id` | ✅ | Actualizar venta (descuento, fecha límite) |
+| DELETE | `/ventas/:id` | ✅ | Anular venta |
+
+**Reportes de ventas:**
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/ventas/reportes/mensual` | ✅ | Reporte mensual (`?mes=&anio=`) |
+| GET | `/ventas/reportes/periodo` | ✅ | Reporte por periodo (`?fechaInicio=&fechaFin=`) |
+| GET | `/ventas/reportes/mensual/pdf` | ✅ | Exportar PDF reporte mensual |
+| GET | `/ventas/reportes/periodo/pdf` | ✅ | Exportar PDF reporte por periodo |
+| GET | `/ventas/reportes/mensual/excel` | ✅ | Exportar Excel reporte mensual |
+| GET | `/ventas/reportes/periodo/excel` | ✅ | Exportar Excel reporte por periodo |
 
 ### Usuarios (`/usuarios`)
 
@@ -260,7 +307,22 @@ cd backend && npm test
 cd frontend && npm test
 ```
 
-Los tests del backend no dependen de la base de datos (servicios mockeados).
+```bash
+# Ejecutar tests específicos de un módulo
+node --experimental-vm-modules node_modules/jest/bin/jest.js src/test/productos.test.js
+node --experimental-vm-modules node_modules/jest/bin/jest.js src/test/materiales.test.js
+```
+
+Los tests del backend **no dependen de la base de datos** (servicios mockeados). Actualmente hay tests para:
+
+| Archivo | Tests |
+|---------|-------|
+| `auth.test.js` | Autenticación |
+| `clientes.test.js` | Clientes |
+| `pedidos.test.js` | Pedidos (CRUD + detalles + producción) |
+| `user.test.js` | Usuarios |
+| `productos.test.js` | Productos (CRUD + estado) |
+| `materiales.test.js` | Materiales (CRUD + estado) |
 
 ---
 
@@ -274,7 +336,7 @@ Ajustar en `src/app.js` según entorno.
 Todos los controladores usan `next(new AppError(mensaje, código))`.  
 El middleware `err.middleware.js` captura y responde con:
 ```json
-{ "success": false, "error": "mensaje" }
+{ "status": false, "error": "mensaje" }
 ```
 Los errores internos (MySQL, etc.) solo se muestran en consola.
 

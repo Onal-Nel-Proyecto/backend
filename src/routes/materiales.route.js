@@ -1,16 +1,24 @@
 import express from 'express';
 import { ctlGetAllMateriales, ctlGetMaterialById, ctlCreateMaterial, ctlUpdateMaterial, ctlChangeMaterialEstado } from '../controllers/materiales.controller.js';
-import { createMaterialValidator, updateMaterialValidator, changeMaterialEstadoValidator } from '../validators/materiales.validator.js';
+import { getAllMaterialesValidator, getMaterialByIdValidator, createMaterialValidator, updateMaterialValidator, changeMaterialEstadoValidator } from '../validators/materiales.validator.js';
 import validateFields from '../middleware/validator.middleware.js';
 import { authValidator, isAdmin } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 // Listar todos los materiales
-router.get('/', authValidator, ctlGetAllMateriales);
+router.get('/',
+  authValidator,
+  [...getAllMaterialesValidator, validateFields],
+  ctlGetAllMateriales
+);
 
 // Obtener un material por ID
-router.get('/:id', authValidator, ctlGetMaterialById);
+router.get('/:id',
+  authValidator,
+  [...getMaterialByIdValidator, validateFields],
+  ctlGetMaterialById
+);
 
 // Crear material
 router.post('/',

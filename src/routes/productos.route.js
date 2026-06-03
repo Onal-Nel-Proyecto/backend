@@ -1,16 +1,24 @@
 import express from 'express';
 import { ctlGetAllProductos, ctlGetProductoById, ctlCreateProducto, ctlUpdateProducto, ctlChangeProductoEstado } from '../controllers/productos.controller.js';
-import { createProductoValidator, updateProductoValidator, changeProductoEstadoValidator } from '../validators/productos.validator.js';
+import { getAllProductosValidator, getProductoByIdValidator, createProductoValidator, updateProductoValidator, changeProductoEstadoValidator } from '../validators/productos.validator.js';
 import validateFields from '../middleware/validator.middleware.js';
 import { authValidator, isAdmin } from '../middleware/auth.middleware.js';
 
 const router = express.Router();
 
 // Listar todos los productos
-router.get('/', authValidator, ctlGetAllProductos);
+router.get('/',
+  authValidator,
+  [...getAllProductosValidator, validateFields],
+  ctlGetAllProductos
+);
 
 // Obtener un producto por ID
-router.get('/:id', authValidator, ctlGetProductoById);
+router.get('/:id',
+  authValidator,
+  [...getProductoByIdValidator, validateFields],
+  ctlGetProductoById
+);
 
 // Crear producto
 router.post('/',
