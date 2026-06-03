@@ -14,14 +14,14 @@ const ctlLog = async (req, res, next) => {
     res.status(200)
       .cookie('token', result.token, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: false,
+        sameSite: "lax",
         credentials: true
       })
       .cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: false,
+        sameSite: "lax",
         credentials: true
       })
       .json({

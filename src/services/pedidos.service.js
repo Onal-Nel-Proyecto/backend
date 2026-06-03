@@ -4,7 +4,6 @@ import { PedidoModel } from '../models/pedido.models.js';
 import { toTitleCase } from '../utils/normalizacion_datos.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
 import { getDetallePedidoByIdPedido } from './dt_pedido.service.js';
-import { getPagosService } from './pagos.service.js';
 import db from "../config/db.js";
 
 // servicio para obtener todos los pedidos con paginacion
@@ -22,7 +21,8 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
     fecha_entrega_estimada: e.fecha_estimada ? new Date(e.fecha_estimada).toLocaleDateString() : null,
     estado: e.estado,
     estado_pago: e.estado_pago,
-    dias_faltantes: e.dias_faltantes
+    dias_faltantes: e.dias_faltantes,
+    precio_total: e.total_pedido
   }));
 
   return {
@@ -91,7 +91,7 @@ export const getPedidoByIdService = async (id_pedido) => {
   const pedido = await PedidoModel.getById(id_pedido);
   if (!pedido) return { err: "Pedido no encontrado", errorCode: 404 }
   const detalles = await getDetallePedidoByIdPedido(id_pedido);
-  // console.log(detalles)
+  // console.log(pedido[0])
   return {
     pedido_id: pedido[0].id,
     cliente: {
@@ -107,12 +107,13 @@ export const getPedidoByIdService = async (id_pedido) => {
     estado_pago: pedido[0].estado_pago,
     observacion: pedido[0].obs,
     recordatorio: pedido[0].recordatorio,
+    precio_total: pedido[0].total_pedido,
     fecha_estimada_entrega: pedido[0].f_estimada != null ? pedido[0].f_estimada.toISOString().split('T')[0] : pedido[0].f_estimada,
     fecha_entrega: pedido[0].f_entrega != null ? pedido[0].f_entrega.toISOString().split('T')[0] : pedido[0].f_entrega,
     fecha_ingreso: pedido[0].f_ingreso != null ? pedido[0].f_ingreso.toISOString().split('T')[0] : pedido[0].f_ingreso,
     fotos_pedido: [], // para el modulo de adjuntar foto
     detalles_pedido: detalles.data ?? [],
-    pagos: (await getPagosService({ pedido_id: pedido[0].id, pagina: 1, limite: 50 })).data
+    venta_id: pedido[0].venta_id
   }
 };
 
@@ -181,6 +182,77 @@ export const updatePedidoService = async (id, data) => {
   await PedidoModel.update(id, setClause, values);
 
   return { status: true };
+};
+
+// ─────────────────────────────────────────────
+//  Servicio: entregar un pedido (TERMINADO → ENTREGADO)
+// ─────────────────────────────────────────────
+export const entregarPedidoService = async (pedidoId, usuarioId) => {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // 1. Validar que el pedido existe
+    const [[pedido]] = await connection.query(
+      `SELECT pedId, pedEst FROM pedidos WHERE pedId = ? FOR UPDATE`,
+      [pedidoId]
+    );
+
+    if (!pedido) {
+      await connection.rollback();
+      return { err: 'Pedido no encontrado', errorCode: 404 };
+    }
+
+    // 2. Validar que el estado sea TERMINADO
+    if (pedido.pedEst !== 'TERMINADO') {
+      await connection.rollback();
+      return { err: `El pedido debe estar en estado TERMINADO para entregarlo. Estado actual: ${pedido.pedEst}`, errorCode: 400 };
+    }
+
+    // 3. Ejecutar el cambio vía modelo (usa la misma conexión)
+    await PedidoModel.entregar(pedidoId, usuarioId, connection);
+
+    await connection.commit();
+    return { status: true };
+  } catch (error) {
+    await connection.rollback();
+    console.error('[entregarPedidoService] Error:', error.message);
+    return { err: 'Error interno al entregar el pedido', errorCode: 500 };
+  } finally {
+    connection.release();
+  }
+};
+
+// ─────────────────────────────────────────────
+//  Servicio: listar pedidos completados (TERMINADO + ENTREGADO)
+// ─────────────────────────────────────────────
+export const getAllEntregasService = async (pag = 1, filtros = {}) => {
+  const limite = 15;
+
+  const [rows, total, resumen] = await Promise.all([
+    PedidoModel.getAllEntregas(pag, limite, filtros),
+    PedidoModel.countEntregas(filtros),
+    PedidoModel.getResumenEntregas(filtros)
+  ]);
+
+  const data = rows.map(e => ({
+    id: e.id,
+    descripcion: e.descripcion,
+    cliente_nombres: e.cliente_nombres,
+    fecha_entrega_estimada: e.fecha_estimada ? new Date(e.fecha_estimada).toLocaleDateString() : null,
+    fecha_entrega_real: e.fecha_entrega ? new Date(e.fecha_entrega).toLocaleDateString() : null,
+    estado: e.estado,
+    precio_total: Number(e.precio_total ?? 0),
+    estado_pago: e.estado_pago,
+    saldo: Number(e.saldo ?? 0)
+  }));
+
+  return {
+    maxPag: calculateTotalPages(total, limite),
+    pagAct: Number(pag),
+    data,
+    resumen
+  };
 };
 
 // cancelar un pedido

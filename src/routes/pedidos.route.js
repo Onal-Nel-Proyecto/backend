@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { PedidoModel } from "../models/pedido.models.js";
-import { cancelPedidoController, createNewPedidoController, getAllPedidosController, getPedidoByIdController, updatePedidoController } from "../controllers/pedidos.controller.js";
+import { cancelPedidoController, createNewPedidoController, entregarPedidoController, getAllEntregasController, getAllPedidosController, getPedidoByIdController, updatePedidoController } from "../controllers/pedidos.controller.js";
 import { authValidator } from "../middleware/auth.middleware.js";
-import { basePedidoValidator, cancelPedidoValidator, parametroValidator, updateValidator } from "../validators/pedido.validator.js";
+import { basePedidoValidator, cancelPedidoValidator, entregarPedidoValidator, parametroValidator, updateValidator } from "../validators/pedido.validator.js";
 import validateFields from "../middleware/validator.middleware.js";
 import { actualizarDetalleValidator, crearDetalleValidator } from "../validators/dt_pedido.validator.js";
 import { actualizarDetalle, crearDetalle, eliminarDetalle } from "../controllers/dt_pedido.controller.js";
@@ -28,6 +28,14 @@ router.post('/', authValidator,
   ],
   createNewPedidoController);
 
+// ruta para listar pedidos completados (TERMINADO + ENTREGADO) — debe ir ANTES de /:id
+router.get('/entregas', authValidator,
+  [
+    ...parametroValidator,
+    validateFields
+  ],
+  getAllEntregasController);
+
 // ruta para obtener un pedido por id (pendiente de implementar)
 router.get('/:id', authValidator, getPedidoByIdController);
 
@@ -44,6 +52,15 @@ router.patch('/:id/cancelar', authValidator,
     validateFields
   ],
   cancelPedidoController
+)
+
+// ruta para entregar un pedido (TERMINADO → ENTREGADO)
+router.patch('/:id/entregar', authValidator,
+  [
+    ...entregarPedidoValidator,
+    validateFields
+  ],
+  entregarPedidoController
 )
 
 // ruta para detalles de pedido

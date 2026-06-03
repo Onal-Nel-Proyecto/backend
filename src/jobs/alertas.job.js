@@ -14,7 +14,7 @@
 //Formato cron: minuto hora día-del-mes mes día-de-la-semana
 // 
 import cron from 'node-cron';
-import { ejecutarVerificacionPagos } from '../services/alertas.service.js';
+import { ejecutarVerificacionPagos, ejecutarVerificacionPedidos } from '../services/alertas.service.js';
 
 export const iniciarJobAlertas = () => {
   // ──────────────────────────────────────────────────────
@@ -22,12 +22,18 @@ export const iniciarJobAlertas = () => {
   // ──────────────────────────────────────────────────────
   cron.schedule('*/15 * * * *', async () => {
     console.log('[CRON] Ejecutando job de alertas (cada 15 minutos)...');
-    await ejecutarVerificacionPagos();
+    await Promise.all([
+      ejecutarVerificacionPagos(),
+      ejecutarVerificacionPedidos()
+    ]);
   });
 
-  // Ejecutar también una verificación inicial al arrancar el servidor
+  // Ejecutar también verificación inicial al arrancar el servidor
   console.log('[CRON] Job de alertas configurado. Ejecutando verificación inicial...');
-  ejecutarVerificacionPagos();
+  Promise.all([
+    ejecutarVerificacionPagos(),
+    ejecutarVerificacionPedidos()
+  ]);
 
   console.log('[CRON] Job de alertas programado — cada 15 minutos (*/15 * * * *)');
 };
