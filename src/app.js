@@ -18,7 +18,6 @@ app.use(cors({
       "https://frontend-nine-vert-24.vercel.app"
     ]
     if(ACCEPTED_ORIGINS.includes(origin)) {
-      // console.log(origin)
       return callback(null, true)
     }
     if(!origin) return callback(null, true)
@@ -27,14 +26,6 @@ app.use(cors({
   credentials: true
 }
 ))
-app.use((err, req, res, next) => {
-  console.error("ERROR GLOBAL:", err);
-
-  res.status(500).json({
-    status: false,
-    error: err.message
-  });
-});
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 app.use('/', routes)
