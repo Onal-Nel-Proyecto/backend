@@ -25,6 +25,6 @@ dist-ssr
 
 .env
 instrucciones.txt
-.reasonix
 .env.dev
 .env.prod
+.reasonix

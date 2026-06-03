@@ -1,6 +1,5 @@
-import { body, check } from 'express-validator';
+import { body, check, param } from 'express-validator';
 const tipoPedido = ["personalizado", "retoques", "modificaciones",]
-const estadoPedido = ["pendiente", "retoques", "modificaciones",]
 
 // validacion basica para registro de pedido
 export const basePedidoValidator = [
@@ -15,14 +14,22 @@ export const basePedidoValidator = [
     .isISO8601()
     .withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
     .custom(value => {
-      // console.log(value) 
-      const hoy = new Date().toISOString().split('T')[0]; // obtener solo año, mes y día
-      const fecha = new Date(value).toISOString().split('T')[0]; // convertir la fecha ingresada al mismo formato
+      // Obtener la fecha local actual en formato YYYY-MM-DD
+      const ahora = new Date();
+      const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
 
-      // console.log(hoy, fecha);
-
-      if (fecha < hoy) {
+      // value ya viene como YYYY-MM-DD validado por isISO8601
+      if (value < hoy) {
         throw new Error('La fecha no puede ser anterior a hoy');
+      }
+
+      // Calcular fecha máxima (1 año a partir de hoy)
+      const fechaMax = new Date(ahora);
+      fechaMax.setFullYear(fechaMax.getFullYear() + 1);
+      const maxStr = `${fechaMax.getFullYear()}-${String(fechaMax.getMonth() + 1).padStart(2, '0')}-${String(fechaMax.getDate()).padStart(2, '0')}`;
+
+      if (value > maxStr) {
+        throw new Error('La fecha estimada no puede superar un año a partir de hoy');
       }
 
       return true;
@@ -61,8 +68,9 @@ export const parametroValidator = [
 
   check('estado')
     .optional()
-    .isIn(["pendiente", "terminado", "cancelado", "en_proceso"])
-    .withMessage("el estado debe ser: pendiente | terminado | cancelado | en_proceso"),
+    .toLowerCase()
+    .isIn(["pendiente", "terminado", "cancelado", "en_proceso", "entregado", "completados"])
+    .withMessage("el estado debe ser: pendiente | terminado | cancelado | en_proceso | entregado | completados"),
 
   check('fecha_desde')
     .optional()
@@ -82,8 +90,35 @@ export const parametroValidator = [
   check('tipo_pedido')
     .optional()
     .isIn(["personalizado", "retoques", "modificaciones"])
-    .withMessage("tipo_pedido debe ser: personalizado | retoques | modificaciones")
-]
+    .withMessage("tipo_pedido debe ser: personalizado | retoques | modificaciones"),
+
+  check('estado_pago')
+    .optional()
+    .isIn(["SIN PAGAR", "ABONADO", "PAGADO"])
+    .withMessage("estado_pago debe ser: SIN PAGAR | ABONADO | PAGADO"),
+
+  check('fecha_entrega_desde')
+    .optional()
+    .isISO8601()
+    .withMessage("fecha_entrega_desde debe tener formato válido (YYYY-MM-DD)"),
+
+  check('fecha_entrega_hasta')
+    .optional()
+    .isISO8601()
+    .withMessage("fecha_entrega_hasta debe tener formato válido (YYYY-MM-DD)"),
+
+  check('descripcion')
+    .optional()
+    .isString()
+    .withMessage("descripcion debe ser texto")
+    .isLength({ max: 100 })
+    .withMessage("descripcion no puede tener más de 100 caracteres"),
+
+  check('mes')
+    .optional()
+    .isInt({ min: 1, max: 12 })
+    .withMessage("mes debe ser un número entre 1 y 12"),
+]    
 
 export const updateValidator = [
   body("cliente_id")
@@ -96,11 +131,22 @@ export const updateValidator = [
     .isISO8601()
     .withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
     .custom(value => {
-      const hoy = new Date().toISOString().split('T')[0];
-      const fecha = new Date(value).toISOString().split('T')[0];
+      // Obtener la fecha local actual en formato YYYY-MM-DD
+      const ahora = new Date();
+      const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
 
-      if (fecha < hoy) {
+      // value ya viene como YYYY-MM-DD validado por isISO8601
+      if (value < hoy) {
         throw new Error('La fecha no puede ser anterior a hoy');
+      }
+
+      // Calcular fecha máxima (1 año a partir de hoy)
+      const fechaMax = new Date(ahora);
+      fechaMax.setFullYear(fechaMax.getFullYear() + 1);
+      const maxStr = `${fechaMax.getFullYear()}-${String(fechaMax.getMonth() + 1).padStart(2, '0')}-${String(fechaMax.getDate()).padStart(2, '0')}`;
+
+      if (value > maxStr) {
+        throw new Error('La fecha estimada no puede superar un año a partir de hoy');
       }
 
       return true;
@@ -129,6 +175,13 @@ export const updateValidator = [
     .isLength({ max: 100 })
     .withMessage("La descripción no puede tener más de 100 caracteres"),
 
+];
+
+export const entregarPedidoValidator = [
+  param('id')
+    .notEmpty()
+    .isString()
+    .withMessage('ID de pedido requerido'),
 ];
 
 export const cancelPedidoValidator = [

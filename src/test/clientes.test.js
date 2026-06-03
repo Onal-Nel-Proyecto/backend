@@ -92,7 +92,7 @@ describe('GET /clientes', () => {
     const response = await request(app).get('/clientes?pagina=2&limite=10');
 
     expect(response.status).toBe(200);
-    expect(obtenerClientes).toHaveBeenCalledWith('2', '10');
+    expect(obtenerClientes).toHaveBeenCalledWith('2', '10', { search: undefined });
   });
 
   test('debe retornar 500 si el service falla', async () => {

@@ -4,7 +4,7 @@ import { calculateTotalPages } from "../utils/paginacion.js";
 import db from "../config/db.js";
 import { generateId } from "../utils/genId.js";
 const transfromEstado = ['activo', 'inactivo']
-export const obtenerClientes = async (pagina = 1, limite = 15) => {
+export const obtenerClientes = async (pagina = 1, limite = 15, filtros = {}) => {
   // Asegurar valores numéricos
   const paginaActual = parseInt(pagina, 10) || 1;
   const limitePagina = parseInt(limite, 10) || 15;
@@ -12,8 +12,8 @@ export const obtenerClientes = async (pagina = 1, limite = 15) => {
 
   // Obtener total y datos en paralelo
   const [total, filas] = await Promise.all([
-    ClienteModel.getAll(limitePagina, offset),
-    ClienteModel.getTotalClientes()
+    ClienteModel.getAll(limitePagina, offset, filtros),
+    ClienteModel.getTotalClientes(filtros)
   ]);
   console.log(total)
   // Mapear filas al formato deseado
