@@ -63,7 +63,7 @@ export const createNewProduction = async (
     Number(cantidadEnProduccion?.cantidad_total) || 0;
     
     // 6. Validar límite total
-    console.log(totalProduccion)
+    // console.log(totalProduccion)
     if (
     totalProduccion >= detalleActual.detPedCant
   ) {
@@ -169,7 +169,7 @@ export const updateProduction = async (
       // ===============================
       // PRODUCCIÓN EN PROCESO
       // ===============================
-      console.log(pedidoExiste[0].estado)
+      // console.log(pedidoExiste[0].estado)
 
       if (
         data.estado === 'EN PROCESO' &&
@@ -209,7 +209,7 @@ export const updateProduction = async (
           await ProduccionModel.countPendingByPedido(
             pedidoExiste[0].id
           );
-          console.log(produccionesPendientes)
+          // console.log(produccionesPendientes)
         // Si no quedan pendientes
         if (produccionesPendientes === 0) {
 

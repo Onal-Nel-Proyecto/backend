@@ -3,8 +3,9 @@ import { actualizarCliente, changeStatusServices, crearCliente, obtenerClientePo
 
 export const getClientes = async (req, res, next) => {
   try {
-    const { pagina, limite } = req.query;
-    const resultado = await obtenerClientes(pagina, limite);
+    const { pagina, limite, search } = req.query;
+    const filtros = { search };
+    const resultado = await obtenerClientes(pagina, limite, filtros);
     res.json(resultado);
   } catch (error) {
     console.error('Error al obtener clientes:', error);
