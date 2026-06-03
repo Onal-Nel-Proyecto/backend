@@ -13,6 +13,8 @@ export const initSocket = (server) => {
     FRONT_URL_DEV || 'http://localhost:5173',
     FRONT_URL_PROD,
     'https://sp78zgqw-5173.use2.devtunnels.ms',
+    'http://192.168.18.65:5173',
+    'http://10.2.129.229:5173',
     'https://frontend-nine-vert-24.vercel.app'
   ].filter(Boolean);
 

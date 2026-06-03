@@ -243,4 +243,74 @@ export const anularVentaService = async (id) => {
   };
 };
 
+// ─────────────────────────────────────────────
+//  Reportes de ventas
+// ─────────────────────────────────────────────
+
+/**
+ * Obtener reporte mensual de ventas
+ */
+export const getReporteVentasMensualService = async (mes, anio) => {
+  const mesNum = Number(mes);
+  const anioNum = Number(anio);
+
+  if (!mes || !anio) {
+    throw new AppError('Los parámetros mes y anio son obligatorios', 400);
+  }
+
+  if (isNaN(mesNum) || mesNum < 1 || mesNum > 12) {
+    throw new AppError('El mes debe ser un número entre 1 y 12', 400);
+  }
+
+  if (isNaN(anioNum)) {
+    throw new AppError('El año debe ser un valor numérico', 400);
+  }
+
+  const results = await VentasModel.getReporteVentasMensual(mesNum, anioNum);
+
+  return {
+    resumen: results[0]?.[0] ?? {},
+    topProductos: results[1] ?? [],
+    ventasPorDia: results[2] ?? []
+  };
+};
+
+/**
+ * Obtener reporte de ventas por periodo
+ */
+export const getReporteVentasPeriodoService = async (fechaInicio, fechaFin) => {
+  if (!fechaInicio || !fechaFin) {
+    throw new AppError('Los parámetros fechaInicio y fechaFin son obligatorios', 400);
+  }
+
+  const inicio = new Date(fechaInicio + 'T00:00:00');
+  const fin = new Date(fechaFin + 'T00:00:00');
+
+  if (isNaN(inicio.getTime()) || isNaN(fin.getTime())) {
+    throw new AppError('Las fechas deben tener formato YYYY-MM-DD', 400);
+  }
+
+  if (inicio > fin) {
+    throw new AppError('La fecha de inicio no puede ser mayor que la fecha fin', 400);
+  }
+
+  const diffDays = Math.ceil((fin - inicio) / (1000 * 60 * 60 * 24));
+  const maxDays = 366;
+
+  if (diffDays > maxDays) {
+    throw new AppError(
+      `El periodo del reporte no puede superar un año (máximo ${maxDays} días). El rango enviado es de ${diffDays} días.`,
+      400
+    );
+  }
+
+  const results = await VentasModel.getReporteVentasPeriodo(fechaInicio, fechaFin);
+
+  return {
+    resumen: results[0]?.[0] ?? {},
+    topProductos: results[1] ?? [],
+    ventasPorDia: results[2] ?? []
+  };
+};
+
 

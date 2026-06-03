@@ -160,25 +160,25 @@ src/
 │   ├── user.test.js
 │   └── ventas.test.js
 ├── utils/
-│   ├── appError.js               # Clase AppError
-│   ├── genId.js                  # Generador de IDs (SP)
-│   ├── normalizacion_datos.js    # Normalización de inputs
-│   ├── paginacion.js             # calculateTotalPages
-│   ├── pdfGenerator.js           # PDF con Puppeteer
+│   ├── appError.js               # Clase AppError para errores controlados
+│   ├── genId.js                  # Generador de IDs con prefijo (SP en BD)
+│   ├── normalizacion_datos.js    # Normalización de inputs (nombres, mayúsculas)
+│   ├── paginacion.js             # Helper calculateTotalPages
+│   ├── pdfGenerator.js           # Generación de PDF con Puppeteer + HTML template
 │   ├── reportesPdf.js            # PDF de reportes de ventas
 │   └── reportesExcel.js          # Excel de reportes de ventas
-└── validators/                   # Reglas express-validator
-    ├── auth.validator.js
-    ├── cliente.validator.js
-    ├── dt_pedido.validator.js
-    ├── factura.validator.js
-    ├── materiales.validator.js
-    ├── pagos.validator.js
-    ├── pedido.validator.js
-    ├── produccion.validator.js
-    ├── productos.validator.js
-    ├── user.validator.js
-    └── ventas.validator.js
+└── validators/                   # Reglas de validación por módulo (express-validator)
+    ├── auth.validator.js         # Login: email, password
+    ├── cliente.validator.js      # Cliente: nombres, documento, teléfono
+    ├── dt_pedido.validator.js    # Detalles de pedido
+    ├── factura.validator.js      # Factura
+    ├── materiales.validator.js   # Materiales
+    ├── pagos.validator.js        # Pagos: monto, método, referencia
+    ├── pedido.validator.js       # Pedido: fechas, cliente, servicios
+    ├── produccion.validator.js   # Producción: fecha, responsable
+    ├── productos.validator.js    # Productos
+    ├── user.validator.js         # Usuario: email, rol, contraseña
+    └── ventas.validator.js       # Venta: descuento, detalles, pagos
 ```
 
 ---
@@ -284,6 +284,17 @@ src/
 | PATCH | `/ventas/:id` | ✅ | Actualizar descuento y/o fecha límite de pago |
 | DELETE | `/ventas/:id` | ✅ | Anular venta (cambia estado a `ANULADO`) |
 
+**Reportes y exportación** (`/ventas/reportes`):
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/ventas/reportes/mensual` | ✅ | Reporte mensual (`?mes=&anio=`) |
+| GET | `/ventas/reportes/periodo` | ✅ | Reporte por periodo (`?fechaInicio=&fechaFin=`) |
+| GET | `/ventas/reportes/mensual/pdf` | ✅ | Exportar PDF reporte mensual |
+| GET | `/ventas/reportes/periodo/pdf` | ✅ | Exportar PDF reporte por periodo |
+| GET | `/ventas/reportes/mensual/excel` | ✅ | Exportar Excel reporte mensual |
+| GET | `/ventas/reportes/periodo/excel` | ✅ | Exportar Excel reporte por periodo |
+
 **Detalles de venta** (`/ventas/:id/detalles`):
 
 | Método | Ruta | Auth | Descripción |
@@ -341,9 +352,16 @@ Usan **Jest** + **Supertest** para peticiones HTTP simuladas (150+ tests).
 
 | Archivo | Tests | Cobertura |
 |---------|-------|-----------|
-| `ventas.test.js` | **41** | CRUD ventas, detalles, filtros, anulación |
+| `ventas.test.js` | **65** | CRUD ventas, detalles, reportes, exportación PDF/Excel, validaciones |
 | `productos.test.js` | **32** | CRUD productos, filtros, validaciones, estado |
 | `materiales.test.js` | **32** | CRUD materiales, filtros, validaciones, estado |
+| `pedidos.test.js` | ~10 | CRUD pedidos, cancelación, validaciones de fecha |
+| `clientes.test.js` | ~10 | CRUD clientes, activar/bloquear |
+| `alertas.test.js` | ~10 | Listado paginado, filtros |
+| `auth.test.js` | ~8 | Login, refresh, perfil, logout |
+| `factura.test.js` | ~8 | CRUD factura, anulación, PDF |
+| `pagos.test.js` | ~8 | CRUD pagos, rechazo, filtros |
+| `user.test.js` | ~8 | CRUD usuarios, activar/bloquear |
 | `pedidos.test.js` | ~10 | CRUD pedidos, cancelación, validaciones de fecha |
 | `clientes.test.js` | ~10 | CRUD clientes, activar/bloquear |
 | `alertas.test.js` | ~10 | Listado paginado, filtros |

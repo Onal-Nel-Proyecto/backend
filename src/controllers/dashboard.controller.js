@@ -4,7 +4,7 @@ import { getResumenService, getPedidosDashboardService } from '../services/dashb
 export const getResumenController = async (_req, res, next) => {
   try {
     const result = await getResumenService();
-    res.status(200).json({ success: true, data: result });
+    res.status(200).json({ status: true, data: result });
   } catch (error) {
     console.error('Error en getResumenController:', error);
     next(new AppError('Error interno del servidor', 500));
@@ -17,7 +17,7 @@ export const getResumenController = async (_req, res, next) => {
 export const getPedidosDashboardController = async (_req, res, next) => {
   try {
     const result = await getPedidosDashboardService();
-    res.status(200).json({ success: true, data: result });
+    res.status(200).json({ status: true, data: result });
   } catch (error) {
     console.error('Error en getPedidosDashboardController:', error);
     next(new AppError('Error interno del servidor', 500));

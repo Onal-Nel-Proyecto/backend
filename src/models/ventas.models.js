@@ -247,4 +247,36 @@ export class VentasModel {
 
     return result.affectedRows > 0;
   }
+
+  // ─────────────────────────────────────────────
+  //  Reportes de ventas — SP almacenados
+  // ─────────────────────────────────────────────
+
+  /**
+   * Ejecuta sp_reporte_ventas_mensual
+   * @param {number} mes  (1-12)
+   * @param {number} anio
+   * @returns {Promise<Array>} Multi-result-set: [summary, topProductos, ventasPorDia]
+   */
+  static async getReporteVentasMensual(mes, anio) {
+    const [results] = await db.query(
+      'CALL sp_reporte_ventas_mensual(?, ?)',
+      [mes, anio]
+    );
+    return results;
+  }
+
+  /**
+   * Ejecuta sp_reporte_ventas_periodo
+   * @param {string} fechaInicio  YYYY-MM-DD
+   * @param {string} fechaFin     YYYY-MM-DD
+   * @returns {Promise<Array>} Multi-result-set: [summary, topProductos, ventasPorDia]
+   */
+  static async getReporteVentasPeriodo(fechaInicio, fechaFin) {
+    const [results] = await db.query(
+      'CALL sp_reporte_ventas_periodo(?, ?)',
+      [fechaInicio, fechaFin]
+    );
+    return results;
+  }
 }

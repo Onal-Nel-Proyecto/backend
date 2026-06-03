@@ -181,3 +181,41 @@ export const deleteDetalleValidator = [
     .isString()
     .withMessage('El ID del detalle debe ser texto')
 ];
+
+// ─────────────────────────────────────────────
+//  Reportes de ventas
+// ─────────────────────────────────────────────
+
+/**
+ * Validaciones para GET /ventas/reportes/mensual
+ */
+export const reporteMensualValidator = [
+  query('mes')
+    .notEmpty()
+    .withMessage('El parámetro mes es obligatorio')
+    .isInt({ min: 1, max: 12 })
+    .withMessage('El mes debe ser un número entre 1 y 12'),
+
+  query('anio')
+    .notEmpty()
+    .withMessage('El parámetro anio es obligatorio')
+    .isInt()
+    .withMessage('El año debe ser un valor numérico')
+];
+
+/**
+ * Validaciones para GET /ventas/reportes/periodo
+ */
+export const reportePeriodoValidator = [
+  query('fechaInicio')
+    .notEmpty()
+    .withMessage('El parámetro fechaInicio es obligatorio')
+    .isISO8601()
+    .withMessage('fechaInicio debe tener formato YYYY-MM-DD'),
+
+  query('fechaFin')
+    .notEmpty()
+    .withMessage('El parámetro fechaFin es obligatorio')
+    .isISO8601()
+    .withMessage('fechaFin debe tener formato YYYY-MM-DD')
+];
