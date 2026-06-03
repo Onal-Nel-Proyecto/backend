@@ -92,22 +92,26 @@ export const crearDetalle = async (pedidoId, data) => {
     let productoId;
     if (data.producto_id) {
       // Producto existente: validar que exista
-      const productoModel = new ProductoModel(connection);
-      const productoExiste = await ProductoModel.existe(data.producto_id);
+      const productoExiste = await ProductoModel.getProductoById({ id: data.producto_id });
       if (!productoExiste) {
         throw new Error('El producto especificado no existe');
       }
       productoId = data.producto_id;
     } else if (data.producto) {
-      // Crear nuevo producto y obtener su ID
-      const productoModel = new ProductoModel(connection);
-      const genIdProducto = await productoModel.generarId();
-      data.producto.tipo_producto = 'PERSONALIZADO'
-      data.producto.producto_id = genIdProducto
-      const nuevoProductoId = await productoModel.crear(data.producto);
+      // Crear nuevo producto (createProducto genera ID internamente vía SP)
+      const nuevoProductoId = await ProductoModel.createProducto({
+        nombre: data.producto.nombre,
+        precioUnitario: data.producto.precio || data.producto.precioUnitario || 0,
+        descripcion: data.producto.descripcion,
+        genero: data.producto.genero,
+        categoriaId: data.producto.categoriaId,
+        tipoPrenda: data.producto.tipoPrenda,
+        tipoProducto: 'PERSONALIZADO',
+        umbralMinimo: data.producto.umbralMinimo,
+        talla: data.producto.talla
+      });
       productoId = nuevoProductoId;
     } else {
-      // Nunca debería llegar aquí por las validaciones, pero por seguridad
       throw new Error('Se requiere producto_id o producto para crear el detalle');
     }
 
@@ -197,14 +201,10 @@ export const eliminarDetalle = async (pedidoId, detalleId) => {
     await detalleModel.deleteDetalle(detalleId);
 
     // 7. Manejar producto asociado
-    const productoModel = new ProductoModel(connection);
-    const producto = await productoModel.getById(productoId);
-    if (producto && producto.proEst === 3) {
-      // Verificar que no existan otros detalles usando este producto
-      const otrosDetalles = await productoModel.contarDetallesConProducto(productoId, detalleId);
-      if (otrosDetalles === 0) {
-        await productoModel.deleteProducto(productoId);
-      }
+    const producto = await ProductoModel.getProductoById({ id: productoId });
+    if (producto && producto.estado === 3) {
+      // Cambiar estado a inactivo (3) si es un producto personalizado sin otros detalles
+      await ProductoModel.changeEstado({ id: productoId, estado: 3 });
     }
     // Si está activo, se conserva sin hacer nada más
 
@@ -246,17 +246,22 @@ export const actualizarDetalleService = async (pedidoId, detalleId, data) => {
 
     // 4. Si se envió producto, actualizar el producto asociado (nombre, precio)
     if (data.producto && Object.keys(data.producto).length > 0) {
-      const productoModel = new ProductoModel(connection);
       // Verificar que el producto existe (ya está asociado)
-      const prodActual = await productoModel.getById(detalleActual.proIdFk);
+      const prodActual = await ProductoModel.getProductoById({ id: detalleActual.proIdFk });
       if (!prodActual) throw new Error('El producto asociado al detalle no existe');
 
-      const updatesProducto = {};
-      if (data.producto.nombre !== undefined) updatesProducto.nombre = data.producto.nombre;
-      if (data.producto.precio !== undefined) updatesProducto.precio = data.producto.precio;
-
-      if (Object.keys(updatesProducto).length > 0) {
-        await productoModel.update(detalleActual.proIdFk, updatesProducto);
+      if (data.producto.nombre !== undefined || data.producto.precio !== undefined) {
+        await ProductoModel.updateProducto({
+          id: detalleActual.proIdFk,
+          nombre: data.producto.nombre !== undefined ? data.producto.nombre : prodActual.nombre,
+          precioUnitario: data.producto.precio !== undefined ? data.producto.precio : prodActual.precioUnitario,
+          descripcion: prodActual.descripcion,
+          genero: prodActual.genero,
+          categoriaId: prodActual.categoriaId,
+          tipoPrenda: prodActual.tipoPrenda,
+          umbralMinimo: prodActual.umbralMinimo,
+          talla: prodActual.talla
+        });
       }
     }
 

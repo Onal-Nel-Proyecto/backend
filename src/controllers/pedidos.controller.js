@@ -32,7 +32,7 @@ export const createNewPedidoController = async (req, res, next) => {
   try {
     req.body.usuarioId = req.user.user_id;
     req.body = normalizeEmptyStrings(req.body);
-
+    console.log(req.body)
     const result = await createNewPedido(req.body);
 
     if (result.err) {
@@ -68,6 +68,7 @@ export const updatePedidoController = async (req, res, next) => {
   try {
     const { id } = req.params;
     const result = await updatePedidoService(id, req.body);
+    console.log(req.body)
 
     if (result.err) {
       return next(new AppError(result.err, result.errorCode));

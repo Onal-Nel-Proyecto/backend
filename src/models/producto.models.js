@@ -134,4 +134,19 @@ export class ProductoModel {
     const [rows] = await db.query('SELECT catId FROM categoria WHERE catId = ?', [categoriaId]);
     return rows.length > 0;
   }
+
+  //  async generarId() {
+  //   // Llamada al procedimiento almacenado y recuperación del ID
+  //   await this.connection.execute("CALL sp_generar_siguiente_id('PR','productos','proId', @id)");
+  //   const [rows] = await this.connection.execute('SELECT @id AS id');
+  //   // console.log(rows);
+
+  //   return rows[0].id;
+  // }
+
+  async contarDetallesConProducto(productoId, detalleExcluido) {
+    const sql = 'SELECT COUNT(*) AS total FROM det_pedido WHERE proIdFk = ? AND detPedId != ?';
+    const [rows] = await this.connection.execute(sql, [productoId, detalleExcluido]);
+    return rows[0].total;
+  }
 }

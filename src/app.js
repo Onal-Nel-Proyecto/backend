@@ -19,7 +19,7 @@ app.use(cors({
       "https://frontend-nine-vert-24.vercel.app",
       "http://192.168.18.65:5173"
     ]
-    console.log(origin)
+    // console.log(origin)
     if(ACCEPTED_ORIGINS.includes(origin)) {
       return callback(null, true)
     }

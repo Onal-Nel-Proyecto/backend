@@ -37,13 +37,10 @@ export const createNewProduction = async (
   }
 
   // 4. Validar producto asociado
-  const productoModel =
-    new ProductoModel(connection);
-
   const prodActual =
-    await productoModel.getById(
-      detalleActual.proIdFk
-    );
+    await ProductoModel.getProductoById({
+      id: detalleActual.proIdFk
+    });
 
   if (!prodActual) {
     throw new Error(
@@ -147,9 +144,7 @@ export const updateProduction = async (
       );
     }
 
-    const productoModel = new ProductoModel(connection);
-
-    const stockProducto = await productoModel.getById(produccionActual[0].proIdFk)
+    const stockProducto = await ProductoModel.getProductoById({ id: produccionActual[0].proIdFk })
 
 
     // 2. Actualizar producción
@@ -194,12 +189,10 @@ export const updateProduction = async (
 
       if (data.estado === 'TERMINADO') {
         // console.log(stockProducto.proStock)
-        // 1. Aumentar stock producto
-        await productoModel.update(
-          produccionActual[0].proIdFk,
-          {
-            stock: stockProducto.proStock + produccionActual[0].cantidad
-          }
+        // 1. Aumentar stock producto (consulta directa porque updateProducto no maneja stock)
+        await db.query(
+          'UPDATE productos SET proStock = ? WHERE proId = ?',
+          [stockProducto.stock + produccionActual[0].cantidad, produccionActual[0].proIdFk]
         );
 
         // 2. Verificar si TODAS las producciones
@@ -209,6 +202,7 @@ export const updateProduction = async (
           await ProduccionModel.countPendingByPedido(
             pedidoExiste[0].id
           );
+        console.log(produccionesPendientes)
           // console.log(produccionesPendientes)
         // Si no quedan pendientes
         if (produccionesPendientes === 0) {
