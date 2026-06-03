@@ -4,6 +4,7 @@ import cookieParser from "cookie-parser";
 import routes from './routes/index.route.js'
 import { errorMiddleware } from './middleware/err.middleware.js';
 import { FRONT_URL_DEV, FRONT_URL_PROD } from "./config/config.js";
+import { swaggerServe, swaggerSetup } from './config/swagger.js';
 
 const app = express();
 
@@ -31,6 +32,9 @@ app.use(cors({
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
 app.use('/', routes)
+
+// Documentación Swagger/OpenAPI
+app.use('/api-docs', swaggerServe, swaggerSetup);
 
 // Middleware global de errores (debe ir después de las rutas)
 app.use(errorMiddleware);
