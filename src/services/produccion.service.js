@@ -194,7 +194,7 @@ export const updateProduction = async (
           'UPDATE productos SET proStock = ? WHERE proId = ?',
           [stockProducto.stock + produccionActual[0].cantidad, produccionActual[0].proIdFk]
         );
-
+        
         // 2. Verificar si TODAS las producciones
         // del pedido están terminadas
 
@@ -202,7 +202,7 @@ export const updateProduction = async (
           await ProduccionModel.countPendingByPedido(
             pedidoExiste[0].id
           );
-        console.log(produccionesPendientes)
+        // console.log(produccionesPendientes)
           // console.log(produccionesPendientes)
         // Si no quedan pendientes
         if (produccionesPendientes === 0) {

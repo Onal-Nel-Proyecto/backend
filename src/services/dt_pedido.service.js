@@ -13,7 +13,7 @@ export const getDetallePedidoByIdPedido = async (id_pedido) => {
   const detallesMap = {};
 
   for (const e of rows) {
-
+    
     // 🔹 si no existe el detalle lo creamos
     if (!detallesMap[e.detPedId]) {
       detallesMap[e.detPedId] = {
@@ -22,7 +22,10 @@ export const getDetallePedidoByIdPedido = async (id_pedido) => {
           producto_id: e.proId,
           nombre: e.proNom,
           precio: e.proPreUni,
-          categoria: e.catNom
+          categoria: e.proCatFk,
+          genero: e.proGen,
+          tipoPrenda: e.proTipPre,
+          talla: e.proTall
         },
         observacion: e.pedObs,
         cantidad: e.detPedCant,
@@ -108,7 +111,8 @@ export const crearDetalle = async (pedidoId, data) => {
         tipoPrenda: data.producto.tipoPrenda,
         tipoProducto: 'PERSONALIZADO',
         umbralMinimo: data.producto.umbralMinimo,
-        talla: data.producto.talla
+        talla: data.producto.talla,
+        estado: 3
       });
       productoId = nuevoProductoId;
     } else {

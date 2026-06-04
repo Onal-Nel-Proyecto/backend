@@ -9,7 +9,7 @@ export class DashboardModel {
   static async getResumen() {
     const [[pedidos]] = await db.query(`
       SELECT 
-        COUNT(*) AS total,
+        SUM(CASE WHEN pedEst != 'entregado' THEN 1 ELSE 0 END) AS total,
         SUM(CASE WHEN pedEst = 'pendiente' THEN 1 ELSE 0 END) AS pendientes,
         SUM(CASE WHEN pedEst = 'en proceso' THEN 1 ELSE 0 END) AS en_proceso,
         SUM(CASE WHEN pedEst = 'terminado' THEN 1 ELSE 0 END) AS terminados,
