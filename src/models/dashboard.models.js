@@ -102,7 +102,7 @@ export class DashboardModel {
     const [rows] = await db.query(`
       SELECT
         p.pedId AS id,
-        p.pedDesc AS numeroPedido,
+        p.pedDesc AS descripcion,
         CONCAT_WS(' ', c.cliNom, c.cliApe) AS cliente,
         DATE(p.pedFecEst) AS fechaEntrega,
         p.pedEst AS estado,

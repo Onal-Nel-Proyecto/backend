@@ -249,7 +249,8 @@ export const getAllEntregasService = async (pag = 1, filtros = {}) => {
     estado: e.estado,
     precio_total: Number(e.precio_total ?? 0),
     estado_pago: e.estado_pago,
-    saldo: Number(e.saldo ?? 0)
+    saldo: Number(e.saldo ?? 0),
+    venta_id: e.venta_id
   }));
 
   return {

@@ -105,7 +105,7 @@ export class PedidoModel {
     // Por defecto: solo pedidos activos (pendiente + en_proceso)
     // Si se pasa ?estado=completados → trae terminado + entregado
     if (!filtros.estado) {
-      whereClauses.push("pedEst IN ('pendiente', 'en_proceso')");
+      whereClauses.push("pedEst IN ('pendiente', 'en proceso')");
     } else if (filtros.estado === 'completados') {
       whereClauses.push("pedEst IN ('terminado', 'entregado')");
     } else {
@@ -393,6 +393,7 @@ export class PedidoModel {
         DATE(p.pedFecEnt) AS fecha_entrega,
         p.pedEst AS estado,
         p.pedTolEst AS precio_total,
+        v.venId as venta_id,
         CASE
           WHEN COALESCE(pag.total_pagado, 0) >= p.pedTolEst AND p.pedTolEst > 0 THEN 'PAGADO'
           WHEN COALESCE(pag.total_pagado, 0) > 0 THEN 'ABONADO'
@@ -408,6 +409,7 @@ export class PedidoModel {
         FROM pagos
         GROUP BY pagPedIdFk
       ) pag ON pag.pagPedIdFk = p.pedId
+      LEFT JOIN ventas v ON v.pedIdFk = p.pedId
       ${whereSQL}
       ORDER BY p.pedFecEnt DESC, p.pedFecEst DESC
       LIMIT ? OFFSET ?

@@ -51,10 +51,10 @@ export const getPedidosDashboardService = async () => {
   const calendarEventsWithFlags = calendarEvents.map(event => {
     const fechaEntrega = new Date(event.fechaEntrega + 'T00:00:00');
     const estado = (event.estado || '').toLowerCase();
-
+    
     return {
       id: event.id,
-      numeroPedido: event.numeroPedido,
+      descripcion: event.descripcion,
       cliente: event.cliente,
       fechaEntrega: event.fechaEntrega,
       estado: event.estado,
