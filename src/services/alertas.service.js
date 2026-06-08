@@ -25,6 +25,36 @@ export const getAlertasService = async (pagina = 1, limite = 15, filtros = {}) =
 
     const esPedido = infoExtra?.tipo_origen === 'PEDIDO';
 
+    const tipo_origen = [
+      {
+        origen: "pedido",
+        url: `/pedidos/${row.altReferenciaId}`,
+        texto: 'Ir a pedido'
+      },
+      {
+        origen: "venta",
+        url: `/ventas/${row.altReferenciaId}`,
+        texto: 'Ir a venta'
+      },
+      {
+        origen: "producto",
+        url: `/inventario/productos`,
+        texto: 'Ir a inventario'
+      },
+      {
+        origen: "material",
+        url: `/inventario/materiales`,
+        texto: 'Ir a inventario'
+      }
+    ]
+    const accion = tipo_origen.find(
+      ({ origen }) => origen.toUpperCase() === infoExtra?.tipo_origen
+    );
+
+    const { origen, ...datos } = accion || {};
+
+    // console.log(accion);
+
     return {
       id_alerta: row.altId,
       titulo: row.altTitulo,
@@ -38,10 +68,7 @@ export const getAlertasService = async (pagina = 1, limite = 15, filtros = {}) =
       estado: row.altEstado,
       referencia_id: row.altReferenciaId,
       info_extra: infoExtra,
-      accion: {
-        url: esPedido ? `/pedidos/${row.altReferenciaId}` : `/ventas/${row.altReferenciaId}`,
-        texto: esPedido ? 'Ir a pedido' : 'Ir a venta'
-      }
+      accion: accion 
     };
   });
 
@@ -214,11 +241,11 @@ export const ejecutarVerificacionPedidos = async () => {
             timeZone: 'UTC'
           })
           : 'sin fecha';
-          // console.log(fechaEntrega);
-          
+        // console.log(fechaEntrega);
+
         const infoExtra = {
           cliente: row.nombreCliente || null,
-          fecha_entrega: fechaEntrega|| null,
+          fecha_entrega: fechaEntrega || null,
           dias_restantes: row.diasRestantes ?? null,
           tipo_origen: 'PEDIDO'
         };

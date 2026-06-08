@@ -91,7 +91,7 @@ export class DetallePedidoModel {
   }
 
   async deleteProduccionesPendientes(detalleId) {
-    const sql = "DELETE FROM produccion WHERE detPedIdFk = ? AND estado = 'pendiente'";
+    const sql = "DELETE FROM produccion WHERE detPedIdFk = ? AND estado IN ('pendiente', 'cancelado')";
     await this.connection.execute(sql, [detalleId]);
   }
 

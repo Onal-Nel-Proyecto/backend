@@ -49,8 +49,9 @@ export const getPedidosDashboardService = async () => {
   const estadosNoPendientes = ['terminado', 'entregado', 'cancelado'];
 
   const calendarEventsWithFlags = calendarEvents.map(event => {
-    const fechaEntrega = new Date(event.fechaEntrega + 'T00:00:00');
+    const fechaEntrega = new Date(event.fechaEntrega);
     const estado = (event.estado || '').toLowerCase();
+    // console.log(event.fechaEntrega  < today)
     
     return {
       id: event.id,

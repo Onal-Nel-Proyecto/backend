@@ -9,7 +9,7 @@ export class DashboardModel {
   static async getResumen() {
     const [[pedidos]] = await db.query(`
       SELECT 
-        SUM(CASE WHEN pedEst != 'entregado' THEN 1 ELSE 0 END) AS total,
+        SUM(CASE WHEN pedEst NOT IN('entregado', 'CANCELADO') THEN 1 ELSE 0 END) AS total,
         SUM(CASE WHEN pedEst = 'pendiente' THEN 1 ELSE 0 END) AS pendientes,
         SUM(CASE WHEN pedEst = 'en proceso' THEN 1 ELSE 0 END) AS en_proceso,
         SUM(CASE WHEN pedEst = 'terminado' THEN 1 ELSE 0 END) AS terminados,
@@ -133,9 +133,9 @@ export class DashboardModel {
       JOIN cliente c ON c.cliId = p.pedCliIdFk
       JOIN productos pr ON pr.proId = dp.proIdFk
       LEFT JOIN categoria ct ON ct.catId = pr.ProCatFk
-      WHERE prod.estado IN ('PENDIENTE', 'EN PROCESO')
-      ORDER BY prod.fecha_inicio ASC
-      LIMIT 5
+      WHERE prod.estado IN ('EN PROCESO')
+      ORDER BY prod.fecha_inicio DESC
+      LIMIT 4
     `);
     return rows;
   }

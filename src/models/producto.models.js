@@ -101,8 +101,8 @@ export class ProductoModel {
   }
 
   // Actualizar datos de un producto
-  static async updateProducto({ id, nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, umbralMinimo, talla }) {
-    const [result] = await db.query(
+  static async updateProducto({ id, nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, umbralMinimo, talla }, connection = db) {
+    const [result] = await connection.query(
       `UPDATE productos SET
         proNom = ?,
         proPreUni = ?,

@@ -411,7 +411,14 @@ export class PedidoModel {
       ) pag ON pag.pagPedIdFk = p.pedId
       LEFT JOIN ventas v ON v.pedIdFk = p.pedId
       ${whereSQL}
-      ORDER BY p.pedFecEnt DESC, p.pedFecEst DESC
+      ORDER BY 
+      CASE
+        WHEN p.pedEst = 'TERMINADO' THEN 1
+        WHEN p.pedEst = 'ENTREGADO' THEN 2
+        ELSE 3
+      END,
+      p.pedFecEnt DESC, 
+      p.pedFecEst DESC
       LIMIT ? OFFSET ?
       `,
       values
@@ -477,7 +484,7 @@ export class PedidoModel {
     };
   }
 
-  static async updateStatus({pedidoId, usu_id, estado, motivo}) {
+  static async updateStatus({ pedidoId, usu_id, estado, motivo }, connection = db) {
     const sql = `
     CALL sp_cambiar_estado_pedido(
       ?, ?, ?, ?, @result
@@ -492,10 +499,10 @@ export class PedidoModel {
     ];
 
     // Ejecutar procedimiento
-    await db.query(sql, values);
+    await connection.query(sql, values);
 
     // Obtener ID generado
-    const [[result]] = await db.query(
+    const [[result]] = await connection.query(
       'SELECT @result AS resultado'
     );
     // console.log(result, estado)
