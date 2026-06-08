@@ -1,11 +1,11 @@
 import { DashboardModel } from '../models/dashboard.models.js';
 
 export const getResumenService = async () => {
-  const [resumen, pedidosPorEstado, topClientes, recientes] = await Promise.all([
+  const [resumen, pedidosPorEstado, actividadSistema, stock] = await Promise.all([
     DashboardModel.getResumen(),
     DashboardModel.getPedidosPorEstado(),
-    DashboardModel.getTopClientes(10),
-    DashboardModel.getPedidosRecientes(5),
+    DashboardModel.getActividadSitema(),
+    DashboardModel.getStockCritico()
   ]);
 
   return {
@@ -17,8 +17,8 @@ export const getResumenService = async () => {
       cancelados: resumen.cancelados,
     },
     pedidos_por_estado: pedidosPorEstado,
-    top_clientes: topClientes,
-    pedidos_recientes: recientes,
+    stock_critico: stock,
+    actividad_sistema: actividadSistema
   };
 };
 

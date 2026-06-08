@@ -30,38 +30,41 @@ export class DashboardModel {
     `);
     return rows;
   }
-
-  static async getTopClientes(limite = 10) {
+  static async getStockCritico() {
     const [rows] = await db.query(`
       SELECT 
-        c.cliId AS cliente_id,
-        CONCAT_WS(' ', c.cliNom, c.cliApe) AS nombre,
-        COUNT(p.pedId) AS total_pedidos
-      FROM cliente c
-      LEFT JOIN pedidos p ON p.pedCliIdFk = c.cliId
-      GROUP BY c.cliId, c.cliNom, c.cliApe
-      ORDER BY total_pedidos DESC
-      LIMIT ?
-    `, [limite]);
+        nombre, 
+        stockActual as cantidad, 
+        umbralMinimo as max 
+      FROM vw_productos_bajo_umbral
+      ORDER BY (stockActual - umbralMinimo) ASC
+      LIMIT 3
+    `);
     return rows;
   }
 
-  static async getPedidosRecientes(limite = 5) {
+  // actividad del sistema 
+
+  static async getActividadSitema() {
     const [rows] = await db.query(`
-      SELECT 
-        p.pedId AS id,
-        p.pedDesc AS descripcion,
-        CONCAT_WS(' ', c.cliNom, c.cliApe) AS cliente,
-        pedEst AS estado,
-        DATE(pedFecIng) AS fecha_ingreso,
-        DATE(pedFecEst) AS fecha_estimada
-      FROM pedidos p
-      JOIN cliente c ON c.cliId = p.pedCliIdFk
-      ORDER BY pedFecIng DESC
-      LIMIT ?
-    `, [limite]);
+      SELECT
+          a.actId,
+          a.modulo,
+          a.accion,
+          a.descripcion,
+          a.referenciaId,
+          CONCAT(u.usuNom, ' ', u.usuApe) AS usuario,
+          a.fecha
+      FROM actividad_sistema a
+      LEFT JOIN usuario u
+          ON u.usuId = a.usuIdFk
+      ORDER BY a.fecha DESC
+      LIMIT 5;
+    `);
     return rows;
   }
+
+
 
   // ─────────────────────────────────────────────
   //  Dashboard de Pedidos — Resumen indicadores
