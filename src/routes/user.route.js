@@ -1,8 +1,9 @@
 import express from 'express';
-import { ctlGetAllUsers, ctlGetUserById, ctlCreateUser, ctlUpdateUser, ctlChangeUserStatus } from '../controllers/user.controller.js';
-import { createUserValidator, updateUserValidator, changeStatusValidator } from '../validators/user.validator.js';
+import { ctlGetAllUsers, ctlGetUserById, ctlCreateUser, ctlUpdateUser, ctlChangeUserStatus, ctlUpdatePassword } from '../controllers/user.controller.js';
+import { createUserValidator, updateUserValidator, changeStatusValidator, updatePasswordValidator } from '../validators/user.validator.js';
 import validateFields from '../middleware/validator.middleware.js';
-import { authValidator, isAdmin } from '../middleware/auth.middleware.js';
+import { authValidator, isAdmin, isAdminOrSelf } from '../middleware/auth.middleware.js';
+import { createLimiter } from "../middleware/rateLimit.js";
 
 const router = express.Router();
 
@@ -16,6 +17,7 @@ router.get('/:id', authValidator, isAdmin, ctlGetUserById);
 router.post('/',
   authValidator,
   isAdmin,
+  createLimiter,
   [...createUserValidator, validateFields],
   ctlCreateUser
 );
@@ -24,6 +26,7 @@ router.post('/',
 router.put('/:id',
   authValidator,
   isAdmin,
+  createLimiter,
   [...updateUserValidator, validateFields],
   ctlUpdateUser
 );
@@ -34,6 +37,15 @@ router.patch('/:id/estado',
   isAdmin,
   [...changeStatusValidator, validateFields],
   ctlChangeUserStatus
+);
+
+// PATCH /usuarios/:id/password - Actualizar contraseña (admin o propio usuario)
+router.patch('/:id/password',
+  authValidator,
+  isAdminOrSelf,
+  createLimiter,
+  [...updatePasswordValidator, validateFields],
+  ctlUpdatePassword
 );
 
 export { router };

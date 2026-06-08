@@ -1,4 +1,5 @@
 import { UserModel } from '../models/user.models.js';
+import bcrypt from 'bcryptjs';
 
 // Servicio para listar todos los usuarios
 export const getAllUsersService = async () => {
@@ -74,6 +75,41 @@ export const updateUserService = async ({ id, nombres, apellidos, telefono, corr
     await UserModel.updateUser({ id, nombres, apellidos, telefono, correo, rolId, supervisorId });
 
     return { msg: 'Usuario actualizado correctamente' };
+  } catch (error) {
+    return { err: error.message, errorCode: 500 };
+  }
+};
+
+// Servicio para actualizar la contraseña de un usuario (admin o propio usuario)
+export const updatePasswordService = async ({ id, password, passwordActual, requesterId, requesterRol }) => {
+  try {
+    // Verificar que el usuario exista
+    const userExists = await UserModel.getUserById({ id });
+    if (!userExists) return { err: 'Usuario no encontrado', errorCode: 404 };
+
+    const isAdmin = requesterRol === 'ADMINISTRADOR';
+    const isSelf = String(requesterId) === String(id);
+
+    if (!isAdmin && !isSelf) {
+      return { err: 'Acceso denegado', errorCode: 403 };
+    }
+
+    // Si no es admin (es el propio usuario), debe verificar la contraseña actual
+    if (!isAdmin) {
+      if (!passwordActual) {
+        return { err: 'La contraseña actual es requerida', errorCode: 400 };
+      }
+
+      const currentHash = await UserModel.getPasswordHash({ id });
+      if (!currentHash) return { err: 'Usuario no encontrado', errorCode: 404 };
+
+      const isValid = bcrypt.compareSync(passwordActual, currentHash);
+      if (!isValid) return { err: 'La contraseña actual no es correcta', errorCode: 400 };
+    }
+
+    await UserModel.updatePassword({ id, password });
+
+    return { msg: 'Contraseña actualizada correctamente' };
   } catch (error) {
     return { err: error.message, errorCode: 500 };
   }

@@ -1,6 +1,7 @@
 import { ClienteModel } from '../models/cliente.models.js';
 import { DetallePedidoModel } from '../models/dt_pedido.models.js';
 import { PedidoModel } from '../models/pedido.models.js';
+import { PedidoFotoModel } from '../models/pedido_foto.models.js';
 import { toTitleCase } from '../utils/normalizacion_datos.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
 import { getDetallePedidoByIdPedido } from './dt_pedido.service.js';
@@ -111,7 +112,11 @@ export const getPedidoByIdService = async (id_pedido) => {
     fecha_estimada_entrega: pedido[0].f_estimada != null ? pedido[0].f_estimada.toISOString().split('T')[0] : pedido[0].f_estimada,
     fecha_entrega: pedido[0].f_entrega != null ? pedido[0].f_entrega.toISOString().split('T')[0] : pedido[0].f_entrega,
     fecha_ingreso: pedido[0].f_ingreso != null ? pedido[0].f_ingreso.toISOString().split('T')[0] : pedido[0].f_ingreso,
-    fotos_pedido: [], // para el modulo de adjuntar foto
+    fotos_pedido: (await PedidoFotoModel.getFotosByPedidoId(id_pedido)).map(f => ({
+      foto_id: f.fotId,
+      foto_url: f.fotUrl,
+      foto_fecha_registro: f.fotFec
+    })),
     detalles_pedido: detalles.data ?? [],
     venta_id: pedido[0].venta_id
   }

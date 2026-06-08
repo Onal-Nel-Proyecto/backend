@@ -83,3 +83,18 @@ export const changeStatusValidator = [
     .notEmpty().withMessage('El estado es requerido')
     .isInt({ min: 1, max: 2 }).withMessage('El estado debe ser 1 (activo) o 2 (bloqueado)')
 ];
+
+// Validaciones para actualizar contraseña
+export const updatePasswordValidator = [
+  param('id')
+    .notEmpty().withMessage('El ID del usuario es requerido'),
+
+  body('password')
+    .notEmpty().withMessage('La nueva contraseña es requerida')
+    .isString().withMessage('La contraseña debe ser texto')
+    .isLength({ min: 6, max: 15 }).withMessage('La contraseña debe tener entre 6 y 15 caracteres'),
+
+  body('passwordActual')
+    .optional({ nullable: true })
+    .isString().withMessage('La contraseña actual debe ser texto')
+];

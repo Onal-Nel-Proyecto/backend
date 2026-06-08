@@ -165,4 +165,23 @@ static async supervisorExists({ supervisorId }) {
     )
     return rows
   }
+
+  // Obtener el hash de la contraseña de un usuario por su ID (para verificar contraseña actual)
+  static async getPasswordHash({ id }) {
+    const [rows] = await db.query(
+      'SELECT usuPassHash FROM usuario WHERE usuId = ?',
+      [id]
+    );
+    return rows.length > 0 ? rows[0].usuPassHash : null;
+  }
+
+  // Actualizar la contraseña de un usuario (la encripta antes de guardar)
+  static async updatePassword({ id, password }) {
+    const passwordHash = hashSync(password, 10);
+    const [result] = await db.query(
+      'UPDATE usuario SET usuPassHash = ? WHERE usuId = ?',
+      [passwordHash, id]
+    );
+    return result;
+  }
 }

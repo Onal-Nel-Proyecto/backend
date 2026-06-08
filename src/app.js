@@ -1,4 +1,5 @@
 import express from "express";
+import path from "node:path";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import routes from './routes/index.route.js'
@@ -31,6 +32,10 @@ app.use(cors({
 ))
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
+
+// Servir archivos estáticos (imágenes subidas)
+app.use('/uploads', express.static(path.resolve('uploads')));
+
 app.use('/', routes)
 
 // Documentación Swagger/OpenAPI
