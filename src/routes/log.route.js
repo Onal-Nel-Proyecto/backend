@@ -20,13 +20,13 @@ router.post("/logout", (req, res) => {
   res
     .clearCookie('token', {
       httpOnly: true,
-      secure: true,
-      sameSite: "none"
+      secure: false,
+      sameSite: "lax"
     })
     .clearCookie('refreshToken', {
       httpOnly: true,
-      secure: true,
-      sameSite: "none"
+      secure: false,
+      sameSite: "lax"
     })
     .status(200)
     .json({ msg: 'Sesión cerrada' })

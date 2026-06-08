@@ -37,13 +37,10 @@ export const createNewProduction = async (
   }
 
   // 4. Validar producto asociado
-  const productoModel =
-    new ProductoModel(connection);
-
   const prodActual =
-    await productoModel.getById(
-      detalleActual.proIdFk
-    );
+    await ProductoModel.getProductoById({
+      id: detalleActual.proIdFk
+    });
 
   if (!prodActual) {
     throw new Error(
@@ -57,14 +54,14 @@ export const createNewProduction = async (
       detalleId
     );
 
-    
-    // Total ya producido
-    const totalProduccion =
+
+  // Total ya producido
+  const totalProduccion =
     Number(cantidadEnProduccion?.cantidad_total) || 0;
-    
-    // 6. Validar límite total
-    // console.log(totalProduccion)
-    if (
+
+  // 6. Validar límite total
+  // console.log(totalProduccion)
+  if (
     totalProduccion >= detalleActual.detPedCant
   ) {
     throw new Error(
@@ -147,9 +144,7 @@ export const updateProduction = async (
       );
     }
 
-    const productoModel = new ProductoModel(connection);
-
-    const stockProducto = await productoModel.getById(produccionActual[0].proIdFk)
+    const stockProducto = await ProductoModel.getProductoById({ id: produccionActual[0].proIdFk })
 
 
     // 2. Actualizar producción
@@ -165,7 +160,7 @@ export const updateProduction = async (
     if (data.estado !== undefined) {
       data.estado = data.estado.toUpperCase()
       // Obtener pedido relacionado
-      
+
       // ===============================
       // PRODUCCIÓN EN PROCESO
       // ===============================
@@ -175,51 +170,80 @@ export const updateProduction = async (
         data.estado === 'EN PROCESO' &&
         pedidoExiste[0].estado === 'PENDIENTE'
       ) {
-        
+
         // const base =
         //   console.log(base)
         await PedidoModel.updateStatus(
-           {
+          {
             pedidoId: pedidoExiste[0].id,
             usu_id: user,
             estado: data.estado
-          }
+          }, connection
         );
 
       }
-
+      
+      const produccionesPendientes =
+        await ProduccionModel.countAllByPedido(
+          pedidoExiste[0].id
+        );
       // ===============================
       // PRODUCCIÓN TERMINADA
       // ===============================
 
       if (data.estado === 'TERMINADO') {
         // console.log(stockProducto.proStock)
-        // 1. Aumentar stock producto
-        await productoModel.update(
-          produccionActual[0].proIdFk,
-          {
-            stock: stockProducto.proStock + produccionActual[0].cantidad
-          }
+        // 1. Aumentar stock producto (consulta directa porque updateProducto no maneja stock)
+        await db.query(
+          'UPDATE productos SET proStock = ? WHERE proId = ?',
+          [stockProducto.stock + produccionActual[0].cantidad, produccionActual[0].proIdFk]
         );
 
         // 2. Verificar si TODAS las producciones
         // del pedido están terminadas
 
-        const produccionesPendientes =
-          await ProduccionModel.countPendingByPedido(
-            pedidoExiste[0].id
-          );
-          // console.log(produccionesPendientes)
+        // console.log(produccionesPendientes)
+        // console.log(produccionesPendientes)
         // Si no quedan pendientes
-        if (produccionesPendientes === 0) {
-
+        if (
+          produccionesPendientes.activas === 0 &&
+          produccionesPendientes.cantidad_terminada >= produccionesPendientes.cantidad_solicitada
+        ) {
+          console.log('ENTRO EN TERMINADO');
+          
           await PedidoModel.updateStatus(
             {
               pedidoId: pedidoExiste[0].id,
               usu_id: user,
-              estado: data.estado
-            }
+              estado: data.estado,
+              motivo: 'Toda la producción del pedido ha sido completada'
+            },
+            connection
           );
+
+        }
+
+      }
+
+      // ===============================
+      // PRODUCCIÓN CANCELADA
+      // ===============================
+
+      if (data.estado === 'CANCELADO' &&
+        pedidoExiste[0].estado === 'EN PROCESO') {
+
+        if (
+          produccionesPendientes.activas === 0 &&
+          produccionesPendientes.terminadas === 0 &&
+          produccionesPendientes.canceladas > 0
+        ) {
+          console.log('ENTRO A CONDICCION DE CANCELAR PRODUCCION')
+          await PedidoModel.updateStatus({
+            pedidoId: pedidoExiste[0].id,
+            usu_id: user,
+            estado: 'PENDIENTE',
+            motivo: "Toda la produccion fue cancelada, se regresa a pendiente"
+          }, connection);
 
         }
 

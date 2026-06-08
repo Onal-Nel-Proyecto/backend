@@ -1,11 +1,11 @@
 import { DashboardModel } from '../models/dashboard.models.js';
 
 export const getResumenService = async () => {
-  const [resumen, pedidosPorEstado, topClientes, recientes] = await Promise.all([
+  const [resumen, pedidosPorEstado, actividadSistema, stock] = await Promise.all([
     DashboardModel.getResumen(),
     DashboardModel.getPedidosPorEstado(),
-    DashboardModel.getTopClientes(10),
-    DashboardModel.getPedidosRecientes(5),
+    DashboardModel.getActividadSitema(),
+    DashboardModel.getStockCritico()
   ]);
 
   return {
@@ -17,8 +17,8 @@ export const getResumenService = async () => {
       cancelados: resumen.cancelados,
     },
     pedidos_por_estado: pedidosPorEstado,
-    top_clientes: topClientes,
-    pedidos_recientes: recientes,
+    stock_critico: stock,
+    actividad_sistema: actividadSistema
   };
 };
 
@@ -49,12 +49,13 @@ export const getPedidosDashboardService = async () => {
   const estadosNoPendientes = ['terminado', 'entregado', 'cancelado'];
 
   const calendarEventsWithFlags = calendarEvents.map(event => {
-    const fechaEntrega = new Date(event.fechaEntrega + 'T00:00:00');
+    const fechaEntrega = new Date(event.fechaEntrega);
     const estado = (event.estado || '').toLowerCase();
-
+    // console.log(event.fechaEntrega  < today)
+    
     return {
       id: event.id,
-      numeroPedido: event.numeroPedido,
+      descripcion: event.descripcion,
       cliente: event.cliente,
       fechaEntrega: event.fechaEntrega,
       estado: event.estado,

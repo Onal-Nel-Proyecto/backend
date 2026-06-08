@@ -87,22 +87,22 @@ export class ProductoModel {
   }
 
   // Crear un nuevo producto
-  static async createProducto({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla }) {
+  static async createProducto({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, estado }) {
     await db.query("CALL sp_generar_siguiente_id('PR','productos','proId', @id)");
     const [[{ id }]] = await db.query('SELECT @id AS id');
 
     await db.query(
       `INSERT INTO productos (proId, proNom, proStock, proPreUni, proDesc, proGen, ProCatFk, proTipPre, proTipPro, proUmbMin, proTall, proEst)
-       VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      [id, nombre, precioUnitario, descripcion || null, genero || null, categoriaId || null, tipoPrenda || null, tipoProducto.toUpperCase(), umbralMinimo || null, talla || null]
+       VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, nombre, precioUnitario, descripcion || null, genero || null, categoriaId || null, tipoPrenda || null, tipoProducto.toUpperCase(), umbralMinimo || null, talla || null, estado || 1]
     );
 
     return id;
   }
 
   // Actualizar datos de un producto
-  static async updateProducto({ id, nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, umbralMinimo, talla }) {
-    const [result] = await db.query(
+  static async updateProducto({ id, nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, umbralMinimo, talla }, connection = db) {
+    const [result] = await connection.query(
       `UPDATE productos SET
         proNom = ?,
         proPreUni = ?,
@@ -133,5 +133,20 @@ export class ProductoModel {
   static async categoriaExists({ categoriaId }) {
     const [rows] = await db.query('SELECT catId FROM categoria WHERE catId = ?', [categoriaId]);
     return rows.length > 0;
+  }
+
+  //  async generarId() {
+  //   // Llamada al procedimiento almacenado y recuperación del ID
+  //   await this.connection.execute("CALL sp_generar_siguiente_id('PR','productos','proId', @id)");
+  //   const [rows] = await this.connection.execute('SELECT @id AS id');
+  //   // console.log(rows);
+
+  //   return rows[0].id;
+  // }
+
+  async contarDetallesConProducto(productoId, detalleExcluido) {
+    const sql = 'SELECT COUNT(*) AS total FROM det_pedido WHERE proIdFk = ? AND detPedId != ?';
+    const [rows] = await this.connection.execute(sql, [productoId, detalleExcluido]);
+    return rows[0].total;
   }
 }

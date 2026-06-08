@@ -124,22 +124,58 @@ export class ProduccionModel {
     return result;
   }
 
-  static async countPendingByPedido(idPedido) {
-
+  static async getTotalByDetId(id) {
     const sql = `
-      SELECT COUNT(*) AS total
-      FROM produccion p
-      INNER JOIN det_pedido d
-      ON d.detPedId = p.detPedIdFk
-      WHERE d.pedIdFk = ?
-      AND p.estado IN ('PENDIENTE', 'EN PROCESO')
+      SELECT SUM(cantidad) AS total_detalle
+      FROM produccion 
+      WHERE detPedIdFk = ?
+      AND estado IN ('PENDIENTE', 'EN PROCESO', 'TERMINADO')
     `;
 
     const [[result]] = await db.query(sql, [
-      idPedido
+      id
     ]);
 
-    return result.total;
+    return result.total_detalle;
+  }
+
+  static async countAllByPedido(idPedido, connection = db) {
+
+    const sql = `
+   SELECT
+      COALESCE(SUM(CASE WHEN p.estado IN ('PENDIENTE','EN PROCESO') THEN 1 ELSE 0 END), 0) AS activas,
+      COALESCE(SUM(CASE WHEN p.estado = 'TERMINADO' THEN 1 ELSE 0 END),0) AS terminadas,
+      COALESCE(SUM(CASE WHEN p.estado = 'CANCELADO' THEN 1 ELSE 0 END),0) AS canceladas,
+      (
+        SELECT COALESCE(SUM(detPedCant),0)
+        FROM det_pedido
+        WHERE pedIdFk = d.pedIdFk
+    ) AS cantidad_solicitada,
+    COALESCE(
+        SUM(
+            CASE
+                WHEN p.estado = 'TERMINADO'
+                THEN p.cantidad
+                ELSE 0
+            END
+        ),
+        0
+    ) AS cantidad_terminada
+    FROM produccion p
+    INNER JOIN det_pedido d
+      ON d.detPedId = p.detPedIdFk
+    WHERE d.pedIdFk = ?
+  `;
+
+    const [[result]] = await connection.query(sql, [idPedido]);
+
+    return {
+      activas: Number(result.activas || 0),
+      terminadas: Number(result.terminadas || 0),
+      canceladas: Number(result.canceladas || 0),
+      cantidad_solicitada: Number(result.cantidad_solicitada || 0),
+      cantidad_terminada: Number(result.cantidad_terminada || 0),
+    };
 
   }
 }

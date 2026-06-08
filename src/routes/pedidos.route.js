@@ -76,7 +76,7 @@ router.post('/:id/detalles', authValidator,
 router.delete('/:id/detalles/:id_detalle', authValidator, eliminarDetalle)
 
 // PATCH para actualizar detalle
-router.patch('/:id/detalles/:id_detalle',
+router.patch('/:id/detalles/:id_detalle', authValidator,
   [
     ...actualizarDetalleValidator,
     validateFields

@@ -42,7 +42,7 @@ export const createNewPedido = async ({
   usuarioId,
   tipo_pedido
 }) => {
-
+  
   // // 🔹 1. Validaciones básicas
   // if (!cliente_id || !fecha_estimada || !descripcion || !usuarioId) {
   //   return { err: 'Campos obligatorios faltantes', errorCode: 400 };
@@ -213,10 +213,15 @@ export const entregarPedidoService = async (pedidoId, usuarioId) => {
     await PedidoModel.entregar(pedidoId, usuarioId, connection);
 
     await connection.commit();
+
     return { status: true };
   } catch (error) {
     await connection.rollback();
     console.error('[entregarPedidoService] Error:', error.message);
+    // Si el SP lanzó SIGNAL SQLSTATE, propagamos el mensaje real
+    if (error.code === 'ER_SIGNAL_EXCEPTION' || error.sqlMessage) {
+      return { err: error.sqlMessage || error.message, errorCode: 400 };
+    }
     return { err: 'Error interno al entregar el pedido', errorCode: 500 };
   } finally {
     connection.release();
@@ -244,7 +249,8 @@ export const getAllEntregasService = async (pag = 1, filtros = {}) => {
     estado: e.estado,
     precio_total: Number(e.precio_total ?? 0),
     estado_pago: e.estado_pago,
-    saldo: Number(e.saldo ?? 0)
+    saldo: Number(e.saldo ?? 0),
+    venta_id: e.venta_id
   }));
 
   return {
