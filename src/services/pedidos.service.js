@@ -63,7 +63,8 @@ export const createNewPedido = async ({
   // si la descripcion es null asignar un valor por defecto para evitar errores de validacion
   if (!descripcion) {
     // estructura nombre del cliente - fecha de registro del pedido
-    descripcion = `Pedido de ${toTitleCase(cliente.data.cliNom)} ${toTitleCase(cliente.data.cliApe)} - ${new Date().toLocaleDateString('es-CO')}`;
+    
+    descripcion = `Pedido de ${toTitleCase(cliente.data.cliNom)} ${cliente.data?.cliApe !== null ? toTitleCase(cliente.data.cliApe) : ''} - ${new Date().toLocaleDateString('es-CO')}`;
   }
   // 🔹 4. Crear pedido
   const result = await PedidoModel.create({

@@ -75,14 +75,20 @@ export class ClienteModel {
     await db.query(sql, [values]);
   }
 
-  static async create(cliente) {
-    const { cliId, cliNom, cliApe, cliCorr, cliDir, cliEst, cliFecReg, usuIdFk } = cliente;
-    const sql = `
-      INSERT INTO cliente (cliId, cliNom, cliApe, cliCorr, cliDir, cliFecReg, usuIdFk)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-    await db.query(sql, [cliId, cliNom, cliApe, cliCorr, cliDir, cliFecReg, usuIdFk || null]);
-    return cliId; // Retorna el ID del cliente insertado
+  // Crear un nuevo cliente mediante SP (maneja cliente + teléfonos internamente)
+  static async create({ cliId, cliNom, cliApe, cliCorr, cliDir, cliFecReg, usuIdFk }, telefonos = []) {
+    // Convertir array de teléfonos a JSON plano: ["3001234567","3019876543"]
+    const telefonosJSON = JSON.stringify(telefonos.map(t => t.numero_telefono));
+
+    await db.query(
+      `CALL sp_registrar_cliente(?, ?, ?, ?, ?, ?, ?, @cliIdOut, @tipoOperacion)`,
+      [cliId, cliNom, cliApe, cliCorr, cliDir, telefonosJSON, usuIdFk]
+    );
+
+    const [[{ cliIdOut }]] = await db.query('SELECT @cliIdOut AS cliIdOut');
+    const [[{ tipoOperacion }]] = await db.query('SELECT @tipoOperacion AS tipoOperacion');
+
+    return { cliId, cliIdOut, tipoOperacion };
   }
 
   static async changeStatus(id, estado) {

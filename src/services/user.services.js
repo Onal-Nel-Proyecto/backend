@@ -1,5 +1,6 @@
 import { UserModel } from '../models/user.models.js';
 import bcrypt from 'bcryptjs';
+import { generateId } from '../utils/genId.js';
 
 // Servicio para listar todos los usuarios
 export const getAllUsersService = async () => {
@@ -24,8 +25,8 @@ export const getUserByIdService = async ({ id }) => {
   }
 };
 
-// Servicio para crear un nuevo usuario
-export const createUserService = async ({ id, nombres, apellidos, telefono, correo, password, rolId, supervisorId }) => {
+// Servicio para crear un nuevo usuario (el ID se genera automáticamente si no se envía)
+export const createUserService = async ({ id = generateId('USER'), nombres, apellidos, telefono, correo, password, rolId, supervisorId }) => {
   try {
     // Verificar que el rol especificado exista
     const rolValido = await UserModel.rolExists({ rolId });

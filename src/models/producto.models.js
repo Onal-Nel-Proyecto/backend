@@ -42,7 +42,8 @@ export class ProductoModel {
         p.proUmbMin AS umbralMinimo,
         p.proTall AS talla,
         p.proEst AS estado,
-        c.catNom AS categoria
+        c.catNom AS categoria,
+        p.proCatFk as categoria_id
       FROM productos p
       LEFT JOIN categoria c ON c.catId = p.ProCatFk
       ${where}
@@ -76,7 +77,8 @@ export class ProductoModel {
         p.proUmbMin AS umbralMinimo,
         p.proTall AS talla,
         p.proEst AS estado,
-        c.catNom AS categoria
+        c.catNom AS categoria,
+        p.proCatFk as categoria_id
       FROM productos p
       LEFT JOIN categoria c ON c.catId = p.ProCatFk
       WHERE p.proId = ?`,

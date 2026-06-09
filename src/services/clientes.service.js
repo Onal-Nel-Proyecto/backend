@@ -130,24 +130,11 @@ export const crearCliente = async (body) => {
     usuIdFk: user_id || null
   };
 
-  // Transacción: insertar cliente y sus teléfonos
-  const connection = await db.getConnection();
-  try {
-    await connection.beginTransaction();
+  // El SP sp_registrar_cliente maneja internamente el cliente + teléfonos
+  await ClienteModel.create(nuevoCliente, telefono);
 
-    await ClienteModel.create(nuevoCliente); // Necesitamos modificar create para aceptar conexión opcional
-    await ClienteModel.createBatch(cliente_id, telefono);
-
-    await connection.commit();
-
-    // Devolver los datos completos recién creados (igual que GET /:id)
-    return await obtenerClientePorId(cliente_id);
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  // Devolver los datos completos recién creados (igual que GET /:id)
+  return await obtenerClientePorId(cliente_id);
 }
 
 export const changeStatusServices = async ({id, estado}) => {

@@ -91,18 +91,20 @@ export class UserModel {
   };
 }
 
-  // Crear un nuevo usuario
-  static async createUser({ id, nombres, apellidos, telefono, correo, password, rolId, supervisorId }) {
-    // Encriptar la contraseña antes de guardarla
+  // Crear un nuevo usuario mediante SP
+  static async createUser({ id, nombres, apellidos, telefono, correo, password, rolId, supervisorId, user_id }) {
+    // Encriptar la contraseña antes de pasarla al SP
     const passwordHash = hashSync(password, 10);
 
-    const [result] = await db.query(
-      `INSERT INTO usuario (usuId, usuNom, usuApe, usuTel, usuCor, usuPassHash, usuRol, usuSupFk, usuEst)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      [id, nombres, apellidos, telefono, correo.toLowerCase(), passwordHash, rolId, supervisorId || null]
+    await db.query(
+      `CALL sp_registrar_usuario(?, ?, ?, ?, ?, ?, ?, ?,?, @usuIdOut)`,
+      [id, nombres, apellidos, correo.toLowerCase(), passwordHash, rolId, supervisorId  || null, user_id || null]
     );
 
-    return result;
+    // Obtener el OUT parameter
+    const [[{ usuIdOut }]] = await db.query('SELECT @usuIdOut AS usuIdOut');
+
+    return { usuIdOut };
   }
 
   // Actualizar datos de un usuario

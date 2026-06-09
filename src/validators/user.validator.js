@@ -3,8 +3,8 @@ import { body, param } from 'express-validator';
 // Validaciones para crear un nuevo usuario
 export const createUserValidator = [
   body('id')
-  .notEmpty().withMessage('El ID es requerido')
-  .isNumeric().withMessage('El ID debe ser numérico')
+  .optional({ values: 'falsy' })
+  .isString().withMessage('El ID debe ser texto')
   .isLength({ min: 6, max: 15 }).withMessage('El ID debe tener entre 6 y 15 caracteres'),
 
   body('nombres')
