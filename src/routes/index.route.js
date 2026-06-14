@@ -8,6 +8,7 @@ import { router as productosRoute } from './productos.route.js'
 import { router as materialesRoute } from './materiales.route.js'
 import { router as pagosRoute } from './pagos.route.js'
 import { router as ventasRoute } from './ventas.route.js'
+import { router as abastecimientoRoute } from './abastecimiento.route.js'
 import { router as alertasRoute } from './alertas.route.js'
 import { router as categoriasRoute } from './categorias.route.js'
 import { router as medidasRoute } from './medidas.route.js'
@@ -25,6 +26,7 @@ router.use('/productos', productosRoute)
 router.use('/materiales', materialesRoute)
 router.use('/pagos', pagosRoute)
 router.use('/ventas', ventasRoute)
+router.use('/abastecimientos', abastecimientoRoute)
 router.use('/alertas', alertasRoute)
 router.use('/categorias', categoriasRoute)
 router.use('/medidas', medidasRoute)
