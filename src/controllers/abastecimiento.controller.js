@@ -6,19 +6,28 @@ import {
   cancelarAbastecimientoService,
 } from '../services/abastecimiento.service.js';
 
-// ── GET /api/abastecimientos — Listar paginado ──
+// ── GET /api/abastecimientos — Listar paginado con filtros + resumen ──
 const ctlGetAll = async (req, res, next) => {
   try {
     const pagina = parseInt(req.query.pagina) || 1;
     const limite = parseInt(req.query.limite) || 15;
+    const { busqueda, fecha_desde, fecha_hasta, estado } = req.query;
 
-    const result = await getAllAbastecimientosService({ pagina, limite });
+    const result = await getAllAbastecimientosService({
+      pagina,
+      limite,
+      busqueda,
+      fecha_desde,
+      fecha_hasta,
+      estado,
+    });
     if (result.err) return next(new AppError(result.err, result.errorCode));
 
     res.status(200).json({
       status: true,
       data: result.data,
       meta: result.meta,
+      resumen: result.resumen,
     });
   } catch (error) {
     next(new AppError('Error interno del servidor', 500));

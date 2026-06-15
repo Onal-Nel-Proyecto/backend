@@ -12,32 +12,87 @@ import { calculateTotalPages } from '../utils/paginacion.js';
 // ══════════════════════════════════════════════════════════════
 
 // ────────────────────────────────────────────────────────────
-// getAllAbastecimientosService — Lista paginada
+// getAllAbastecimientosService — Lista paginada con filtros + resumen
 // ────────────────────────────────────────────────────────────
-export const getAllAbastecimientosService = async ({ pagina, limite }) => {
+export const getAllAbastecimientosService = async ({
+  pagina,
+  limite,
+  busqueda,
+  fecha_desde,
+  fecha_hasta,
+  estado,
+}) => {
   try {
     const offset = (pagina - 1) * limite;
 
-    const [countRows] = await db.query('SELECT COUNT(*) AS total FROM abastecimiento');
-    const total = countRows[0].total;
+    // ── Construcción dinámica de WHERE ──
+    const whereClauses = [];
+    const values = [];
 
+    if (busqueda) {
+      whereClauses.push('(pv.provNom LIKE ? OR a.abaObs LIKE ?)');
+      const like = `%${busqueda}%`;
+      values.push(like, like);
+    }
+
+    if (fecha_desde) {
+      whereClauses.push('DATE(a.abaFec) >= ?');
+      values.push(fecha_desde);
+    }
+
+    if (fecha_hasta) {
+      whereClauses.push('DATE(a.abaFec) <= ?');
+      values.push(fecha_hasta);
+    }
+
+    if (estado) {
+      whereClauses.push('a.abaEst = ?');
+      values.push(estado);
+    }
+
+    const whereSQL = whereClauses.length > 0
+      ? `WHERE ${whereClauses.join(' AND ')}`
+      : '';
+
+    // ── 1. Resumen (una sola consulta agregada — reemplaza COUNT(*) individual) ──
+    const sqlResumen = `
+      SELECT
+        COUNT(*) AS total_abastecimientos,
+        COALESCE(SUM(CASE WHEN a.abaEst = 'PENDIENTE'  THEN 1 ELSE 0 END), 0) AS pendientes,
+        COALESCE(SUM(CASE WHEN a.abaEst = 'COMPLETADO' THEN 1 ELSE 0 END), 0) AS completados,
+        COALESCE(SUM(d.costo_total), 0) AS costo_total
+      FROM abastecimiento a
+      LEFT JOIN proveedor pv ON pv.provId = a.provIdFk
+      LEFT JOIN (
+        SELECT absIdFk, SUM(detAbsCant * detAbsCos) AS costo_total
+        FROM detalle_abastecimiento
+        GROUP BY absIdFk
+      ) d ON d.absIdFk = a.id
+      ${whereSQL}
+    `;
+    const [resumenRows] = await db.query(sqlResumen, values);
+    const total = resumenRows[0].total_abastecimientos;
+
+    // ── 2. Datos paginados ──
     const sql = `
-      SELECT 
+      SELECT
         a.id,
+        a.abaEst AS estado,
         a.abaFec AS fecha,
         a.abaObs AS observacion,
         a.provIdFk,
         pv.provNom AS proveedor_nombre,
         a.usuIdFk,
         (SELECT COUNT(*) FROM detalle_abastecimiento d WHERE d.absIdFk = a.id) AS total_items,
-        (SELECT COALESCE(SUM(d.detAbsCant * d.detAbsCos), 0) 
+        (SELECT COALESCE(SUM(d.detAbsCant * d.detAbsCos), 0)
          FROM detalle_abastecimiento d WHERE d.absIdFk = a.id) AS costo_total
       FROM abastecimiento a
       LEFT JOIN proveedor pv ON pv.provId = a.provIdFk
+      ${whereSQL}
       ORDER BY a.abaFec DESC
       LIMIT ? OFFSET ?
     `;
-    const [rows] = await db.query(sql, [limite, offset]);
+    const [rows] = await db.query(sql, [...values, limite, offset]);
 
     return {
       data: rows,
@@ -46,6 +101,12 @@ export const getAllAbastecimientosService = async ({ pagina, limite }) => {
         paginas_totales: calculateTotalPages(total, limite),
         total,
         limite,
+      },
+      resumen: {
+        total_abastecimientos: Number(resumenRows[0].total_abastecimientos),
+        pendientes:             Number(resumenRows[0].pendientes),
+        completados:            Number(resumenRows[0].completados),
+        costo_total:            Number(resumenRows[0].costo_total),
       },
     };
   } catch (error) {
