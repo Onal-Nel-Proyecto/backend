@@ -16,7 +16,7 @@ export const obtenerClientes = async (pagina = 1, limite = 15, filtros = {}) => 
     ClienteModel.getTotalClientes(filtros)
   ]);
 
-  // Recolectar todos los IDs de cliente devueltos para traer teléfonos en una sola consulta
+  // Recolectar todos los IDs para traer teléfonos en una sola consulta
   const ids = total.map(row => row.cliId);
   let telefonosPorCliente = {};
 
