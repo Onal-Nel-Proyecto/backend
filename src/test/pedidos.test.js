@@ -49,6 +49,8 @@ jest.unstable_mockModule('../services/produccion.service.js', () => ({
   deleteProduction: jest.fn()
 }));
 
+
+
 // =====================================================
 // 2. IMPORTS (después de los mocks)
 // =====================================================

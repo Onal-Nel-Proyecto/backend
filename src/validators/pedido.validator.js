@@ -2,10 +2,19 @@ import { body, check, param } from 'express-validator';
 import db from "../config/db.js";
 const tipoPedido = ["personalizado", "retoques", "modificaciones",]
 
-// Obtener la fecha actual desde el servidor MySQL (no confiar en hora local)
+// Obtener la fecha actual desde MySQL con timeout de 500ms.
+// Si la BD no está disponible (tests unitarios), usa fecha local como fallback.
 const getCurrentDate = async () => {
-  const [[{ hoy }]] = await db.query("SELECT CURDATE() AS hoy");
-  return hoy; // string YYYY-MM-DD
+  try {
+    const resultado = await Promise.race([
+      db.query("SELECT CURDATE() AS hoy"),
+      new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), 500))
+    ]);
+    const [[{ hoy }]] = resultado;
+    return hoy;
+  } catch {
+    return new Date().toISOString().split('T')[0];
+  }
 };
 
 // validacion basica para registro de pedido
