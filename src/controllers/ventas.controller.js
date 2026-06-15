@@ -18,13 +18,15 @@ export const getVentasController = async (req, res, next) => {
       limite = 15,
       fecha_registro,
       fecha_limite_pago,
-      cliente
+      cliente,
+      estado
     } = req.query;
 
     const filtros = {
       fecha_registro,
       fecha_limite_pago,
-      cliente
+      cliente,
+      estado
     };
 
     const result = await getVentasService(pagina, limite, filtros);

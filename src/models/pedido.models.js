@@ -53,6 +53,15 @@ export class PedidoModel {
       values.push(`%${filtros.descripcion}%`);
     }
 
+    if (filtros.tipo_prenda) {
+      whereClauses.push(`EXISTS (
+        SELECT 1 FROM det_pedido dp
+        JOIN productos pr ON pr.proId = dp.proIdFk
+        WHERE dp.pedIdFk = p.pedId AND pr.proTipPre = ?
+      )`);
+      values.push(filtros.tipo_prenda);
+    }
+
     const whereSQL = whereClauses.length > 0
       ? `WHERE ${whereClauses.join(" AND ")}`
       : "";
@@ -69,13 +78,22 @@ export class PedidoModel {
             END AS estado_pago
           FROM pedidos p
           JOIN cliente c ON c.cliId = p.pedCliIdFk
+          LEFT JOIN ventas v ON v.pedIdFk = p.pedId
           LEFT JOIN (
-            SELECT
-              pagPedIdFk,
-              COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
-            FROM pagos
-            GROUP BY pagPedIdFk
-          ) pag ON pag.pagPedIdFk = p.pedId
+    SELECT
+        COALESCE(pagVenIdFk, pagPedIdFk) AS referencia_id,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pagEst <> 'RECHAZADO' THEN pagMon
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_pagado
+    FROM pagos
+    GROUP BY COALESCE(pagVenIdFk, pagPedIdFk)
+) pag ON pag.referencia_id = COALESCE(v.venId, p.pedId)
           ${whereSQL}
         ) AS sub
         WHERE sub.estado_pago = ?`,
@@ -92,6 +110,26 @@ export class PedidoModel {
       values
     );
     return Number(rows[0].total)
+  }
+
+  /**
+   * Obtener los tipos de prenda (proTipPre) únicos para una lista de IDs de pedidos
+   * @param {string[]} ids - Lista de IDs de pedidos
+   * @returns {Promise<Array<{pedido_id: string, tipos_prenda: string}>>}
+   */
+  static async getTiposPrendaByPedidoIds(ids) {
+    if (!ids || ids.length === 0) return [];
+    const placeholders = ids.map(() => '?').join(',');
+    const [rows] = await db.query(
+      `SELECT dp.pedIdFk AS pedido_id, GROUP_CONCAT(DISTINCT pr.proTipPre ORDER BY pr.proTipPre) AS tipos_prenda
+       FROM det_pedido dp
+       JOIN productos pr ON pr.proId = dp.proIdFk
+       WHERE dp.pedIdFk IN (${placeholders})
+         AND pr.proTipPre IS NOT NULL
+       GROUP BY dp.pedIdFk`,
+      ids
+    );
+    return rows;
   }
 
   static async getAllPedidos(pag = 1, limite = 15, filtros = {}) {
@@ -149,6 +187,15 @@ export class PedidoModel {
       values.push(`%${filtros.descripcion}%`);
     }
 
+    if (filtros.tipo_prenda) {
+      whereClauses.push(`EXISTS (
+        SELECT 1 FROM det_pedido dp
+        JOIN productos pr ON pr.proId = dp.proIdFk
+        WHERE dp.pedIdFk = p.pedId AND pr.proTipPre = ?
+      )`);
+      values.push(filtros.tipo_prenda);
+    }
+
     const whereSQL = whereClauses.length > 0
       ? `WHERE ${whereClauses.join(" AND ")}`
       : "";
@@ -173,7 +220,8 @@ export class PedidoModel {
         sub.estado,
         sub.dias_faltantes,
         sub.estado_pago,
-        sub.total_pedido
+        sub.total_pedido,
+        sub.tipo_pedido
       FROM (
         SELECT
           p.pedId AS id,
@@ -182,6 +230,7 @@ export class PedidoModel {
           DATE(p.pedFecEst) AS fecha_estimada,
           p.pedEst AS estado,
           p.pedTolEst AS total_pedido,
+          p.pedTipPed AS tipo_pedido,
           fn_dias_restantes_pedido(p.pedId) AS dias_faltantes,
           CASE
             WHEN COALESCE(pag.total_pagado, 0) >= p.pedTolEst AND p.pedTolEst > 0 THEN 'PAGADO'
@@ -190,13 +239,22 @@ export class PedidoModel {
           END AS estado_pago
         FROM pedidos p
         JOIN cliente c ON c.cliId = p.pedCliIdFk
+        LEFT JOIN ventas v ON v.pedIdFk = p.pedId
         LEFT JOIN (
-          SELECT
-            pagPedIdFk,
-            COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
-          FROM pagos
-          GROUP BY pagPedIdFk
-        ) pag ON pag.pagPedIdFk = p.pedId
+    SELECT
+        COALESCE(pagVenIdFk, pagPedIdFk) AS referencia_id,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pagEst <> 'RECHAZADO' THEN pagMon
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_pagado
+    FROM pagos
+    GROUP BY COALESCE(pagVenIdFk, pagPedIdFk)
+) pag ON pag.referencia_id = COALESCE(v.venId, p.pedId)
         ${whereSQL}
       ) AS sub
       ${estadoPagoWhere}
@@ -266,12 +324,20 @@ export class PedidoModel {
       LEFT JOIN usuario u ON u.usuId = p.pedUsuIdFk
       LEFT JOIN ventas v ON v.pedIdFk = p.pedId
       LEFT JOIN (
-        SELECT
-          pagPedIdFk,
-          COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
-        FROM pagos
-        GROUP BY pagPedIdFk
-      ) pag ON pag.pagPedIdFk = p.pedId
+    SELECT
+        COALESCE(pagVenIdFk, pagPedIdFk) AS referencia_id,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pagEst <> 'RECHAZADO' THEN pagMon
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_pagado
+    FROM pagos
+    GROUP BY COALESCE(pagVenIdFk, pagPedIdFk)
+) pag ON pag.referencia_id = COALESCE(v.venId, p.pedId)
       WHERE p.pedId = ?`,
       [id])
     return rows.length > 0 ? rows : null
@@ -402,14 +468,22 @@ export class PedidoModel {
         (COALESCE(p.pedTolEst, 0) - COALESCE(pag.total_pagado, 0)) AS saldo
       FROM pedidos p
       JOIN cliente c ON c.cliId = p.pedCliIdFk
-      LEFT JOIN (
-        SELECT
-          pagPedIdFk,
-          COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
-        FROM pagos
-        GROUP BY pagPedIdFk
-      ) pag ON pag.pagPedIdFk = p.pedId
       LEFT JOIN ventas v ON v.pedIdFk = p.pedId
+     LEFT JOIN (
+    SELECT
+        COALESCE(pagVenIdFk, pagPedIdFk) AS referencia_id,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pagEst <> 'RECHAZADO' THEN pagMon
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_pagado
+    FROM pagos
+    GROUP BY COALESCE(pagVenIdFk, pagPedIdFk)
+) pag ON pag.referencia_id = COALESCE(v.venId, p.pedId)
       ${whereSQL}
       ORDER BY 
       CASE
@@ -464,13 +538,22 @@ export class PedidoModel {
         COALESCE(SUM(COALESCE(p.pedTolEst, 0) - COALESCE(pag.total_pagado, 0)), 0) AS saldoPendiente
       FROM pedidos p
       JOIN cliente c ON c.cliId = p.pedCliIdFk
-      LEFT JOIN (
-        SELECT
-          pagPedIdFk,
-          COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
-        FROM pagos
-        GROUP BY pagPedIdFk
-      ) pag ON pag.pagPedIdFk = p.pedId
+      LEFT JOIN ventas v ON v.pedIdFk = p.pedId
+     LEFT JOIN (
+    SELECT
+        COALESCE(pagVenIdFk, pagPedIdFk) AS referencia_id,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pagEst <> 'RECHAZADO' THEN pagMon
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_pagado
+    FROM pagos
+    GROUP BY COALESCE(pagVenIdFk, pagPedIdFk)
+) pag ON pag.referencia_id = COALESCE(v.venId, p.pedId)
       ${whereSQL}
       `,
       values

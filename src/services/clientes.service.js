@@ -15,22 +15,31 @@ export const obtenerClientes = async (pagina = 1, limite = 15, filtros = {}) => 
     ClienteModel.getAll(limitePagina, offset, filtros),
     ClienteModel.getTotalClientes(filtros)
   ]);
-  console.log(total)
+
+  // Recolectar todos los IDs para traer teléfonos en una sola consulta
+  const ids = total.map(row => row.cliId);
+  let telefonosPorCliente = {};
+
+  if (ids.length > 0) {
+    const todasLasFilasTel = await ClienteModel.getTelefonosByClientesIds(ids);
+    telefonosPorCliente = todasLasFilasTel.reduce((acc, tel) => {
+      if (!acc[tel.cliIdFk]) acc[tel.cliIdFk] = [];
+      acc[tel.cliIdFk].push({ numero_telefono: tel.cliTel });
+      return acc;
+    }, {});
+  }
+
   // Mapear filas al formato deseado
   const data = total.map(row => {
-    // Separar cliNom en nombre y apellido (primer palabra y resto)
-    // const partes = (row.cliNom || '').trim().split(/\s+/);
-    // const nombre = partes[0] || '';
-    // const apellido = partes.slice(1).join(' ') || '';
-
     return {
       cliente_id: String(row.cliId),
       cliente_nombre: row.cliNom,
       cliente_apellido: row.cliApe,
       cliente_email: row.cliCorr || null,
       cliente_direccion: row.cliDir || null,
+      cliente_telefonos: telefonosPorCliente[row.cliId] || [],
       estado: transfromEstado[row.cliEst - 1],
-      fecha_creacion: row.cliFecReg // directamente el valor de la BD (string/fecha)
+      fecha_creacion: row.cliFecReg
     };
   });
 
@@ -97,7 +106,7 @@ export const obtenerClientePorId = async (id) => {
     cliente_email: cliente.cliCorr || null,
     cliente_direccion: cliente.cliDir || null,
     usuario,
-    telefonos,
+    cliente_telefonos: telefonos,
     estado: transfromEstado[cliente.cliEst - 1],
     fecha_creacion: cliente.cliFecReg,
     historial_pedido: []  // Por ahora vacío
@@ -130,24 +139,11 @@ export const crearCliente = async (body) => {
     usuIdFk: user_id || null
   };
 
-  // Transacción: insertar cliente y sus teléfonos
-  const connection = await db.getConnection();
-  try {
-    await connection.beginTransaction();
+  // El SP sp_registrar_cliente maneja internamente el cliente + teléfonos
+  await ClienteModel.create(nuevoCliente, telefono);
 
-    await ClienteModel.create(nuevoCliente); // Necesitamos modificar create para aceptar conexión opcional
-    await ClienteModel.createBatch(cliente_id, telefono);
-
-    await connection.commit();
-
-    // Devolver los datos completos recién creados (igual que GET /:id)
-    return await obtenerClientePorId(cliente_id);
-  } catch (error) {
-    await connection.rollback();
-    throw error;
-  } finally {
-    connection.release();
-  }
+  // Devolver los datos completos recién creados (igual que GET /:id)
+  return await obtenerClientePorId(cliente_id);
 }
 
 export const changeStatusServices = async ({id, estado}) => {
@@ -155,7 +151,7 @@ export const changeStatusServices = async ({id, estado}) => {
     const cliente = await ClienteModel.getById(id);
     if (!cliente || !cliente.status) return null;
     
-    if(cliente.data.cliEst == 2) throw new Error("El cliente ya sen encuntra eliminado")
+    if(cliente.data.cliEst == 2 && estado == 2) throw new Error("El cliente ya se encuntra eliminado")
 
     await ClienteModel.changeStatus(id, estado)
 

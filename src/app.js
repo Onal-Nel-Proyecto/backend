@@ -1,4 +1,5 @@
 import express from "express";
+import path from "node:path";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 import routes from './routes/index.route.js'
@@ -17,7 +18,7 @@ app.use(cors({
       "http://localhost:5173",
       "https://sp78zgqw-5173.use2.devtunnels.ms",  
       "https://frontend-nine-vert-24.vercel.app",
-      "http://192.168.18.65:5173"
+      "http://10.2.129.81:5173"
     ]
     // console.log(origin)
     if(ACCEPTED_ORIGINS.includes(origin)) {
@@ -31,6 +32,10 @@ app.use(cors({
 ))
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser())
+
+// Servir archivos estáticos (imágenes subidas)
+app.use('/uploads', express.static(path.resolve('uploads')));
+
 app.use('/', routes)
 
 // Documentación Swagger/OpenAPI

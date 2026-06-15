@@ -28,3 +28,17 @@ export const isAdmin = (req, res, next) => {
     
   }
 }
+
+// middleware para validar que sea administrador o el propio usuario (dueño del recurso)
+export const isAdminOrSelf = (req, res, next) => {
+  try {
+    const isAdmin = req.user.rol === "ADMINISTRADOR";
+    const isSelf = String(req.user.user_id) === req.params.id;
+
+    if (isAdmin || isSelf) return next();
+
+    return res.status(403).json({ message: "Acceso denegado" });
+  } catch (error) {
+    return res.status(500).json({ message: "Error interno del servidor" });
+  }
+};

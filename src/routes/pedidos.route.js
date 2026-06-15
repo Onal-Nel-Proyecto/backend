@@ -8,6 +8,9 @@ import { actualizarDetalleValidator, crearDetalleValidator } from "../validators
 import { actualizarDetalle, crearDetalle, eliminarDetalle } from "../controllers/dt_pedido.controller.js";
 import { createNewProductionController, eliminarProduccion, updateProductionController } from "../controllers/produccion.controller.js";
 import { produccionPATCHValidator, produccionPOSTValidator } from "../validators/produccion.validator.js";
+import { subirFotoController, eliminarFotoController } from "../controllers/pedido_foto.controller.js";
+import { subirFotoValidator, eliminarFotoValidator } from "../validators/pedido_foto.validator.js";
+import { upload } from "../config/upload.js";
 
 export const router = Router()
 
@@ -98,3 +101,35 @@ router.patch('/:id/detalles/:id_detalle/produccion/:id_produccion', authValidato
     validateFields
   ], updateProductionController)
 router.delete('/:id/detalles/:id_detalle/produccion/:id_produccion', authValidator, eliminarProduccion)
+
+// ─────────────────────────────────────────────
+//  Rutas para fotos de pedidos
+// ─────────────────────────────────────────────
+
+// POST /pedidos/:id/fotos - Subir imagen a un pedido (máx. 15)
+router.post('/:id/fotos',
+  authValidator,
+  (req, res, next) => {
+    upload.single('foto')(req, res, (err) => {
+      if (err) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          return res.status(400).json({ msg: 'La imagen no puede superar los 5MB' });
+        }
+        if (err.message) {
+          return res.status(400).json({ msg: err.message });
+        }
+        return res.status(400).json({ msg: 'Error al subir la imagen' });
+      }
+      next();
+    });
+  },
+  [...subirFotoValidator, validateFields],
+  subirFotoController
+);
+
+// DELETE /pedidos/:id/fotos/:fotoId - Eliminar imagen de un pedido
+router.delete('/:id/fotos/:fotoId',
+  authValidator,
+  [...eliminarFotoValidator, validateFields],
+  eliminarFotoController
+);

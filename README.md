@@ -238,7 +238,7 @@ src/
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| GET | `/productos` | ✅ | Listar productos (paginado + filtros: `nombre`, `estado`, `categoria`, `tipoProducto`) |
+| GET | `/productos` | ✅ | Listar productos (paginado + filtros: `nombre`, `estado`, `categoria`, `tipoProducto`). Incluye `resumen` con `total_productos`, `alertas_stock` y `valor_total` del catálogo filtrado |
 | GET | `/productos/:id` | ✅ | Obtener producto por ID |
 | POST | `/productos` | ✅ + Admin | Crear producto |
 | PUT | `/productos/:id` | ✅ + Admin | Actualizar producto |
@@ -248,7 +248,7 @@ src/
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| GET | `/materiales` | ✅ | Listar materiales (paginado + filtros: `nombre`, `estado`, `tipoMaterial`) |
+| GET | `/materiales` | ✅ | Listar materiales (paginado + filtros: `nombre`, `estado`, `tipoMaterial`). Incluye `resumen` con `total_stock` (objeto: `{ total, materiales_registrados }`) y `alertas_stock` del inventario filtrado |
 | GET | `/materiales/:id` | ✅ | Obtener material por ID |
 | POST | `/materiales` | ✅ + Admin | Crear material |
 | PUT | `/materiales/:id` | ✅ + Admin | Actualizar material |
@@ -258,11 +258,31 @@ src/
 
 | Método | Ruta | Auth | Descripción |
 |--------|------|------|-------------|
-| GET | `/clientes` | ✅ | Listar clientes |
+| GET | `/clientes` | ✅ | Listar clientes (paginado + filtro `search`). Cada item incluye `cliente_telefonos` |
 | POST | `/clientes` | ✅ | Crear cliente |
-| GET | `/clientes/:id` | ✅ | Obtener cliente |
+| GET | `/clientes/:id` | ✅ | Obtener cliente por ID (incluye `cliente_telefonos`) |
 | PUT | `/clientes/:id` | ✅ | Actualizar cliente |
 | PATCH | `/clientes/:id/estado` | ✅ | Activar/bloquear |
+
+### Categorías (`/categorias`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/categorias` | ✅ | Listar categorías (paginado) |
+| GET | `/categorias/:id` | ✅ | Obtener categoría por ID |
+| POST | `/categorias` | ✅ + Admin | Crear categoría |
+| PUT | `/categorias/:id` | ✅ + Admin | Actualizar categoría |
+| PATCH | `/categorias/:id/estado` | ✅ + Admin | Cambiar estado |
+
+### Medidas (`/medidas`)
+
+| Método | Ruta | Auth | Descripción |
+|--------|------|------|-------------|
+| GET | `/medidas` | ✅ | Listar medidas (paginado) |
+| GET | `/medidas/:id` | ✅ | Obtener medida por ID |
+| POST | `/medidas` | ✅ + Admin | Crear medida |
+| PUT | `/medidas/:id` | ✅ + Admin | Actualizar medida |
+| PATCH | `/medidas/:id/estado` | ✅ + Admin | Cambiar estado |
 
 ### Proveedores (`/proveedores`)
 
@@ -368,14 +388,7 @@ Usan **Jest** + **Supertest** para peticiones HTTP simuladas (150+ tests).
 | `productos.test.js` | **32** | CRUD productos, filtros, validaciones, estado |
 | `materiales.test.js` | **32** | CRUD materiales, filtros, validaciones, estado |
 | `pedidos.test.js` | ~10 | CRUD pedidos, cancelación, validaciones de fecha |
-| `clientes.test.js` | ~10 | CRUD clientes, activar/bloquear |
-| `alertas.test.js` | ~10 | Listado paginado, filtros |
-| `auth.test.js` | ~8 | Login, refresh, perfil, logout |
-| `factura.test.js` | ~8 | CRUD factura, anulación, PDF |
-| `pagos.test.js` | ~8 | CRUD pagos, rechazo, filtros |
-| `user.test.js` | ~8 | CRUD usuarios, activar/bloquear |
-| `pedidos.test.js` | ~10 | CRUD pedidos, cancelación, validaciones de fecha |
-| `clientes.test.js` | ~10 | CRUD clientes, activar/bloquear |
+| `clientes.test.js` | **24** | CRUD clientes, teléfonos, activar/bloquear |
 | `alertas.test.js` | ~10 | Listado paginado, filtros |
 | `auth.test.js` | ~8 | Login, refresh, perfil, logout |
 | `factura.test.js` | ~8 | CRUD factura, anulación, PDF |

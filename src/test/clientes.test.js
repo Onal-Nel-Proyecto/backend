@@ -16,7 +16,8 @@ jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
     };
     next();
   },
-  isAdmin: (req, _res, next) => next()
+  isAdmin: (req, _res, next) => next(),
+  isAdminOrSelf: (req, _res, next) => next()
 }));
 
 // Mock completo del service de clientes (evita cualquier acceso a BD)
@@ -339,7 +340,7 @@ describe('PATCH /clientes/:id/estado', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       status: true,
-      msg: 'El cliente fue eliminado'
+      msg: 'El cliente fue reactivado'
     });
   });
 

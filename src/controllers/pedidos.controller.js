@@ -14,10 +14,11 @@ export const getAllPedidosController = async (req, res, next) => {
       estado_pago,
       fecha_entrega_desde,
       fecha_entrega_hasta,
-      descripcion
+      descripcion,
+      tipo_prenda
     } = req.query;
 
-    const filtros = { estado, fecha_desde, fecha_hasta, cliente, tipo_pedido, estado_pago, fecha_entrega_desde, fecha_entrega_hasta, descripcion };    
+    const filtros = { estado, fecha_desde, fecha_hasta, cliente, tipo_pedido, estado_pago, fecha_entrega_desde, fecha_entrega_hasta, descripcion, tipo_prenda };    
 
     const result = await getAllPedidosService(pag, filtros);
 

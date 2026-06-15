@@ -34,12 +34,19 @@ const generarHTMLReporte = (data, titulo, periodo) => {
     )
     .join('');
 
+  const formatFecha = (fecha) => {
+    if (!fecha) return '-';
+    const f = new Date(fecha);
+    if (isNaN(f.getTime())) return String(fecha);
+    return f.toLocaleDateString('es-CO'); // DD/MM/YYYY
+  };
+
   const filasVentasDia = ventasPorDia
     .map(
       (d, i) => `
     <tr>
       <td class="text-center">${i + 1}</td>
-      <td>${d.fecha || d.Fecha || d.dia || '-'}</td>
+      <td>${formatFecha(d.fecha || d.Fecha || d.dia)}</td>
       <td class="text-right">${Number(d.cantidadVentas || d.CantidadVentas || 0).toLocaleString('es-CL')}</td>
       <td class="text-right">${formatearMoneda(d.totalDia || d.TotalDia || 0)}</td>
     </tr>`

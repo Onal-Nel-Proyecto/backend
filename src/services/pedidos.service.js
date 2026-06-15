@@ -1,6 +1,7 @@
 import { ClienteModel } from '../models/cliente.models.js';
 import { DetallePedidoModel } from '../models/dt_pedido.models.js';
 import { PedidoModel } from '../models/pedido.models.js';
+import { PedidoFotoModel } from '../models/pedido_foto.models.js';
 import { toTitleCase } from '../utils/normalizacion_datos.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
 import { getDetallePedidoByIdPedido } from './dt_pedido.service.js';
@@ -14,6 +15,14 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
   const rows = await PedidoModel.getAllPedidos(pag, limite, filtros);
   const total = await PedidoModel.countPedidos(filtros);
 
+  // Obtener tipos de prenda para todos los pedidos devueltos
+  const pedidoIds = rows.map(e => e.id);
+  const tiposRows = await PedidoModel.getTiposPrendaByPedidoIds(pedidoIds);
+  const tiposMap = {};
+  for (const row of tiposRows) {
+    tiposMap[row.pedido_id] = row.tipos_prenda ? row.tipos_prenda.split(',') : [];
+  }
+
   const data = rows.map(e => ({
     id: e.id,
     descripcion: e.descripcion,
@@ -22,7 +31,9 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
     estado: e.estado,
     estado_pago: e.estado_pago,
     dias_faltantes: e.dias_faltantes,
-    precio_total: e.total_pedido
+    precio_total: e.total_pedido,
+    tipo_pedido: e.tipo_pedido,
+    tipos_prenda: tiposMap[e.id] || [],
   }));
 
   return {
@@ -62,7 +73,8 @@ export const createNewPedido = async ({
   // si la descripcion es null asignar un valor por defecto para evitar errores de validacion
   if (!descripcion) {
     // estructura nombre del cliente - fecha de registro del pedido
-    descripcion = `Pedido de ${toTitleCase(cliente.data.cliNom)} ${toTitleCase(cliente.data.cliApe)} - ${new Date().toLocaleDateString('es-CO')}`;
+    
+    descripcion = `Pedido de ${toTitleCase(cliente.data.cliNom)} ${cliente.data?.cliApe !== null ? toTitleCase(cliente.data.cliApe) : ''} - ${new Date().toLocaleDateString('es-CO')}`;
   }
   // 🔹 4. Crear pedido
   const result = await PedidoModel.create({
@@ -91,9 +103,20 @@ export const getPedidoByIdService = async (id_pedido) => {
   const pedido = await PedidoModel.getById(id_pedido);
   if (!pedido) return { err: "Pedido no encontrado", errorCode: 404 }
   const detalles = await getDetallePedidoByIdPedido(id_pedido);
-  // console.log(pedido[0])
+
+  // Extraer tipos de prenda únicos desde los detalles
+  const tiposSet = new Set();
+  if (detalles.data) {
+    for (const det of detalles.data) {
+      if (det.producto?.tipoPrenda) {
+        tiposSet.add(det.producto.tipoPrenda);
+      }
+    }
+  }
+
   return {
     pedido_id: pedido[0].id,
+    tipos_prenda: [...tiposSet],
     cliente: {
       cliente_id: pedido[0].cliente_id,
       cliente_nombres: pedido[0].cliente_name
@@ -111,7 +134,11 @@ export const getPedidoByIdService = async (id_pedido) => {
     fecha_estimada_entrega: pedido[0].f_estimada != null ? pedido[0].f_estimada.toISOString().split('T')[0] : pedido[0].f_estimada,
     fecha_entrega: pedido[0].f_entrega != null ? pedido[0].f_entrega.toISOString().split('T')[0] : pedido[0].f_entrega,
     fecha_ingreso: pedido[0].f_ingreso != null ? pedido[0].f_ingreso.toISOString().split('T')[0] : pedido[0].f_ingreso,
-    fotos_pedido: [], // para el modulo de adjuntar foto
+    fotos_pedido: (await PedidoFotoModel.getFotosByPedidoId(id_pedido)).map(f => ({
+      foto_id: f.fotId,
+      foto_url: f.fotUrl,
+      foto_fecha_registro: f.fotFec
+    })),
     detalles_pedido: detalles.data ?? [],
     venta_id: pedido[0].venta_id
   }
@@ -125,7 +152,8 @@ export const updatePedidoService = async (id, data) => {
     descripcion,
     observacion,
     fecha_estimada_entrega,
-    recordatorio
+    recordatorio,
+    tipo_pedido
   } = data;
 
   // 🔹 validar que exista el pedido
@@ -166,6 +194,11 @@ export const updatePedidoService = async (id, data) => {
   if (recordatorio !== undefined) {
     fields.pedRecor = '?';
     values.push(recordatorio);
+  }
+
+  if (tipo_pedido !== undefined) {
+    fields.pedTipPed = '?';
+    values.push(tipo_pedido);
   }
 
   // 🔴 si no viene nada para actualizar

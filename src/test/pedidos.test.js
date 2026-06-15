@@ -23,7 +23,8 @@ jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
     };
     next();
   },
-  isAdmin: (req, _res, next) => next()
+  isAdmin: (req, _res, next) => next(),
+  isAdminOrSelf: (req, _res, next) => next()
 }));
 
 jest.unstable_mockModule('../services/pedidos.service.js', () => ({
@@ -47,6 +48,8 @@ jest.unstable_mockModule('../services/produccion.service.js', () => ({
   updateProduction: jest.fn(),
   deleteProduction: jest.fn()
 }));
+
+
 
 // =====================================================
 // 2. IMPORTS (después de los mocks)

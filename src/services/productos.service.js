@@ -5,9 +5,11 @@ import { calculateTotalPages } from '../utils/paginacion.js';
 export const getAllProductosService = async ({ pagina, limite, nombre, estado, categoria, tipoProducto }) => {
   try {
     const { rows, total } = await ProductoModel.getAllProductos({ pagina, limite, nombre, estado, categoria, tipoProducto });
+    const resumen = await ProductoModel.getProductosResumen({ nombre, estado, categoria, tipoProducto });
 
     return {
       data: rows,
+      resumen,
       meta: {
         pagina_actual: pagina,
         paginas_totales: calculateTotalPages(total, limite),

@@ -95,6 +95,56 @@ export class MaterialesModel {
     return result;
   }
 
+  // Obtener resumen de materiales
+  // total_stock.total y alertas_stock son dinámicos (respetan filtros)
+  // total_stock.materiales_registrados es estático (total absoluto sin importar filtros)
+  static async getMaterialesResumen({ nombre, estado, tipoMaterial }) {
+    const filtros = [];
+    const valores = [];
+
+    if (nombre) {
+      filtros.push('matNom LIKE ?');
+      valores.push(`%${nombre}%`);
+    }
+    if (estado) {
+      filtros.push('matEst = ?');
+      valores.push(estado.toUpperCase());
+    }
+    if (tipoMaterial) {
+      filtros.push('matTipMat = ?');
+      valores.push(tipoMaterial.toUpperCase());
+    }
+
+    const whereBase = filtros.length > 0 ? `WHERE ${filtros.join(' AND ')}` : '';
+    const whereAlertas = filtros.length > 0
+      ? `WHERE ${filtros.join(' AND ')} AND (matCantDisp < matUmbMin OR matCantDisp = 0)`
+      : 'WHERE (matCantDisp < matUmbMin OR matCantDisp = 0)';
+
+    const from = 'FROM materiales';
+
+    // total_stock.total: suma de cantidad disponible (dinámico con filtros)
+    const [[{ total }]] = await db.query(
+      `SELECT COALESCE(SUM(matCantDisp), 0) AS total ${from} ${whereBase}`,
+      valores
+    );
+
+    // total_stock.materiales_registrados: total absoluto sin filtros (estático)
+    const [[{ totalMateriales }]] = await db.query(
+      `SELECT COUNT(*) AS totalMateriales FROM materiales`
+    );
+
+    // alertas_stock: cantidad bajo umbral mínimo o agotados (dinámico con filtros)
+    const [[{ alertas_stock }]] = await db.query(
+      `SELECT COUNT(*) AS alertas_stock ${from} ${whereAlertas}`,
+      valores
+    );
+
+    return {
+      total_stock: { total, materiales_registrados: totalMateriales },
+      alertas_stock
+    };
+  }
+
   // Cambiar estado del material
   static async changeEstado({ id, estado }) {
     const [result] = await db.query(

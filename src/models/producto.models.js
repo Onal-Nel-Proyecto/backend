@@ -42,7 +42,8 @@ export class ProductoModel {
         p.proUmbMin AS umbralMinimo,
         p.proTall AS talla,
         p.proEst AS estado,
-        c.catNom AS categoria
+        c.catNom AS categoria,
+        p.proCatFk as categoria_id
       FROM productos p
       LEFT JOIN categoria c ON c.catId = p.ProCatFk
       ${where}
@@ -76,7 +77,8 @@ export class ProductoModel {
         p.proUmbMin AS umbralMinimo,
         p.proTall AS talla,
         p.proEst AS estado,
-        c.catNom AS categoria
+        c.catNom AS categoria,
+        p.proCatFk as categoria_id
       FROM productos p
       LEFT JOIN categoria c ON c.catId = p.ProCatFk
       WHERE p.proId = ?`,
@@ -116,6 +118,57 @@ export class ProductoModel {
       [nombre, precioUnitario, descripcion || null, genero || null, categoriaId || null, tipoPrenda || null, umbralMinimo || null, talla || null, id]
     );
     return result;
+  }
+
+  // Obtener resumen de productos (total_productos, alertas_stock, valor_total)
+  // Respetando los filtros aplicados (nombre, estado, categoria, tipoProducto)
+  static async getProductosResumen({ nombre, estado, categoria, tipoProducto }) {
+    const filtros = [];
+    const valores = [];
+
+    if (nombre) {
+      filtros.push('p.proNom LIKE ?');
+      valores.push(`%${nombre}%`);
+    }
+    if (estado) {
+      filtros.push('p.proEst = ?');
+      valores.push(estado);
+    }
+    if (categoria) {
+      filtros.push('c.catNom LIKE ?');
+      valores.push(`%${categoria}%`);
+    }
+    if (tipoProducto) {
+      filtros.push('p.proTipPro = ?');
+      valores.push(tipoProducto.toUpperCase());
+    }
+
+    const whereBase = filtros.length > 0 ? `WHERE ${filtros.join(' AND ')}` : '';
+    const whereAlertas = filtros.length > 0
+      ? `WHERE ${filtros.join(' AND ')} AND (p.proStock < p.proUmbMin OR p.proStock = 0)`
+      : 'WHERE (p.proStock < p.proUmbMin OR p.proStock = 0)';
+
+    const join = 'FROM productos p LEFT JOIN categoria c ON c.catId = p.ProCatFk';
+
+    // total_productos: cantidad total de registros filtrados
+    const [[{ total_productos }]] = await db.query(
+      `SELECT COUNT(*) AS total_productos ${join} ${whereBase}`,
+      valores
+    );
+
+    // alertas_stock: productos bajo umbral mínimo o agotados
+    const [[{ alertas_stock }]] = await db.query(
+      `SELECT COUNT(*) AS alertas_stock ${join} ${whereAlertas}`,
+      valores
+    );
+
+    // valor_total: suma de (precioUnitario * stock) del catálogo filtrado
+    const [[{ valor_total }]] = await db.query(
+      `SELECT COALESCE(SUM(p.proPreUni * p.proStock), 0) AS valor_total ${join} ${whereBase}`,
+      valores
+    );
+
+    return { total_productos, alertas_stock, valor_total };
   }
 
   // Cambiar estado

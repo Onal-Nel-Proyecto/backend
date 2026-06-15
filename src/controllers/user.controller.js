@@ -4,7 +4,8 @@ import {
   getUserByIdService,
   createUserService,
   updateUserService,
-  changeUserStatusService
+  changeUserStatusService,
+  updatePasswordService
 } from '../services/user.services.js'
 
 // Controlador para obtener todos los usuarios
@@ -75,6 +76,11 @@ const ctlChangeUserStatus = async (req, res, next) => {
     const { id } = req.params;
     const { estado } = req.body;
 
+    // Validar que el usuario no se bloquee a sí mismo
+    if (String(req.user.user_id) === id && Number(estado) === 2) {
+      return next(new AppError('No puedes bloquearte a ti mismo', 400));
+    }
+
     const result = await changeUserStatusService({ id, estado });
 
     if (result.err) return next(new AppError(result.err, result.errorCode));
@@ -86,4 +92,27 @@ const ctlChangeUserStatus = async (req, res, next) => {
   }
 };
 
-export { ctlGetAllUsers, ctlGetUserById, ctlCreateUser, ctlUpdateUser, ctlChangeUserStatus };
+// Controlador para actualizar la contraseña de un usuario
+const ctlUpdatePassword = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { password, passwordActual } = req.body;
+
+    const result = await updatePasswordService({
+      id,
+      password,
+      passwordActual,
+      requesterId: req.user.user_id,
+      requesterRol: req.user.rol
+    });
+
+    if (result.err) return next(new AppError(result.err, result.errorCode));
+
+    res.status(200).json({ status: true, msg: result.msg });
+  } catch (error) {
+    console.error('Error en ctlUpdatePassword:', error);
+    next(new AppError('Error interno del servidor', 500));
+  }
+};
+
+export { ctlGetAllUsers, ctlGetUserById, ctlCreateUser, ctlUpdateUser, ctlChangeUserStatus, ctlUpdatePassword };

@@ -21,7 +21,8 @@ jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
     };
     next();
   },
-  isAdmin: (req, _res, next) => next()
+  isAdmin: (req, _res, next) => next(),
+  isAdminOrSelf: (req, _res, next) => next()
 }));
 
 jest.unstable_mockModule('../services/user.services.js', () => ({
@@ -29,7 +30,8 @@ jest.unstable_mockModule('../services/user.services.js', () => ({
   getUserByIdService: jest.fn(),
   createUserService: jest.fn(),
   updateUserService: jest.fn(),
-  changeUserStatusService: jest.fn()
+  changeUserStatusService: jest.fn(),
+  updatePasswordService: jest.fn()
 }));
 
 // =====================================================
@@ -155,19 +157,19 @@ describe('POST /usuarios', () => {
     expect(res.body).toEqual({ msg: 'Usuario creado correctamente' });
   });
 
-  test('debe retornar 400 si falta el campo id', async () => {
+  test('debe retornar 400 si el id es muy corto (menor a 6 caracteres)', async () => {
     const res = await request(app)
       .post('/usuarios')
-      .send({ ...usuarioValido, id: undefined });
+      .send({ ...usuarioValido, id: 'AB' });
 
     expect(res.status).toBe(400);
     expect(res.body.errors).toHaveProperty('id');
   });
 
-  test('debe retornar 400 si el id no es numérico', async () => {
+  test('debe retornar 400 si el id supera los 15 caracteres', async () => {
     const res = await request(app)
       .post('/usuarios')
-      .send({ ...usuarioValido, id: 'ABCDEF' });
+      .send({ ...usuarioValido, id: 'A'.repeat(16) });
 
     expect(res.status).toBe(400);
     expect(res.body.errors).toHaveProperty('id');
