@@ -11,10 +11,12 @@ export const getVentasService = async (pagina = 1, limite = 15, filtros = {}) =>
   const paginaActual = parseInt(pagina, 10) || 1;
   const limitePagina = parseInt(limite, 10) || 15;
   const offset = (paginaActual - 1) * limitePagina;
-
-  const [total, rows] = await Promise.all([
+  console.log(filtros.cliente);
+  
+  const [total, rows, resumen] = await Promise.all([
     VentasModel.countAll(filtros),
-    VentasModel.getAll(filtros, limitePagina, offset)
+    VentasModel.getAll(filtros, limitePagina, offset),
+    VentasModel.getResumenGlobal()
   ]);
 
   const data = rows.map(row => ({
@@ -47,7 +49,8 @@ export const getVentasService = async (pagina = 1, limite = 15, filtros = {}) =>
       total,
       limite: limitePagina
     },
-    data
+    data,
+    resumen
   };
 };
 
@@ -172,22 +175,30 @@ export const createVentaService = async (body, userId) => {
     precio: d.precio
   }));
 
-  // Ejecutar SP
-  const result = await VentasModel.create({
-    cliente_id,
-    usuario_id: userId,
-    descuento: descuento ?? 0,
-    pedido_id: pedido_id || null,
-    fecha_limite_pago: fecha_limite_pago || null,
-    pago_inicial: pagoInicial || 0,
-    metodo_pago: metodoPago,
-    detalles: detallesSP
-  });
+  try {
+    // Ejecutar SP
+    const result = await VentasModel.create({
+      cliente_id,
+      usuario_id: userId,
+      descuento: descuento ?? 0,
+      pedido_id: pedido_id || null,
+      fecha_limite_pago: fecha_limite_pago || null,
+      pago_inicial: pagoInicial || 0,
+      metodo_pago: metodoPago,
+      detalles: detallesSP
+    });
 
-  return {
-    status: true,
-    msg: `Se registró con éxito la venta con el ID #${result.venId}`
-  };
+    return {
+      status: true,
+      msg: `Se registró con éxito la venta con el ID #${result.venId}`
+    };
+  } catch (error) {
+    // Si el SP lanzó SIGNAL SQLSTATE ('45000'), propagamos el mensaje real del SP
+    if (error.code === 'ER_SIGNAL_EXCEPTION' || error.sqlMessage) {
+      throw new AppError(error.sqlMessage || error.message, 400);
+    }
+    throw error;
+  }
 };
 
 /**

@@ -78,13 +78,22 @@ export class PedidoModel {
             END AS estado_pago
           FROM pedidos p
           JOIN cliente c ON c.cliId = p.pedCliIdFk
+          LEFT JOIN ventas v ON v.pedIdFk = p.pedId
           LEFT JOIN (
-            SELECT
-              pagPedIdFk,
-              COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
-            FROM pagos
-            GROUP BY pagPedIdFk
-          ) pag ON pag.pagPedIdFk = p.pedId
+    SELECT
+        COALESCE(pagVenIdFk, pagPedIdFk) AS referencia_id,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pagEst <> 'RECHAZADO' THEN pagMon
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_pagado
+    FROM pagos
+    GROUP BY COALESCE(pagVenIdFk, pagPedIdFk)
+) pag ON pag.referencia_id = COALESCE(v.venId, p.pedId)
           ${whereSQL}
         ) AS sub
         WHERE sub.estado_pago = ?`,
@@ -230,13 +239,22 @@ export class PedidoModel {
           END AS estado_pago
         FROM pedidos p
         JOIN cliente c ON c.cliId = p.pedCliIdFk
+        LEFT JOIN ventas v ON v.pedIdFk = p.pedId
         LEFT JOIN (
-          SELECT
-            pagPedIdFk,
-            COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
-          FROM pagos
-          GROUP BY pagPedIdFk
-        ) pag ON pag.pagPedIdFk = p.pedId
+    SELECT
+        COALESCE(pagVenIdFk, pagPedIdFk) AS referencia_id,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pagEst <> 'RECHAZADO' THEN pagMon
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_pagado
+    FROM pagos
+    GROUP BY COALESCE(pagVenIdFk, pagPedIdFk)
+) pag ON pag.referencia_id = COALESCE(v.venId, p.pedId)
         ${whereSQL}
       ) AS sub
       ${estadoPagoWhere}
@@ -306,12 +324,20 @@ export class PedidoModel {
       LEFT JOIN usuario u ON u.usuId = p.pedUsuIdFk
       LEFT JOIN ventas v ON v.pedIdFk = p.pedId
       LEFT JOIN (
-        SELECT
-          pagPedIdFk,
-          COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
-        FROM pagos
-        GROUP BY pagPedIdFk
-      ) pag ON pag.pagPedIdFk = p.pedId
+    SELECT
+        COALESCE(pagVenIdFk, pagPedIdFk) AS referencia_id,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pagEst <> 'RECHAZADO' THEN pagMon
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_pagado
+    FROM pagos
+    GROUP BY COALESCE(pagVenIdFk, pagPedIdFk)
+) pag ON pag.referencia_id = COALESCE(v.venId, p.pedId)
       WHERE p.pedId = ?`,
       [id])
     return rows.length > 0 ? rows : null
@@ -442,14 +468,22 @@ export class PedidoModel {
         (COALESCE(p.pedTolEst, 0) - COALESCE(pag.total_pagado, 0)) AS saldo
       FROM pedidos p
       JOIN cliente c ON c.cliId = p.pedCliIdFk
-      LEFT JOIN (
-        SELECT
-          pagPedIdFk,
-          COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
-        FROM pagos
-        GROUP BY pagPedIdFk
-      ) pag ON pag.pagPedIdFk = p.pedId
       LEFT JOIN ventas v ON v.pedIdFk = p.pedId
+     LEFT JOIN (
+    SELECT
+        COALESCE(pagVenIdFk, pagPedIdFk) AS referencia_id,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pagEst <> 'RECHAZADO' THEN pagMon
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_pagado
+    FROM pagos
+    GROUP BY COALESCE(pagVenIdFk, pagPedIdFk)
+) pag ON pag.referencia_id = COALESCE(v.venId, p.pedId)
       ${whereSQL}
       ORDER BY 
       CASE
@@ -504,13 +538,22 @@ export class PedidoModel {
         COALESCE(SUM(COALESCE(p.pedTolEst, 0) - COALESCE(pag.total_pagado, 0)), 0) AS saldoPendiente
       FROM pedidos p
       JOIN cliente c ON c.cliId = p.pedCliIdFk
-      LEFT JOIN (
-        SELECT
-          pagPedIdFk,
-          COALESCE(SUM(CASE WHEN pagEst <> 'RECHAZADO' THEN pagMon ELSE 0 END), 0) AS total_pagado
-        FROM pagos
-        GROUP BY pagPedIdFk
-      ) pag ON pag.pagPedIdFk = p.pedId
+      LEFT JOIN ventas v ON v.pedIdFk = p.pedId
+     LEFT JOIN (
+    SELECT
+        COALESCE(pagVenIdFk, pagPedIdFk) AS referencia_id,
+        COALESCE(
+            SUM(
+                CASE
+                    WHEN pagEst <> 'RECHAZADO' THEN pagMon
+                    ELSE 0
+                END
+            ),
+            0
+        ) AS total_pagado
+    FROM pagos
+    GROUP BY COALESCE(pagVenIdFk, pagPedIdFk)
+) pag ON pag.referencia_id = COALESCE(v.venId, p.pedId)
       ${whereSQL}
       `,
       values

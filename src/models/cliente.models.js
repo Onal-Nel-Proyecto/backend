@@ -64,6 +64,14 @@ export class ClienteModel {
     return rows; // array de objetos con las columnas de la tabla
   }
 
+  static async getTelefonosByClientesIds(ids) {
+    if (!ids.length) return [];
+    const placeholders = ids.map(() => '?').join(',');
+    const sql = `SELECT cliIdFk, cliTel FROM cliente_telefono WHERE cliIdFk IN (${placeholders})`;
+    const [rows] = await db.query(sql, ids);
+    return rows;
+  }
+
   static async deleteTelByClienteId(cliIdFk) {
     await db.query('DELETE FROM cliente_telefono WHERE cliIdFk = ?', [cliIdFk]);
   }

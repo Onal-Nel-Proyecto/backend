@@ -16,7 +16,8 @@ jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
     };
     next();
   },
-  isAdmin: (req, _res, next) => next()
+  isAdmin: (req, _res, next) => next(),
+  isAdminOrSelf: (req, _res, next) => next()
 }));
 
 // Mock completo del service de clientes (evita cualquier acceso a BD)

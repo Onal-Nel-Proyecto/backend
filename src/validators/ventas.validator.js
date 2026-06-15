@@ -29,7 +29,15 @@ export const getVentasValidator = [
   query('cliente')
     .optional()
     .isString()
-    .withMessage('El filtro de cliente debe ser texto')
+    .withMessage('El filtro de cliente debe ser texto'),
+
+  query('estado')
+    .optional()
+    .isString()
+    .withMessage('El filtro estado debe ser texto')
+    .toUpperCase()
+    .isIn(['SIN PAGAR', 'PAGADO', 'ADELANTADO', 'ANULADO'])
+    .withMessage('El estado debe ser uno de: SIN PAGAR, PAGADO, ADELANTADO, ANULADO')
 ];
 
 /**

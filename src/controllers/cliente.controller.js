@@ -47,7 +47,7 @@ export const changeStatus = async (req, res, next) => {
     await changeStatusServices(req.body);
     res.status(200).json({
       status: true,
-      msg: "El cliente fue eliminado"
+      msg: `El cliente fue ${req.body.estado == 2 ? 'inhabilitado': 'reactivado'}`
     });
   } catch (error) {
     console.error('Error al cambiar estado:', error);

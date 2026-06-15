@@ -15,7 +15,8 @@ jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
     };
     next();
   },
-  isAdmin: (req, _res, next) => next()
+  isAdmin: (req, _res, next) => next(),
+  isAdminOrSelf: (req, _res, next) => next()
 }));
 
 jest.unstable_mockModule('../services/proveedores.service.js', () => ({

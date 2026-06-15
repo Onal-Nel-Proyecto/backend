@@ -2,6 +2,7 @@ import multer from 'multer';
 import path from 'node:path';
 import fs from 'node:fs';
 import { v4 as uuidv4 } from 'uuid';
+import { AppError } from '../utils/appError.js';
 
 const UPLOADS_DIR = path.resolve(process.cwd(), 'uploads/pedidos');
 
@@ -33,7 +34,7 @@ const fileFilter = (req, file, cb) => {
   if (ALLOWED_MIMETYPES.includes(file.mimetype)) {
     cb(null, true);
   } else {
-    cb(new Error('Solo se permiten imágenes (JPEG, PNG, WebP, GIF)'), false);
+    cb(new AppError('Solo se permiten imágenes (JPEG, PNG, WebP, GIF)', 400), false);
   }
 };
 

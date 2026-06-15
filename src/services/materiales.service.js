@@ -5,9 +5,11 @@ import { calculateTotalPages } from '../utils/paginacion.js';
 export const getAllMaterialesService = async ({ pagina, limite, nombre, estado, tipoMaterial }) => {
   try {
     const { rows, total } = await MaterialesModel.getAllMateriales({ pagina, limite, nombre, estado, tipoMaterial });
+    const resumen = await MaterialesModel.getMaterialesResumen({ nombre, estado, tipoMaterial });
 
     return {
       data: rows,
+      resumen,
       meta: {
         pagina_actual: pagina,
         paginas_totales: calculateTotalPages(total, limite),

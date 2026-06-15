@@ -21,7 +21,8 @@ jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
     };
     next();
   },
-  isAdmin: (req, _res, next) => next()
+  isAdmin: (req, _res, next) => next(),
+  isAdminOrSelf: (req, _res, next) => next()
 }));
 
 jest.unstable_mockModule('../services/ventas.service.js', () => ({
@@ -129,6 +130,17 @@ const metaEjemplo = {
   limite: 15
 };
 
+const resumenEjemplo = {
+  total_vendido: {
+    mes: 5,
+    total: 500000,
+    ventas_procesadas: 10
+  },
+  total_cobrado: 300000,
+  cobro_pendiente: 200000,
+  abonos: 2
+};
+
 // =====================================================
 // 4. TESTS: GET /ventas
 // =====================================================
@@ -140,7 +152,8 @@ describe('GET /ventas', () => {
   test('debe retornar lista paginada con código 200', async () => {
     ventasService.getVentasService.mockResolvedValue({
       meta: metaEjemplo,
-      data: [ventaEjemplo]
+      data: [ventaEjemplo],
+      resumen: resumenEjemplo
     });
 
     const res = await request(app).get('/ventas');
@@ -149,6 +162,11 @@ describe('GET /ventas', () => {
     expect(res.body).toHaveProperty('meta');
     expect(res.body.meta).toHaveProperty('paginas_totales', 1);
     expect(res.body).toHaveProperty('data');
+    expect(res.body).toHaveProperty('resumen');
+    expect(res.body.resumen).toHaveProperty('total_vendido');
+    expect(res.body.resumen).toHaveProperty('total_cobrado');
+    expect(res.body.resumen).toHaveProperty('cobro_pendiente');
+    expect(res.body.resumen).toHaveProperty('abonos');
     expect(res.body.data).toHaveLength(1);
     expect(res.body.data[0]).toHaveProperty('venta_id', 'VT001');
     expect(res.body.data[0]).toHaveProperty('cliente');
@@ -158,7 +176,8 @@ describe('GET /ventas', () => {
   test('debe pasar filtros al servicio', async () => {
     ventasService.getVentasService.mockResolvedValue({
       meta: metaEjemplo,
-      data: [ventaEjemplo]
+      data: [ventaEjemplo],
+      resumen: resumenEjemplo
     });
 
     await request(app).get(
@@ -177,7 +196,8 @@ describe('GET /ventas', () => {
   test('debe retornar lista vacía cuando no hay ventas', async () => {
     ventasService.getVentasService.mockResolvedValue({
       meta: { paginas_totales: 0, pagina_actual: 1, total: 0, limite: 15 },
-      data: []
+      data: [],
+      resumen: resumenEjemplo
     });
 
     const res = await request(app).get('/ventas');
@@ -185,6 +205,7 @@ describe('GET /ventas', () => {
     expect(res.status).toBe(200);
     expect(res.body.data).toEqual([]);
     expect(res.body.meta.total).toBe(0);
+    expect(res.body).toHaveProperty('resumen');
   });
 
   test('debe rechazar fecha_registro inválida con 400', async () => {
@@ -193,6 +214,31 @@ describe('GET /ventas', () => {
     expect(res.status).toBe(400);
     expect(res.body).toHaveProperty('errors');
     expect(res.body.errors).toHaveProperty('fecha_registro');
+  });
+
+  test('debe pasar filtro estado al servicio', async () => {
+    ventasService.getVentasService.mockResolvedValue({
+      meta: metaEjemplo,
+      data: [ventaEjemplo],
+      resumen: resumenEjemplo
+    });
+
+    await request(app).get('/ventas?estado=PAGADO');
+
+    expect(ventasService.getVentasService).toHaveBeenCalledWith(
+      1, 15,
+      expect.objectContaining({
+        estado: 'PAGADO'
+      })
+    );
+  });
+
+  test('debe rechazar estado inválido con 400', async () => {
+    const res = await request(app).get('/ventas?estado=INEXISTENTE');
+
+    expect(res.status).toBe(400);
+    expect(res.body).toHaveProperty('errors');
+    expect(res.body.errors).toHaveProperty('estado');
   });
 
   test('debe retornar 500 si el servicio falla', async () => {
