@@ -340,7 +340,7 @@ describe('PATCH /clientes/:id/estado', () => {
     expect(response.status).toBe(200);
     expect(response.body).toEqual({
       status: true,
-      msg: 'El cliente fue eliminado'
+      msg: 'El cliente fue reactivado'
     });
   });
 
