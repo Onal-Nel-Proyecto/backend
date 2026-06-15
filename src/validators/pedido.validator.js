@@ -1,5 +1,12 @@
 import { body, check, param } from 'express-validator';
+import db from "../config/db.js";
 const tipoPedido = ["personalizado", "retoques", "modificaciones",]
+
+// Obtener la fecha actual desde el servidor MySQL (no confiar en hora local)
+const getCurrentDate = async () => {
+  const [[{ hoy }]] = await db.query("SELECT CURDATE() AS hoy");
+  return hoy; // string YYYY-MM-DD
+};
 
 // validacion basica para registro de pedido
 export const basePedidoValidator = [
@@ -13,10 +20,9 @@ export const basePedidoValidator = [
     .optional({ nullable: true, checkFalsy: true })
     .isISO8601()
     .withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
-    .custom(value => {
-      // Obtener la fecha local actual en formato YYYY-MM-DD
-      const ahora = new Date();
-      const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+    .custom(async (value) => {
+      // Obtener la fecha actual desde MySQL (no confiar en hora local)
+      const hoy = await getCurrentDate();
 
       // value ya viene como YYYY-MM-DD validado por isISO8601
       if (value < hoy) {
@@ -24,7 +30,7 @@ export const basePedidoValidator = [
       }
 
       // Calcular fecha máxima (1 año a partir de hoy)
-      const fechaMax = new Date(ahora);
+      const fechaMax = new Date(hoy);
       fechaMax.setFullYear(fechaMax.getFullYear() + 1);
       const maxStr = `${fechaMax.getFullYear()}-${String(fechaMax.getMonth() + 1).padStart(2, '0')}-${String(fechaMax.getDate()).padStart(2, '0')}`;
 
@@ -114,6 +120,12 @@ export const parametroValidator = [
     .isLength({ max: 100 })
     .withMessage("descripcion no puede tener más de 100 caracteres"),
 
+  check('tipo_prenda')
+    .optional()
+    .toUpperCase()
+    .isIn(['CAMISA', 'CAMISETA', 'POLO', 'PANTALON', 'JEAN', 'BERMUDA', 'SHORT', 'FALDA', 'VESTIDO', 'CHAQUETA', 'BUSO', 'SUDADERA', 'HOODIE', 'OVEROL', 'DELANTAL', 'UNIFORME', 'DOTACION', 'GORRA', 'OTRO'])
+    .withMessage('tipo_prenda no válido'),
+
   check('mes')
     .optional()
     .isInt({ min: 1, max: 12 })
@@ -130,10 +142,9 @@ export const updateValidator = [
     .optional({ nullable: true, checkFalsy: true })
     .isISO8601()
     .withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
-    .custom(value => {
-      // Obtener la fecha local actual en formato YYYY-MM-DD
-      const ahora = new Date();
-      const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+    .custom(async (value) => {
+      // Obtener la fecha actual desde MySQL (no confiar en hora local)
+      const hoy = await getCurrentDate();
 
       // value ya viene como YYYY-MM-DD validado por isISO8601
       if (value < hoy) {
@@ -141,7 +152,7 @@ export const updateValidator = [
       }
 
       // Calcular fecha máxima (1 año a partir de hoy)
-      const fechaMax = new Date(ahora);
+      const fechaMax = new Date(hoy);
       fechaMax.setFullYear(fechaMax.getFullYear() + 1);
       const maxStr = `${fechaMax.getFullYear()}-${String(fechaMax.getMonth() + 1).padStart(2, '0')}-${String(fechaMax.getDate()).padStart(2, '0')}`;
 

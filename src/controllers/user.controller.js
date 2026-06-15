@@ -108,7 +108,7 @@ const ctlUpdatePassword = async (req, res, next) => {
 
     if (result.err) return next(new AppError(result.err, result.errorCode));
 
-    res.status(200).json({ msg: result.msg });
+    res.status(200).json({ status: true, msg: result.msg });
   } catch (error) {
     console.error('Error en ctlUpdatePassword:', error);
     next(new AppError('Error interno del servidor', 500));

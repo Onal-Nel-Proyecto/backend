@@ -53,6 +53,15 @@ export class PedidoModel {
       values.push(`%${filtros.descripcion}%`);
     }
 
+    if (filtros.tipo_prenda) {
+      whereClauses.push(`EXISTS (
+        SELECT 1 FROM det_pedido dp
+        JOIN productos pr ON pr.proId = dp.proIdFk
+        WHERE dp.pedIdFk = p.pedId AND pr.proTipPre = ?
+      )`);
+      values.push(filtros.tipo_prenda);
+    }
+
     const whereSQL = whereClauses.length > 0
       ? `WHERE ${whereClauses.join(" AND ")}`
       : "";
@@ -92,6 +101,26 @@ export class PedidoModel {
       values
     );
     return Number(rows[0].total)
+  }
+
+  /**
+   * Obtener los tipos de prenda (proTipPre) únicos para una lista de IDs de pedidos
+   * @param {string[]} ids - Lista de IDs de pedidos
+   * @returns {Promise<Array<{pedido_id: string, tipos_prenda: string}>>}
+   */
+  static async getTiposPrendaByPedidoIds(ids) {
+    if (!ids || ids.length === 0) return [];
+    const placeholders = ids.map(() => '?').join(',');
+    const [rows] = await db.query(
+      `SELECT dp.pedIdFk AS pedido_id, GROUP_CONCAT(DISTINCT pr.proTipPre ORDER BY pr.proTipPre) AS tipos_prenda
+       FROM det_pedido dp
+       JOIN productos pr ON pr.proId = dp.proIdFk
+       WHERE dp.pedIdFk IN (${placeholders})
+         AND pr.proTipPre IS NOT NULL
+       GROUP BY dp.pedIdFk`,
+      ids
+    );
+    return rows;
   }
 
   static async getAllPedidos(pag = 1, limite = 15, filtros = {}) {
@@ -149,6 +178,15 @@ export class PedidoModel {
       values.push(`%${filtros.descripcion}%`);
     }
 
+    if (filtros.tipo_prenda) {
+      whereClauses.push(`EXISTS (
+        SELECT 1 FROM det_pedido dp
+        JOIN productos pr ON pr.proId = dp.proIdFk
+        WHERE dp.pedIdFk = p.pedId AND pr.proTipPre = ?
+      )`);
+      values.push(filtros.tipo_prenda);
+    }
+
     const whereSQL = whereClauses.length > 0
       ? `WHERE ${whereClauses.join(" AND ")}`
       : "";
@@ -173,7 +211,8 @@ export class PedidoModel {
         sub.estado,
         sub.dias_faltantes,
         sub.estado_pago,
-        sub.total_pedido
+        sub.total_pedido,
+        sub.tipo_pedido
       FROM (
         SELECT
           p.pedId AS id,
@@ -182,6 +221,7 @@ export class PedidoModel {
           DATE(p.pedFecEst) AS fecha_estimada,
           p.pedEst AS estado,
           p.pedTolEst AS total_pedido,
+          p.pedTipPed AS tipo_pedido,
           fn_dias_restantes_pedido(p.pedId) AS dias_faltantes,
           CASE
             WHEN COALESCE(pag.total_pagado, 0) >= p.pedTolEst AND p.pedTolEst > 0 THEN 'PAGADO'

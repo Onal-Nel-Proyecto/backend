@@ -15,6 +15,14 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
   const rows = await PedidoModel.getAllPedidos(pag, limite, filtros);
   const total = await PedidoModel.countPedidos(filtros);
 
+  // Obtener tipos de prenda para todos los pedidos devueltos
+  const pedidoIds = rows.map(e => e.id);
+  const tiposRows = await PedidoModel.getTiposPrendaByPedidoIds(pedidoIds);
+  const tiposMap = {};
+  for (const row of tiposRows) {
+    tiposMap[row.pedido_id] = row.tipos_prenda ? row.tipos_prenda.split(',') : [];
+  }
+
   const data = rows.map(e => ({
     id: e.id,
     descripcion: e.descripcion,
@@ -23,7 +31,9 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
     estado: e.estado,
     estado_pago: e.estado_pago,
     dias_faltantes: e.dias_faltantes,
-    precio_total: e.total_pedido
+    precio_total: e.total_pedido,
+    tipo_pedido: e.tipo_pedido,
+    tipos_prenda: tiposMap[e.id] || [],
   }));
 
   return {
@@ -93,9 +103,20 @@ export const getPedidoByIdService = async (id_pedido) => {
   const pedido = await PedidoModel.getById(id_pedido);
   if (!pedido) return { err: "Pedido no encontrado", errorCode: 404 }
   const detalles = await getDetallePedidoByIdPedido(id_pedido);
-  // console.log(pedido[0])
+
+  // Extraer tipos de prenda únicos desde los detalles
+  const tiposSet = new Set();
+  if (detalles.data) {
+    for (const det of detalles.data) {
+      if (det.producto?.tipoPrenda) {
+        tiposSet.add(det.producto.tipoPrenda);
+      }
+    }
+  }
+
   return {
     pedido_id: pedido[0].id,
+    tipos_prenda: [...tiposSet],
     cliente: {
       cliente_id: pedido[0].cliente_id,
       cliente_nombres: pedido[0].cliente_name
@@ -131,7 +152,8 @@ export const updatePedidoService = async (id, data) => {
     descripcion,
     observacion,
     fecha_estimada_entrega,
-    recordatorio
+    recordatorio,
+    tipo_pedido
   } = data;
 
   // 🔹 validar que exista el pedido
@@ -172,6 +194,11 @@ export const updatePedidoService = async (id, data) => {
   if (recordatorio !== undefined) {
     fields.pedRecor = '?';
     values.push(recordatorio);
+  }
+
+  if (tipo_pedido !== undefined) {
+    fields.pedTipPed = '?';
+    values.push(tipo_pedido);
   }
 
   // 🔴 si no viene nada para actualizar
