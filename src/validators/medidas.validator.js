@@ -45,6 +45,11 @@ export const createMedidaValidator = [
     .optional({ values: 'falsy' })
     .toUpperCase()
     .isIn(['ACTIVO', 'INACTIVO']).withMessage('El estado debe ser ACTIVO o INACTIVO'),
+
+    body('medTipo')
+    .optional({ values: 'falsy' })
+    .toUpperCase()
+    .isIn(['SUPERIOR', 'INFERIOR', 'FALDA', 'VESTIDO', 'UNIFORME', 'GENERAL']).withMessage('El tipo de medida debe ser SUPERIOR, INFERIOR, FALDA, VESTIDO, UNIFORME o GENERAL'),
 ];
 
 // ─────────────────────────────────────────────
@@ -71,6 +76,11 @@ export const updateMedidaValidator = [
     .optional({ values: 'falsy' })
     .toUpperCase()
     .isIn(['ACTIVO', 'INACTIVO']).withMessage('El estado debe ser ACTIVO o INACTIVO'),
+
+    body('medTipo')
+    .optional({ values: 'falsy' })
+    .toUpperCase()
+    .isIn(['SUPERIOR', 'INFERIOR', 'FALDA', 'VESTIDO', 'UNIFORME', 'GENERAL']).withMessage('El tipo de medida debe ser SUPERIOR, INFERIOR, FALDA, VESTIDO, UNIFORME o GENERAL'),
 ];
 
 // ─────────────────────────────────────────────

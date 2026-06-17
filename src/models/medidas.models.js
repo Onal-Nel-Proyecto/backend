@@ -22,10 +22,11 @@ export class MedidaModel {
         medId AS id,
         medNom AS nombre,
         medDesc AS descripcion,
-        medEst AS estado
+        medEst AS estado,
+        medTipo as tipo_medida
       FROM medidas
       ${where}
-      ORDER BY medNom ASC`,
+      ORDER BY tipo_medida, id ASC`,
       valores
     );
 
@@ -49,24 +50,25 @@ export class MedidaModel {
   }
 
   // Crear una nueva medida
-  static async create({ medNom, medDesc, medEst }) {
+  static async create({ medNom, medDesc, medEst, medTipo }) {
     const [result] = await db.query(
-      `INSERT INTO medidas (medNom, medDesc, medEst)
+      `INSERT INTO medidas (medNom, medDesc, medEst, medTipo)
        VALUES (?, ?, ?)`,
-      [medNom, medDesc || null, medEst || 'ACTIVO']
+      [medNom, medDesc || null, medEst || 'ACTIVO', medTipo || 'GENERAL']
     );
     return result.insertId;
   }
 
   // Actualizar medida
-  static async update(id, { medNom, medDesc, medEst }) {
+  static async update(id, { medNom, medDesc, medEst, medTipo }) {
     const [result] = await db.query(
       `UPDATE medidas SET
         medNom = ?,
         medDesc = ?,
-        medEst = ?
+        medEst = ?,
+        medTipo = ?
       WHERE medId = ?`,
-      [medNom, medDesc || null, medEst || 'ACTIVO', id]
+      [medNom, medDesc || null, medEst || 'ACTIVO', medTipo || 'GENERAL', id]
     );
     return result.affectedRows > 0;
   }

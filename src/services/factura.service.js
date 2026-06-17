@@ -5,7 +5,7 @@ import { generarPDF, generarHTMLFactura } from '../utils/pdfGenerator.js';
 
 /** Datos fijos de la empresa (provisional) */
 const EMPRESA = {
-  nombre: 'Confecciones Onal & Nel',
+  nombre_empresa: 'Confecciones Onal & Nel',
   // eslogan: 'Calidad y confianza en cada prenda',
   // NIT: '123456789-0',
   direccion_empresa: 'Calle 8 #604, Santa Lucia',

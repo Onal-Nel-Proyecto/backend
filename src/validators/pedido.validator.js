@@ -2,19 +2,10 @@ import { body, check, param } from 'express-validator';
 import db from "../config/db.js";
 const tipoPedido = ["personalizado", "retoques", "modificaciones",]
 
-// Obtener la fecha actual desde MySQL con timeout de 500ms.
-// Si la BD no está disponible (tests unitarios), usa fecha local como fallback.
+// Obtener la fecha actual desde el servidor MySQL (no confiar en hora local)
 const getCurrentDate = async () => {
-  try {
-    const resultado = await Promise.race([
-      db.query("SELECT CURDATE() AS hoy"),
-      new Promise((_, reject) => setTimeout(() => reject(new Error('DB timeout')), 500))
-    ]);
-    const [[{ hoy }]] = resultado;
-    return hoy;
-  } catch {
-    return new Date().toISOString().split('T')[0];
-  }
+  const [[{ hoy }]] = await db.query("SELECT CURDATE() AS hoy");
+  return hoy; // string YYYY-MM-DD
 };
 
 // validacion basica para registro de pedido
@@ -83,9 +74,17 @@ export const parametroValidator = [
 
   check('estado')
     .optional()
-    .toLowerCase()
-    .isIn(["pendiente", "terminado", "cancelado", "en_proceso", "entregado", "completados"])
-    .withMessage("el estado debe ser: pendiente | terminado | cancelado | en_proceso | entregado | completados"),
+    .custom((value) => {
+      const estados = value.split(',').map(s => s.trim().toLowerCase());
+      const validos = ["pendiente", "terminado", "cancelado", "en proceso", "entregado", "completados"];
+      for (const est of estados) {
+        if (!validos.includes(est)) {
+          throw new Error(`Estado inválido: "${est}". Valores permitidos: ${validos.join(', ')}`);
+        }
+      }
+      return true;
+    })
+    .customSanitizer(val => val.toLowerCase().replace(/_/g, ' ')),
 
   check('fecha_desde')
     .optional()
