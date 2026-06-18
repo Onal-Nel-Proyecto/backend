@@ -2,21 +2,23 @@ import db from "../config/db.js";
 
 export class PagosModel {
 
-  /** Obtener pagos filtrados por pedido_id o venta_id */
+  /** Obtener pagos filtrados por pedido_id, venta_id o ambos */
   static async getPagos({ pedido_id, venta_id, pagina = 1, limite = 5 }) {
     const offset = (pagina - 1) * limite;
 
-    let whereClause = '';
+    const conditions = [];
     const params = [];
 
     if (pedido_id) {
-      whereClause = 'WHERE pagPedIdFk = ?';
+      conditions.push('pagPedIdFk = ?');
       params.push(pedido_id);
-    } else if (venta_id) {
-      whereClause = 'WHERE pagVenIdFk = ?';
+    }
+    if (venta_id) {
+      conditions.push('pagVenIdFk = ?');
       params.push(venta_id);
     }
-    // console.log(pedido_id)
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' OR ')}` : '';
 
     const [rows] = await db.query(
       `SELECT 
@@ -34,22 +36,24 @@ export class PagosModel {
       [...params, limite, offset]
     );
 
-
     return rows;
   }
 
   /** Contar total de pagos filtrados */
   static async countPagos({ pedido_id, venta_id }) {
-    let whereClause = '';
+    const conditions = [];
     const params = [];
 
     if (pedido_id) {
-      whereClause = 'WHERE pagPedIdFk = ?';
+      conditions.push('pagPedIdFk = ?');
       params.push(pedido_id);
-    } else if (venta_id) {
-      whereClause = 'WHERE pagVenIdFk = ?';
+    }
+    if (venta_id) {
+      conditions.push('pagVenIdFk = ?');
       params.push(venta_id);
     }
+
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' OR ')}` : '';
 
     const [[{ total }]] = await db.query(
       `SELECT COUNT(*) AS total FROM pagos ${whereClause}`,
@@ -57,6 +61,22 @@ export class PagosModel {
     );
 
     return total;
+  }
+
+  /** Validar que venta_id y pedido_id sean compatibles
+   *  Si la venta tiene un pedIdFk, debe coincidir con el pedido_id enviado */
+  static async validarVentaPedido(venta_id, pedido_id) {
+    const [[venta]] = await db.query(
+      'SELECT venId, pedIdFk FROM ventas WHERE venId = ?',
+      [venta_id]
+    );
+    if (!venta) {
+      return { valido: false, error: 'La venta no existe' };
+    }
+    if (venta.pedIdFk && venta.pedIdFk !== pedido_id) {
+      return { valido: false, error: `El pedido_id ${pedido_id} no corresponde al pedido vinculado a la venta ${venta_id} (${venta.pedIdFk})` };
+    }
+    return { valido: true };
   }
 
   /** Obtener resumen de pagos de un pedido */

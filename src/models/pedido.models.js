@@ -7,10 +7,8 @@ export class PedidoModel {
    * Soporta múltiples estados separados por coma: ?estado=pendiente,en_proceso
    */
   static _buildEstadoFilter(estado) {
-    console.log(estado);
-    
     if (!estado) {
-      return { sql: "pedEst IN ('pendiente', 'en proceso', 'terminado', 'cancelado')", values: [] };
+      return { sql: '', values: [] };
     }
     if (estado === 'completados') {
       return { sql: "pedEst IN ('terminado', 'entregado')", values: [] };
@@ -29,8 +27,10 @@ export class PedidoModel {
 
     // Filtro estado (soporta múltiples valores separados por coma)
     const estadoFilter = PedidoModel._buildEstadoFilter(filtros.estado);
-    whereClauses.push(estadoFilter.sql);
-    values.push(...estadoFilter.values);
+    if (estadoFilter.sql) {
+      whereClauses.push(estadoFilter.sql);
+      values.push(...estadoFilter.values);
+    }
 
     if (filtros.fecha_desde) {
       whereClauses.push("DATE(pedFecIng) >= ?");
@@ -157,8 +157,10 @@ export class PedidoModel {
 
     // Filtro estado (soporta múltiples valores separados por coma)
     const estadoFilter = PedidoModel._buildEstadoFilter(filtros.estado);
-    whereClauses.push(estadoFilter.sql);
-    values.push(...estadoFilter.values);
+    if (estadoFilter.sql) {
+      whereClauses.push(estadoFilter.sql);
+      values.push(...estadoFilter.values);
+    }
 
     if (filtros.fecha_desde) {
       whereClauses.push("DATE(pedFecIng) >= ?");

@@ -3,19 +3,45 @@ import { AppError } from '../utils/appError.js';
 
 /** Obtener pagos con meta y resumen */
 export const getPagosService = async ({ pedido_id, venta_id, pagina = 1, limite = 5 }) => {
-  console.log(pedido_id);
-  
+  // Validar compatibilidad si se envían ambos filtros
+  if (venta_id && pedido_id) {
+    const validacion = await PagosModel.validarVentaPedido(venta_id, pedido_id);
+    if (!validacion.valido) {
+      throw new AppError(validacion.error, 400);
+    }
+  }
+
   const data = await PagosModel.getPagos({ pedido_id, venta_id, pagina, limite });
   const total = await PagosModel.countPagos({ pedido_id, venta_id });
 
+  // Resumen: cuando ambos filtros están activos, combina los totales
   let resumen = null;
-  if (pedido_id) {
-    resumen = await PagosModel.getResumenPedido(pedido_id);
+  if (venta_id && pedido_id) {
+    const [resumenPedido, resumenVenta] = await Promise.all([
+      PagosModel.getResumenPedido(pedido_id),
+      PagosModel.getResumenVenta(venta_id)
+    ]);
+    const totalPedido = resumenPedido?.total || 0;
+    const totalVenta = resumenVenta?.total || 0;
+    const pagadoPedido = resumenPedido?.total_pagado || 0;
+    const pagadoVenta = resumenVenta?.total_pagado || 0;
+    
+    // console.log(Number(pagadoPedido) + Number(pagadoVenta));
+    
+    const totalCombinado = Math.max(totalPedido, totalVenta);
+    const totalPagadoCombinado = Number(pagadoPedido) + Number(pagadoVenta);
+
+    resumen = {
+      total: totalCombinado,
+      total_pagado: totalPagadoCombinado,
+      faltante: totalCombinado - totalPagadoCombinado
+    };
   } else if (venta_id) {
     resumen = await PagosModel.getResumenVenta(venta_id);
+  } else if (pedido_id) {
+    resumen = await PagosModel.getResumenPedido(pedido_id);
   }
-  // console.log(data);
-  
+
   return {
     meta: {
       paginas_totales: Math.ceil(total / limite) || 1,
