@@ -289,7 +289,19 @@ export class VentasModel {
                       AND YEAR(v.venFec) = YEAR(CURDATE())
                 THEN 1 END) AS ventas_completadas,
         COALESCE(SUM(v.venTotal - COALESCE(pg.total_pagado, 0)), 0) AS cobro_pendiente,
-        COUNT(CASE WHEN v.estadoPago = 'ADELANTADO' THEN 1 END) AS abonos
+        COUNT(CASE WHEN v.estadoPago = 'ADELANTADO' THEN 1 END) AS abonos,
+        (SELECT COALESCE(SUM(v2.venTotal), 0)
+         FROM ventas v2
+         WHERE DATE(v2.venFec) = CURDATE()
+           AND v2.estadoPago <> 'ANULADO') AS ingreso_hoy_total,
+        (SELECT COUNT(*)
+         FROM ventas v2
+         WHERE DATE(v2.venFec) = CURDATE()
+           AND v2.estadoPago <> 'ANULADO') AS ingreso_hoy_cantidad,
+        (SELECT COALESCE(SUM(p.pagMon), 0)
+         FROM pagos p
+         WHERE DATE(p.pagFec) = CURDATE()
+           AND p.pagEst <> 'RECHAZADO') AS cobrado_hoy
       FROM ventas v
       LEFT JOIN (
         SELECT pagVenIdFk,
@@ -319,7 +331,12 @@ export class VentasModel {
         ventas_completadas: Number(row.ventas_completadas)
       },
       cobro_pendiente: Number(row.cobro_pendiente),
-      abonos: Number(row.abonos)
+      abonos: Number(row.abonos),
+      ingreso_hoy: {
+        total: Number(row.ingreso_hoy_total),
+        ventas_cantidad: Number(row.ingreso_hoy_cantidad)
+      },
+      cobrado_hoy: Number(row.cobrado_hoy)
     };
   }
 

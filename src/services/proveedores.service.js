@@ -34,16 +34,24 @@ const mapearProveedor = (row) => ({
   prov_correo: row.provCorr || null,
   prov_direccion: row.provDir || null,
   prov_suministro: parseSuministros(row.proTipMatSum),
-  pro_estado: estados[row.provEst - 1] || 'ACTIVO'
+  pro_estado: row.provEst || 'SIN ESTADO'
 });
 
 // ============================================================
-// GET /proveedores — listar con paginación
+// GET /proveedores — listar con paginación y filtros
 // ============================================================
-export const obtenerProveedores = async (pagina = 1, limite = 15, filtro = null, filtroSuministro = null) => {
+export const obtenerProveedores = async (pagina = 1, limite = 15, filtro = null, filtroSuministro = null, filtroEstado = null) => {
   const paginaActual = parseInt(pagina, 10) || 1;
   const limitePagina = parseInt(limite, 10) || 15;
   const offset = (paginaActual - 1) * limitePagina;
+
+  // Normalizar estado: si viene como texto (ACTIVO/INACTIVO), convertir a número
+  let estadoNum = null;
+  if (filtroEstado) {
+    const estadoMap = { 'ACTIVO': 1, 'INACTIVO': 2 };
+    estadoNum = estadoMap[filtroEstado.toUpperCase()] ?? parseInt(filtroEstado, 10);
+    if (![1, 2].includes(estadoNum)) estadoNum = null;
+  }
 
   let filas, total;
 
@@ -56,6 +64,11 @@ export const obtenerProveedores = async (pagina = 1, limite = 15, filtro = null,
     [filas, total] = await Promise.all([
       ProveedorModel.searchBySuministro(filtroSuministro, limitePagina, offset),
       ProveedorModel.getTotalSearchBySuministro(filtroSuministro)
+    ]);
+  } else if (estadoNum) {
+    [filas, total] = await Promise.all([
+      ProveedorModel.searchByEstado(estadoNum, limitePagina, offset),
+      ProveedorModel.getTotalSearchByEstado(estadoNum)
     ]);
   } else {
     [filas, total] = await Promise.all([

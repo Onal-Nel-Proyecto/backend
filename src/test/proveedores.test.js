@@ -91,7 +91,7 @@ describe('GET /proveedores', () => {
     const response = await request(app).get('/proveedores?pagina=2&limite=10');
 
     expect(response.status).toBe(200);
-    expect(obtenerProveedores).toHaveBeenCalledWith('2', '10', null, null);
+    expect(obtenerProveedores).toHaveBeenCalledWith('2', '10', null, null, null);
   });
 
   test('debe filtrar por nombre de proveedor', async () => {
@@ -103,7 +103,7 @@ describe('GET /proveedores', () => {
     const response = await request(app).get('/proveedores?prov_nombre=Distribuidora');
 
     expect(response.status).toBe(200);
-    expect(obtenerProveedores).toHaveBeenCalledWith(undefined, undefined, 'Distribuidora', null);
+    expect(obtenerProveedores).toHaveBeenCalledWith(undefined, undefined, 'Distribuidora', null, null);
   });
 
   test('debe filtrar por tipo de suministro', async () => {
@@ -115,7 +115,7 @@ describe('GET /proveedores', () => {
     const response = await request(app).get('/proveedores?prov_tipo_suministro=tela');
 
     expect(response.status).toBe(200);
-    expect(obtenerProveedores).toHaveBeenCalledWith(undefined, undefined, null, 'tela');
+    expect(obtenerProveedores).toHaveBeenCalledWith(undefined, undefined, null, 'tela', null);
   });
 
   test('debe retornar 500 si el service falla', async () => {

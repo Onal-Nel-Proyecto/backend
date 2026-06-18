@@ -9,8 +9,8 @@ import {
 
 export const getProveedores = async (req, res, next) => {
   try {
-    const { pagina, limite, prov_nombre, prov_tipo_suministro } = req.query;
-    const resultado = await obtenerProveedores(pagina, limite, prov_nombre || null, prov_tipo_suministro || null);
+    const { pagina, limite, prov_nombre, prov_tipo_suministro, prov_estado } = req.query;
+    const resultado = await obtenerProveedores(pagina, limite, prov_nombre || null, prov_tipo_suministro || null, prov_estado || null);
     res.json(resultado);
   } catch (error) {
     console.error('Error al obtener proveedores:', error);

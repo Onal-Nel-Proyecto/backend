@@ -16,9 +16,9 @@ router.get('/', authValidator, ctlGetAll);
 router.get('/:id', authValidator, ctlGetById);
 
 // POST /api/abastecimientos         — Crear (el trigger actualiza stock automáticamente)
-router.post('/', authValidator, isAdmin, ctlCreate);
+router.post('/', authValidator, ctlCreate);
 
 // PATCH /api/abastecimientos/:id/cancelar — Cancelar
-router.patch('/:id/cancelar', authValidator, isAdmin, ctlCancelar);
+router.patch('/:id/cancelar', authValidator, ctlCancelar);
 
 export { router };

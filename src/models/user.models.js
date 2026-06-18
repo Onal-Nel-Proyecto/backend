@@ -97,8 +97,8 @@ export class UserModel {
     const passwordHash = hashSync(password, 10);
 
     await db.query(
-      `CALL sp_registrar_usuario(?, ?, ?, ?, ?, ?, ?, ?,?, @usuIdOut)`,
-      [id, nombres, apellidos, correo.toLowerCase(), passwordHash, rolId, supervisorId  || null, user_id || null]
+      `CALL sp_registrar_usuario(?, ?, ?, ?, ?, ?, ?, ?, ?, @usuIdOut)`,
+      [id, nombres, apellidos, telefono, correo.toLowerCase(), passwordHash, rolId, supervisorId  || null, user_id || null]
     );
 
     // Obtener el OUT parameter

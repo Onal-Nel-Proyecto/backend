@@ -75,6 +75,31 @@ export class ProveedorModel {
     return rows[0].total;
   }
 
+  static async searchByEstado(estado, limit = 15, offset = 0) {
+    const sql = `
+      SELECT 
+        provId,
+        provNom,
+        provTel,
+        provCorr,
+        provDir,
+        proTipMatSum,
+        provEst
+      FROM proveedor
+      WHERE provEst = ?
+      ORDER BY provNom ASC
+      LIMIT ? OFFSET ?
+    `;
+    const [rows] = await db.query(sql, [estado, limit, offset]);
+    return rows;
+  }
+
+  static async getTotalSearchByEstado(estado) {
+    const sql = "SELECT COUNT(*) AS total FROM proveedor WHERE provEst = ?";
+    const [rows] = await db.query(sql, [estado]);
+    return rows[0].total;
+  }
+
   static async getById(id) {
     const sql = 'SELECT * FROM proveedor WHERE provId = ?';
     const [rows] = await db.query(sql, [id]);
