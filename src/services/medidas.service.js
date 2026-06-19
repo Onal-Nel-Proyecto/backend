@@ -9,7 +9,8 @@ export const getAllMedidasService = async ({ nombre, estado }) => {
       id: row.id,
       nombre: row.nombre,
       descripcion: row.descripcion || null,
-      estado: row.estado
+      estado: row.estado,
+      tipo_medida: row.tipo_medida
     }));
 
     return { data };
@@ -29,7 +30,8 @@ export const getMedidaByIdService = async ({ id }) => {
         id: medida.id,
         nombre: medida.nombre,
         descripcion: medida.descripcion || null,
-        estado: medida.estado
+        estado: medida.estado,
+        tipo_medida: medida.tipo_medida
       }
     };
   } catch (error) {
@@ -43,7 +45,7 @@ export const createMedidaService = async ({ medNom, medDesc, medEst }) => {
     const existe = await MedidaModel.existsByName(medNom);
     if (existe) return { err: 'Ya existe una medida con ese nombre', errorCode: 400 };
 
-    const id = await MedidaModel.create({ medNom, medDesc, medEst });
+    const id = await MedidaModel.create({ medNom, medDesc, medEst, medTipo });
 
     return { msg: 'Medida creada correctamente', id };
   } catch (error) {
@@ -60,7 +62,7 @@ export const updateMedidaService = async ({ id, medNom, medDesc, medEst }) => {
     const existe = await MedidaModel.existsByName(medNom, id);
     if (existe) return { err: 'Ya existe otra medida con ese nombre', errorCode: 400 };
 
-    await MedidaModel.update(id, { medNom, medDesc, medEst });
+    await MedidaModel.update(id, { medNom, medDesc, medEst, medTipo });
 
     return { msg: 'Medida actualizada correctamente' };
   } catch (error) {

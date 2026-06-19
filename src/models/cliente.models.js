@@ -16,6 +16,12 @@ export class ClienteModel {
       values.push(like, like, like, like);
     }
 
+    if (filtros.estado) {
+      whereClauses.push("cliEst = ?");
+      values.push(filtros.estado);
+    }
+    
+
     const whereSQL = whereClauses.length > 0
       ? `WHERE ${whereClauses.join(" AND ")}`
       : "";

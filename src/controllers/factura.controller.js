@@ -50,12 +50,13 @@ export const pdfFacturaController = async (req, res, next) => {
     const { id } = req.params;
 
     const { pdfBuffer, filename } = await generarPdfFacturaService(id);
-
+    console.log(filename)
     res.set({
       'Content-Type': 'application/pdf',
       'Content-Disposition': `inline; filename="${filename}"`,
       'Content-Length': pdfBuffer.length,
     });
+    res.set('Access-Control-Expose-Headers', 'Content-Disposition');
 
     res.send(pdfBuffer);
   } catch (error) {

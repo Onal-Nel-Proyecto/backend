@@ -2,19 +2,34 @@ import { format } from "morgan";
 import db from "../config/db.js";
 
 export class PedidoModel {
+  /**
+   * Procesa el filtro estado y retorna { sql, values }
+   * Soporta múltiples estados separados por coma: ?estado=pendiente,en_proceso
+   */
+  static _buildEstadoFilter(estado) {
+    if (!estado) {
+      return { sql: '', values: [] };
+    }
+    if (estado === 'completados') {
+      return { sql: "pedEst IN ('terminado', 'entregado')", values: [] };
+    }
+    const estados = estado.split(',').map(s => s.trim());
+    if (estados.length === 1) {
+      return { sql: 'pedEst = ?', values: [estados[0]] };
+    }
+    const placeholders = estados.map(() => '?').join(', ');
+    return { sql: `pedEst IN (${placeholders})`, values: estados };
+  }
+
   static async countPedidos(filtros = {}) {
     const whereClauses = [];
     const values = [];
 
-    // Por defecto: solo pedidos activos (pendiente + en_proceso)
-    // Si se pasa ?estado=completados → trae terminado + entregado
-    if (!filtros.estado) {
-      whereClauses.push("pedEst IN ('pendiente', 'en_proceso')");
-    } else if (filtros.estado === 'completados') {
-      whereClauses.push("pedEst IN ('terminado', 'entregado')");
-    } else {
-      whereClauses.push("pedEst = ?");
-      values.push(filtros.estado);
+    // Filtro estado (soporta múltiples valores separados por coma)
+    const estadoFilter = PedidoModel._buildEstadoFilter(filtros.estado);
+    if (estadoFilter.sql) {
+      whereClauses.push(estadoFilter.sql);
+      values.push(...estadoFilter.values);
     }
 
     if (filtros.fecha_desde) {
@@ -140,15 +155,11 @@ export class PedidoModel {
     const whereClauses = [];
     const values = [];
 
-    // Por defecto: solo pedidos activos (pendiente + en_proceso)
-    // Si se pasa ?estado=completados → trae terminado + entregado
-    if (!filtros.estado) {
-      whereClauses.push("pedEst IN ('pendiente', 'en proceso')");
-    } else if (filtros.estado === 'completados') {
-      whereClauses.push("pedEst IN ('terminado', 'entregado')");
-    } else {
-      whereClauses.push("pedEst = ?");
-      values.push(filtros.estado);
+    // Filtro estado (soporta múltiples valores separados por coma)
+    const estadoFilter = PedidoModel._buildEstadoFilter(filtros.estado);
+    if (estadoFilter.sql) {
+      whereClauses.push(estadoFilter.sql);
+      values.push(...estadoFilter.values);
     }
 
     if (filtros.fecha_desde) {

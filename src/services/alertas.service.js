@@ -122,7 +122,9 @@ export const ejecutarVerificacionPagos = async () => {
         id_cliente: row.cliId ?? row.cliente_id ?? null,
         nombre_cliente: row.cliente_nombres || `${row.cliNom || ''} ${row.cliApe || ''}`.trim() || null,
         monto_pendiente: montoPendiente,
-        fecha_limite: fechaLimite,
+        fecha_limite: fechaLimite ? new Date(fechaLimite).toLocaleDateString('es-CO', {
+            timeZone: 'UTC'
+          }): 'sin fecha',
         tipo_origen: tipoOrigen
       };
 

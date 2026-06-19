@@ -49,6 +49,28 @@ jest.unstable_mockModule('../services/produccion.service.js', () => ({
   deleteProduction: jest.fn()
 }));
 
+// Mock de db para el validador (getCurrentDate consulta CURDATE())
+// Los modelos no se usan directamente (servicios mockeados)
+jest.unstable_mockModule('../config/db.js', () => {
+  const hoy = new Date().toISOString().split('T')[0];
+  const mockPool = {
+    query: jest.fn().mockImplementation((sql) => {
+      if (sql.includes('CURDATE()')) {
+        return [[{ hoy }]];
+      }
+      return [];
+    }),
+    getConnection: jest.fn().mockResolvedValue({
+      query: jest.fn(),
+      release: jest.fn(),
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn()
+    })
+  };
+  return { default: mockPool, connectDB: jest.fn() };
+});
+
 
 
 // =====================================================
