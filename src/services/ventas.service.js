@@ -282,8 +282,35 @@ export const getReporteVentasMensualService = async (mes, anio) => {
   return {
     resumen: results[0]?.[0] ?? {},
     topProductos: results[1] ?? [],
-    ventasPorDia: results[2] ?? []
+    ventasPorDia: sanitizarVentasPorDia(results[2] ?? [], mesNum, anioNum)
   };
+};
+
+/** Helper: sanitizar ventasPorDia y construir fecha desde dia/mes/anio */
+const sanitizarVentasPorDia = (rows, mes, anio) => {
+  return (rows ?? []).map(d => {
+    const row = { ...d };
+
+    // Si tiene dia pero no fecha, construir YYYY-MM-DD desde dia/mes/anio
+    if (row.dia != null && !row.fecha) {
+      const m = String(mes || row.mes || 1).padStart(2, '0');
+      const a = String(anio || row.anio || new Date().getFullYear()).padStart(4, '0');
+      const dia = String(row.dia).padStart(2, '0');
+      row.fecha = `${a}-${m}-${dia}`;
+    }
+
+    // Limpiar objetos Date epoch 0
+    for (const key of Object.keys(row)) {
+      const val = row[key];
+      if (val instanceof Date && !isNaN(val.getTime()) && val.getTime() > 0) {
+        row[key] = val.toISOString().split('T')[0];
+      } else if (val instanceof Date && val.getTime() === 0) {
+        row[key] = null;
+      }
+    }
+
+    return row;
+  });
 };
 
 /**
@@ -320,7 +347,7 @@ export const getReporteVentasPeriodoService = async (fechaInicio, fechaFin) => {
   return {
     resumen: results[0]?.[0] ?? {},
     topProductos: results[1] ?? [],
-    ventasPorDia: results[2] ?? []
+    ventasPorDia: sanitizarVentasPorDia(results[2] ?? [], inicio.getMonth() + 1, inicio.getFullYear())
   };
 };
 

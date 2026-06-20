@@ -23,8 +23,8 @@ const nombre = body('cliente_nombre')
 
 // Apellido
 const apellido = body('cliente_apellido')
-  .notEmpty()
-  .withMessage('El apellido es requerido')
+  .optional({ values: 'falsy' })
+  // .withMessage('El apellido es requerido')
   .isString()
   .withMessage('El apellido debe ser texto')
   .isLength({ max: 255 })
@@ -33,8 +33,8 @@ const apellido = body('cliente_apellido')
 
 // Email
 const email = body('cliente_email')
-  .notEmpty()
-  .withMessage('El correo electrónico es requerido')
+  .optional({ values: 'falsy' })
+  // .withMessage('El correo electrónico es requerido')
   .isEmail()
   .withMessage('El correo electrónico no es válido')
   .isLength({ max: 254 })

@@ -55,6 +55,7 @@ export const updateProductoService = async ({ id, nombre, precioUnitario, descri
   try {
     const producto = await ProductoModel.getProductoById({ id });
     if (!producto) return { err: 'Producto no encontrado', errorCode: 404 };
+console.log(categoriaId);
 
     if (categoriaId) {
       const catValida = await ProductoModel.categoriaExists({ categoriaId });
