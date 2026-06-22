@@ -199,6 +199,13 @@ export const updateProduction = async (
           [stockProducto.stock + produccionActual[0].cantidad, produccionActual[0].proIdFk]
         );
 
+        await db.query(
+          `INSERT INTO movimientos (tipoMov, tipoSuministro, referenciaID, cantidad, usuIdFk) 
+          VALUES('PRODUCCION', 'PRODUCTO', ?, ?, ?)`,
+          [produccionActual[0].proIdFk, produccionActual[0].cantidad, user]
+        )
+
+
         // 2. Verificar si TODAS las producciones
         // del pedido están terminadas
 

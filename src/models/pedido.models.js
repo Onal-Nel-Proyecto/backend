@@ -324,6 +324,7 @@ export class PedidoModel {
         p.pedFecIng AS f_ingreso,
         p.pedRecor AS recordatorio,
         p.pedTolEst AS total_pedido,
+        p.pedTipPed AS tipo_pedido,
         v.venId AS venta_id,
         CASE 
           WHEN COALESCE(pag.total_pagado, 0) >= p.pedTolEst AND p.pedTolEst > 0 THEN 'PAGADO'

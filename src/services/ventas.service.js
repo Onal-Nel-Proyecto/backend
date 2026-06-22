@@ -1,5 +1,6 @@
 import { VentasModel } from '../models/ventas.models.js';
 import { ClienteModel } from '../models/cliente.models.js';
+import { formatDateColombia } from '../utils/normalizacion_datos.js';
 import { AppError } from '../utils/appError.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
 import db from '../config/db.js';
@@ -18,11 +19,12 @@ export const getVentasService = async (pagina = 1, limite = 15, filtros = {}) =>
     VentasModel.getAll(filtros, limitePagina, offset),
     VentasModel.getResumenGlobal()
   ]);
-
+  console.log();
+  
   const data = rows.map(row => ({
     venta_id: String(row.venta_id),
     fecha_registro: row.fecha_registro instanceof Date
-      ? row.fecha_registro.toISOString().split('T')[0]
+      ? formatDateColombia(row.fecha_registro)
       : row.fecha_registro,
     estado: row.estado,
     total: row.total,
@@ -33,7 +35,7 @@ export const getVentasService = async (pagina = 1, limite = 15, filtros = {}) =>
       cliente_apellidos: row.cliente_apellidos
     },
     fecha_limite_pago: row.fecha_limite_pago instanceof Date
-      ? row.fecha_limite_pago.toISOString().split('T')[0]
+      ? formatDateColombia(row.fecha_limite_pago)
       : (row.fecha_limite_pago || null),
     pagos: {
       total_pagado: Number(row.total_pagado),
@@ -82,11 +84,12 @@ export const getVentaByIdService = async (id) => {
     precio: Number(d.precio),
     subtotal: Number(d.subtotal)
   }));
-
+  console.log(venta.fecha_registro)
+  console.log(typeof venta.fecha_registro)
   return {
     venta_id: String(venta.venta_id),
     fecha_registro: venta.fecha_registro instanceof Date
-      ? venta.fecha_registro.toISOString().split('T')[0]
+      ? formatDateColombia(venta.fecha_registro)
       : venta.fecha_registro,
     estado: venta.estado,
     total: venta.total,
@@ -102,7 +105,7 @@ export const getVentaByIdService = async (id) => {
       user_apellidos: venta.user_apellidos
     },
     fecha_limite_pago: venta.fecha_limite_pago instanceof Date
-      ? venta.fecha_limite_pago.toISOString().split('T')[0]
+      ? formatDateColombia(venta.fecha_limite_pago)
       : (venta.fecha_limite_pago || null),
     pedido_id: venta.pedido_id || null,
     detalles: {
@@ -303,7 +306,7 @@ const sanitizarVentasPorDia = (rows, mes, anio) => {
     for (const key of Object.keys(row)) {
       const val = row[key];
       if (val instanceof Date && !isNaN(val.getTime()) && val.getTime() > 0) {
-        row[key] = val.toISOString().split('T')[0];
+        row[key] = formatDateColombia(val);
       } else if (val instanceof Date && val.getTime() === 0) {
         row[key] = null;
       }

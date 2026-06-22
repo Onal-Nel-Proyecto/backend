@@ -1,4 +1,5 @@
 import { AppError } from '../utils/appError.js';
+import { normalizeEmptyStrings } from '../utils/normalizacion_datos.js';
 import { actualizarCliente, changeStatusServices, crearCliente, obtenerClientePorId, obtenerClientes } from "../services/clientes.service.js";
 
 export const getClientes = async (req, res, next) => {
@@ -29,13 +30,24 @@ export const getClienteById = async (req, res, next) => {
 
 export const createCliente = async (req, res, next) => {
   try {
+    req.body = normalizeEmptyStrings(req.body);
     req.body.user_id = req.user.user_id;
-    const clienteCreado = await crearCliente(req.body);
-    res.status(201).json(clienteCreado);
+    const resultado = await crearCliente(req.body);
+    const { data, tipoOperacion } = resultado;
+
+    const mensaje = tipoOperacion === 'REACTIVADO'
+      ? 'Cliente reactivado exitosamente'
+      : 'Cliente registrado exitosamente';
+      
+    res.status(201).json({status: true, msg: mensaje });
   } catch (error) {
     console.error('Error al crear cliente:', error);
     if (error.message.includes('no existe')) {
       return next(new AppError(error.message, 400));
+    }
+    // Capturar errores SIGNAL SQLSTATE '45000' del SP sp_registrar_cliente
+    if (error.code === 'ER_SIGNAL_EXCEPTION' || error.sqlMessage) {
+      return next(new AppError(error.sqlMessage || error.message, 400));
     }
     next(new AppError('Error interno del servidor', 500));
   }
@@ -60,6 +72,7 @@ export const changeStatus = async (req, res, next) => {
 
 export const updateCliente = async (req, res, next) => {
   try {
+    req.body = normalizeEmptyStrings(req.body);
     const { id } = req.params;
     const resultado = await actualizarCliente(id, req.body);
     res.json(resultado);

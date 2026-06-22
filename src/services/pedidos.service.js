@@ -2,7 +2,7 @@ import { ClienteModel } from '../models/cliente.models.js';
 import { DetallePedidoModel } from '../models/dt_pedido.models.js';
 import { PedidoModel } from '../models/pedido.models.js';
 import { PedidoFotoModel } from '../models/pedido_foto.models.js';
-import { toTitleCase } from '../utils/normalizacion_datos.js';
+import { toTitleCase, formatDateColombia } from '../utils/normalizacion_datos.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
 import { getDetallePedidoByIdPedido } from './dt_pedido.service.js';
 import db from "../config/db.js";
@@ -27,7 +27,7 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
     id: e.id,
     descripcion: e.descripcion,
     cliente_nombres: e.cliente_nombres,
-    fecha_entrega_estimada: e.fecha_estimada ? new Date(e.fecha_estimada).toLocaleDateString() : null,
+    fecha_entrega_estimada: e.fecha_estimada ? formatDateColombia(new Date(e.fecha_estimada)) : null,
     estado: e.estado,
     estado_pago: e.estado_pago,
     dias_faltantes: e.dias_faltantes,
@@ -74,7 +74,7 @@ export const createNewPedido = async ({
   if (!descripcion) {
     // estructura nombre del cliente - fecha de registro del pedido
     
-    descripcion = `Pedido de ${toTitleCase(cliente.data.cliNom)} ${cliente.data?.cliApe !== null ? toTitleCase(cliente.data.cliApe) : ''} - ${new Date().toLocaleDateString('es-CO')}`;
+    descripcion = `Pedido de ${toTitleCase(cliente.data.cliNom)} ${cliente.data?.cliApe !== null ? toTitleCase(cliente.data.cliApe) : ''} - ${formatDateColombia(new Date())}`;
   }
   // 🔹 4. Crear pedido
   const result = await PedidoModel.create({
@@ -131,9 +131,10 @@ export const getPedidoByIdService = async (id_pedido) => {
     observacion: pedido[0].obs,
     recordatorio: pedido[0].recordatorio,
     precio_total: pedido[0].total_pedido,
-    fecha_estimada_entrega: pedido[0].f_estimada != null ? pedido[0].f_estimada.toISOString().split('T')[0] : pedido[0].f_estimada,
-    fecha_entrega: pedido[0].f_entrega != null ? pedido[0].f_entrega.toISOString().split('T')[0] : pedido[0].f_entrega,
-    fecha_ingreso: pedido[0].f_ingreso != null ? pedido[0].f_ingreso.toISOString().split('T')[0] : pedido[0].f_ingreso,
+    tipo_pedido: pedido[0].tipo_pedido != null ? toTitleCase(pedido[0].tipo_pedido) : null,
+    fecha_estimada_entrega: pedido[0].f_estimada != null ? formatDateColombia(pedido[0].f_estimada) : null,
+    fecha_entrega: pedido[0].f_entrega != null ? formatDateColombia(pedido[0].f_entrega) : null,
+    fecha_ingreso: pedido[0].f_ingreso != null ? formatDateColombia(pedido[0].f_ingreso) : null,
     fotos_pedido: (await PedidoFotoModel.getFotosByPedidoId(id_pedido)).map(f => ({
       foto_id: f.fotId,
       foto_url: f.fotUrl,
@@ -178,7 +179,7 @@ export const updatePedidoService = async (id, data) => {
 
   if (descripcion !== undefined) {
     fields.pedDesc = '?';
-    values.push(!descripcion ? `Pedido de ${toTitleCase(pedido[0].cliente_name)} - ${new Date(pedido[0].f_ingreso).toLocaleDateString('es-CO')}` : descripcion);
+    values.push(!descripcion ? `Pedido de ${toTitleCase(pedido[0].cliente_name)} - ${formatDateColombia(new Date(pedido[0].f_ingreso))}` : descripcion);
   }
 
   if (observacion !== undefined) {
@@ -277,8 +278,8 @@ export const getAllEntregasService = async (pag = 1, filtros = {}) => {
     id: e.id,
     descripcion: e.descripcion,
     cliente_nombres: e.cliente_nombres,
-    fecha_entrega_estimada: e.fecha_estimada ? new Date(e.fecha_estimada).toLocaleDateString() : null,
-    fecha_entrega_real: e.fecha_entrega ? new Date(e.fecha_entrega).toLocaleDateString() : null,
+    fecha_entrega_estimada: e.fecha_estimada ? formatDateColombia(new Date(e.fecha_estimada)) : null,
+    fecha_entrega_real: e.fecha_entrega ? formatDateColombia(new Date(e.fecha_entrega)) : null,
     estado: e.estado,
     precio_total: Number(e.precio_total ?? 0),
     estado_pago: e.estado_pago,

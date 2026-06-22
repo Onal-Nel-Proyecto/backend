@@ -140,10 +140,12 @@ export const crearCliente = async (body) => {
   };
 
   // El SP sp_registrar_cliente maneja internamente el cliente + teléfonos
-  await ClienteModel.create(nuevoCliente, telefono);
+  const { tipoOperacion } = await ClienteModel.create(nuevoCliente, telefono);
 
   // Devolver los datos completos recién creados (igual que GET /:id)
-  return await obtenerClientePorId(cliente_id);
+  const clienteData = await obtenerClientePorId(cliente_id);
+  
+  return { data: clienteData, tipoOperacion };
 }
 
 export const changeStatusServices = async ({id, estado}) => {

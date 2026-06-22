@@ -16,7 +16,9 @@ const pool = mysql2.createPool({
   port: MYSQL_PORT,
   waitForConnections: true,
   connectionLimit: 10,
-  queueLimit: 0
+  queueLimit: 0,
+  timezone: '-05:00',
+  
 });
 
 // función para validar conexión

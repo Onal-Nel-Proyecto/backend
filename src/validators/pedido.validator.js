@@ -48,8 +48,21 @@ export const basePedidoValidator = [
 
   body('recordatorio')
     .optional({ nullable: true })
-    .isInt()
-    .withMessage("El recordatorio debe ser un numero"),
+    .isISO8601()
+    .withMessage("El recordatorio debe tener formato válido (YYYY-MM-DD)")
+    .custom(async (value, { req }) => {
+      // Si se envía recordatorio, fecha_estimada es obligatoria
+      if (!req.body.fecha_estimada) {
+        throw new Error('Si se envía un recordatorio, la fecha estimada de entrega es obligatoria');
+      }
+
+      // El recordatorio no puede ser posterior a la fecha estimada
+      if (value > req.body.fecha_estimada) {
+        throw new Error('El recordatorio no puede ser mayor a la fecha estimada de entrega');
+      }
+
+      return true;
+    }),
 
   body('tipo_pedido')
     .optional({ nullable: true, checkFalsy: true })
@@ -146,7 +159,7 @@ export const updateValidator = [
     .isLength({ max: 15, min: 7 })
     .withMessage("El id del cliente debe tener entre 7 y 15 caracteres"),
 
-  body('fecha_estimada')
+  body('fecha_estimada_entrega')
     .optional({ nullable: true, checkFalsy: true })
     .isISO8601()
     .withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
@@ -178,8 +191,19 @@ export const updateValidator = [
 
   body('recordatorio')
     .optional({ nullable: true })
-    .isInt()
-    .withMessage("El recordatorio debe ser un número"),
+    .custom(async (value, { req }) => {
+      // Si se envía recordatorio, fecha_estimada es obligatoria
+      if (!req.body.fecha_estimada_entrega) {
+        throw new Error('Si se envía un recordatorio, la fecha estimada de entrega es obligatoria');
+      }
+
+      // El recordatorio no puede ser posterior a la fecha estimada
+      if (value > req.body.fecha_estimada_entregaa) {
+        throw new Error('El recordatorio no puede ser mayor a la fecha estimada de entrega');
+      }
+
+      return true;
+    }),
 
   body('tipo_pedido')
     .optional({ nullable: true, checkFalsy: true })

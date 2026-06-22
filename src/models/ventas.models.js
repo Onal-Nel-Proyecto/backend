@@ -65,7 +65,13 @@ export class VentasModel {
         GROUP BY pagVenIdFk
       ) p ON p.pagVenIdFk = v.venId
       ${whereSQL}
-      ORDER BY v.venFec DESC
+      ORDER BY  CASE
+        WHEN v.estadoPago = 'SIN PAGAR' THEN 1
+        WHEN v.estadoPago = 'ADELANTADO' THEN 2
+        WHEN v.estadoPago = 'PAGADO' THEN 3
+        WHEN v.estadoPago = 'ANULADO' THEN 4
+        ELSE 5
+      END,v.venFec DESC
       LIMIT ? OFFSET ?`,
       params
     );
