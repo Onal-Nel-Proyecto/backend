@@ -16,7 +16,7 @@ export class PedidoFotoModel {
   // Obtener una foto por su ID
   static async getFotoById(fotoId) {
     const [rows] = await db.query(
-      `SELECT fotId, fotUrl, fotFec, pedIdFk
+      `SELECT fotId, fotUrl, fotFec, pubId, pedIdFk
        FROM pedido_foto
        WHERE fotId = ?`,
       [fotoId]
@@ -25,10 +25,10 @@ export class PedidoFotoModel {
   }
 
   // Insertar una nueva foto para un pedido
-  static async createFoto(pedidoId, fotUrl) {
+  static async createFoto(pedidoId, {fotoUrl, publicId}) {
     const [result] = await db.query(
-      'INSERT INTO pedido_foto (pedIdFk, fotUrl) VALUES (?, ?)',
-      [pedidoId, fotUrl]
+      'INSERT INTO pedido_foto (pedIdFk, fotUrl, pubId) VALUES (?, ?, ?)',
+      [pedidoId, fotoUrl, publicId]
     );
     return result;
   }
