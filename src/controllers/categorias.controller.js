@@ -34,8 +34,8 @@ export const ctlGetCategoriaById = async (req, res, next) => {
 // Crear categoría
 export const ctlCreateCategoria = async (req, res, next) => {
   try {
-    const { catNom, catDesc, catEst } = req.body;
-    const result = await createCategoriaService({ catNom, catDesc, catEst });
+    const { catNom, catDesc, catEst, catTipsPrendas, catTallaRef, catRestMed } = req.body;
+    const result = await createCategoriaService({ catNom, catDesc, catEst, catTipsPrendas, catTallaRef, catRestMed });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(201).json({ status: true, msg: result.msg, id: result.id });
   } catch (error) {
@@ -47,8 +47,8 @@ export const ctlCreateCategoria = async (req, res, next) => {
 export const ctlUpdateCategoria = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { catNom, catDesc, catEst } = req.body;
-    const result = await updateCategoriaService({ id, catNom, catDesc, catEst });
+    const { catNom, catDesc, catEst, catTipsPrendas, catTallaRef, catRestMed } = req.body;
+    const result = await updateCategoriaService({ id, catNom, catDesc, catEst, catTipsPrendas, catTallaRef, catRestMed });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(200).json({ status: true, msg: result.msg });
   } catch (error) {

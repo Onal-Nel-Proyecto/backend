@@ -51,9 +51,10 @@ export class MedidaModel {
 
   // Crear una nueva medida
   static async create({ medNom, medDesc, medEst, medTipo }) {
+    console.log(medNom, medDesc, medEst, medTipo)
     const [result] = await db.query(
       `INSERT INTO medidas (medNom, medDesc, medEst, medTipo)
-       VALUES (?, ?, ?)`,
+       VALUES (?, ?, ?, ?)`,
       [medNom, medDesc || null, medEst || 'ACTIVO', medTipo || 'GENERAL']
     );
     return result.insertId;

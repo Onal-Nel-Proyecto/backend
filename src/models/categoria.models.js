@@ -22,13 +22,17 @@ export class CategoriaModel {
         catId AS id,
         catNom AS nombre,
         catDesc AS descripcion,
-        catEst AS estado
+        catEst AS estado,
+        catTipsPrendas,
+        catTallaRef,
+        catRestMed
       FROM categoria
       ${where}
       ORDER BY catNom ASC`,
       valores
     );
-
+    // console.log(rows);
+    
     return rows;
   }
 
@@ -39,7 +43,10 @@ export class CategoriaModel {
         catId AS id,
         catNom AS nombre,
         catDesc AS descripcion,
-        catEst AS estado
+        catEst AS estado,
+        catTipsPrendas,
+        catTallaRef,
+        catRestMed
       FROM categoria
       WHERE catId = ?`,
       [id]
@@ -49,24 +56,42 @@ export class CategoriaModel {
   }
 
   // Crear una nueva categoría
-  static async create({ catNom, catDesc, catEst }) {
+  static async create({ catNom, catDesc, catEst, catTipsPrendas, catTallaRef, catRestMed }) {
     const [result] = await db.query(
-      `INSERT INTO categoria (catNom, catDesc, catEst)
-       VALUES (?, ?, ?)`,
-      [catNom, catDesc || null, catEst || 'ACTIVO']
+      `INSERT INTO categoria (catNom, catDesc, catEst, catTipsPrendas, catTallaRef, catRestMed)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [
+        catNom,
+        catDesc || null,
+        catEst || 'ACTIVO',
+        catTipsPrendas ? JSON.stringify(catTipsPrendas) : null,
+        catTallaRef ? JSON.stringify(catTallaRef) : null,
+        catRestMed ? JSON.stringify(catRestMed) : null
+      ]
     );
     return result.insertId;
   }
 
   // Actualizar categoría
-  static async update(id, { catNom, catDesc, catEst }) {
+  static async update(id, { catNom, catDesc, catEst, catTipsPrendas, catTallaRef, catRestMed }) {
     const [result] = await db.query(
       `UPDATE categoria SET
         catNom = ?,
         catDesc = ?,
-        catEst = ?
+        catEst = ?,
+        catTipsPrendas = ?,
+        catTallaRef = ?,
+        catRestMed = ?
       WHERE catId = ?`,
-      [catNom, catDesc || null, catEst || 'ACTIVO', id]
+      [
+        catNom,
+        catDesc || null,
+        catEst || 'ACTIVO',
+        catTipsPrendas ? JSON.stringify(catTipsPrendas) : null,
+        catTallaRef ? JSON.stringify(catTallaRef) : null,
+        catRestMed ? JSON.stringify(catRestMed) : null,
+        id
+      ]
     );
     return result.affectedRows > 0;
   }

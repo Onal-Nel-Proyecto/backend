@@ -44,12 +44,12 @@ export const createMaterialService = async ({ nombre, descripcion, umbralMinimo,
 };
 
 // Servicio para actualizar un material
-export const updateMaterialService = async ({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial }) => {
+export const updateMaterialService = async ({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock }) => {
   try {
     const material = await MaterialesModel.getMaterialById({ id });
     if (!material) return { err: 'Material no encontrado', errorCode: 404 };
 
-    await MaterialesModel.updateMaterial({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial });
+    await MaterialesModel.updateMaterial({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock });
     return { msg: 'Material actualizado correctamente' };
   } catch (error) {
     return { err: 'Error al actualizar material', errorCode: 500 };

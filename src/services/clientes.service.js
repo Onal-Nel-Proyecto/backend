@@ -3,7 +3,9 @@ import { UserModel } from "../models/user.models.js";
 import { calculateTotalPages } from "../utils/paginacion.js";
 import db from "../config/db.js";
 import { generateId } from "../utils/genId.js";
+import { toTitleCase } from "../utils/normalizacion_datos.js";
 const transfromEstado = ['activo', 'inactivo']
+
 export const obtenerClientes = async (pagina = 1, limite = 15, filtros = {}) => {
   // Asegurar valores numéricos
   const paginaActual = parseInt(pagina, 10) || 1;
@@ -37,6 +39,8 @@ export const obtenerClientes = async (pagina = 1, limite = 15, filtros = {}) => 
       cliente_apellido: row.cliApe,
       cliente_email: row.cliCorr || null,
       cliente_direccion: row.cliDir || null,
+      cliente_tipo_doc: toTitleCase(row.cliTipDoc),
+      cliente_documento: row.cliNumDoc,
       cliente_telefonos: telefonosPorCliente[row.cliId] || [],
       estado: transfromEstado[row.cliEst - 1],
       fecha_creacion: row.cliFecReg
@@ -58,7 +62,8 @@ export const obtenerClientePorId = async (id) => {
   // Usamos el método getById del modelo (devuelve { status, data } o false)
   
   const resultado = await ClienteModel.getById(id);
-
+  console.log(resultado, id);
+  
   if (!resultado || !resultado.status) {
     return null; // No encontrado
   }
@@ -97,7 +102,7 @@ export const obtenerClientePorId = async (id) => {
   const telefonos = telefonosRaw.map(tel => ({
     numero_telefono: tel.cliTel
   }));
-
+  
   // Construir la respuesta
   return {
     cliente_id: String(cliente.cliId),
@@ -105,6 +110,8 @@ export const obtenerClientePorId = async (id) => {
     cliente_apellido: cliente.cliApe,
     cliente_email: cliente.cliCorr || null,
     cliente_direccion: cliente.cliDir || null,
+    cliente_tipo_doc: cliente.cliTipDoc,
+    cliente_documento: cliente.cliNumDoc,
     usuario,
     cliente_telefonos: telefonos,
     estado: transfromEstado[cliente.cliEst - 1],
@@ -120,6 +127,8 @@ export const crearCliente = async (body) => {
     cliente_apellido,
     cliente_email,
     cliente_direccion,
+    cliente_documento,
+    cliente_tipo_doc,
     telefono = [],
     user_id
   } = body;
@@ -135,9 +144,22 @@ export const crearCliente = async (body) => {
     cliApe: cliente_apellido,
     cliCorr: cliente_email || null,
     cliDir: cliente_direccion || null,
+    cliTipDoc: cliente_tipo_doc,
+    cliNumDoc: cliente_documento,
     cliFecReg: fechaCreacion,
     usuIdFk: user_id || null
   };
+
+  // Validar que no exista otro cliente con el mismo tipo y número de documento
+  if (cliente_documento && cliente_tipo_doc) {
+    const existe = await ClienteModel.existsByDocumento({
+      tipoDoc: cliente_tipo_doc,
+      numDoc: cliente_documento
+    });
+    if (existe) {
+      throw new Error('Ya existe un cliente registrado con ese tipo y número de documento');
+    }
+  }
 
   // El SP sp_registrar_cliente maneja internamente el cliente + teléfonos
   const { tipoOperacion } = await ClienteModel.create(nuevoCliente, telefono);
@@ -162,6 +184,58 @@ export const changeStatusServices = async ({id, estado}) => {
   }
 }
 
+// export const obtenerClientePorDocumento = async (documento) => {
+//   const resultado = await ClienteModel.getByDocumento(documento);
+
+//   if (!resultado || !resultado.status) {
+//     return null;
+//   }
+
+//   const cliente = resultado.data;
+
+//   // Obtener usuario si existe
+//   let usuario = null;
+//   if (cliente.usuIdFk) {
+//     const usuarios = await UserModel.getById(cliente.usuIdFk);
+//     if (usuarios.length > 0) {
+//       const u = usuarios[0];
+//       usuario = {
+//         user_id: String(u.usuId),
+//         user_nombres: u.usuNom,
+//         user_apellido: u.usuApe
+//       };
+//     }
+//   }
+
+//   if (!usuario) {
+//     usuario = {
+//       user_id: "",
+//       user_nombres: "",
+//       user_apellido: ""
+//     };
+//   }
+
+//   const telefonosRaw = await ClienteModel.getTelefonoByClienteId(cliente.cliId);
+//   const telefonos = telefonosRaw.map(tel => ({
+//     numero_telefono: tel.cliTel
+//   }));
+
+//   return {
+//     cliente_id: String(cliente.cliId),
+//     cliente_nombre: cliente.cliNom,
+//     cliente_apellido: cliente.cliApe,
+//     cliente_email: cliente.cliCorr || null,
+//     cliente_direccion: cliente.cliDir || null,
+//     cliente_tipo_doc: cliente.cliTipDoc,
+//     cliente_documento: cliente.cliNumDoc,
+//     usuario,
+//     cliente_telefonos: telefonos,
+//     estado: transfromEstado[cliente.cliEst - 1],
+//     fecha_creacion: cliente.cliFecReg,
+//     historial_pedido: []
+//   };
+// };
+
  export const actualizarCliente = async (id, body) => {
     // Verificar que el cliente existe
     const existe = await ClienteModel.getById(id);
@@ -174,8 +248,22 @@ export const changeStatusServices = async ({id, estado}) => {
       cliente_apellido,
       cliente_email,
       cliente_direccion,
+      cliente_documento,
+      cliente_tipo_doc,
       telefono = []
     } = body;
+
+    // Validar que no exista otro cliente con el mismo tipo y número de documento (excluyendo el actual)
+    if (cliente_documento && cliente_tipo_doc) {
+      const existe = await ClienteModel.existsByDocumento({
+        tipoDoc: cliente_tipo_doc,
+        numDoc: cliente_documento,
+        excludeId: id
+      });
+      if (existe) {
+        throw new Error('Ya existe un cliente registrado con ese tipo y número de documento');
+      }
+    }
 
     // Transacción para actualizar cliente y reemplazar teléfonos
     const connection = await db.getConnection();
@@ -187,7 +275,9 @@ export const changeStatusServices = async ({id, estado}) => {
         cliNom: cliente_nombre,
         cliApe: cliente_apellido,
         cliCorr: cliente_email || null,
-        cliDir: cliente_direccion || null
+        cliDir: cliente_direccion || null,
+        cliTipDoc: cliente_tipo_doc,
+        cliNumDoc: cliente_documento
       });
 
       // Reemplazar teléfonos: eliminar todos los existentes, luego insertar los nuevos

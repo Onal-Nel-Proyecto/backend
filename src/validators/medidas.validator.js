@@ -1,4 +1,23 @@
 import { body, param, query } from 'express-validator';
+import { MedidaModel } from '../models/medidas.models.js';
+
+// Helper para normalizar texto (minúsculas, sin tildes)
+const normalizar = (text) =>
+  String(text).toLowerCase().trim().normalize('NFD').replace(/[̀-ͯ]/g, '');
+
+// Helper para verificar duplicados por nombre normalizado
+const validarNombreUnico = async (value, { req }) => {
+  const excludeId = req.params?.id || null;
+  const todas = await MedidaModel.getAll({});
+  const inputNormalizado = normalizar(value);
+  const duplicado = todas.find(m =>
+    Number(m.id) !== Number(excludeId) && normalizar(m.nombre) === inputNormalizado
+  );
+  if (duplicado) {
+    throw new Error(`Ya existe una medida con el nombre "${duplicado.nombre}"`);
+  }
+  return true;
+};
 
 // ─────────────────────────────────────────────
 //  Listar medidas con filtros
@@ -33,7 +52,8 @@ export const createMedidaValidator = [
     .notEmpty().withMessage('El nombre es requerido')
     .isString().withMessage('El nombre debe ser texto')
     .trim()
-    .isLength({ min: 3, max: 50 }).withMessage('El nombre debe tener entre 3 y 50 caracteres'),
+    .isLength({ min: 3, max: 50 }).withMessage('El nombre debe tener entre 3 y 50 caracteres')
+    .custom(validarNombreUnico),
 
   body('medDesc')
     .optional({ values: 'falsy' })
@@ -64,7 +84,8 @@ export const updateMedidaValidator = [
     .notEmpty().withMessage('El nombre es requerido')
     .isString().withMessage('El nombre debe ser texto')
     .trim()
-    .isLength({ min: 3, max: 50 }).withMessage('El nombre debe tener entre 3 y 50 caracteres'),
+    .isLength({ min: 3, max: 50 }).withMessage('El nombre debe tener entre 3 y 50 caracteres')
+    .custom(validarNombreUnico),
 
   body('medDesc')
     .optional({ values: 'falsy' })

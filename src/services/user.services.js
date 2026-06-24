@@ -96,10 +96,9 @@ export const updatePasswordService = async ({ id, password, passwordActual, requ
       return { err: 'Acceso denegado', errorCode: 403 };
     }
     
-    // Si no es admin (es el propio usuario), debe verificar la contraseña actual
-    if (!isAdmin) {
+    // Requerir contraseña actual si es el propio usuario (incluso si es admin)
+    if (!isAdmin || isSelf) {
       if (!passwordActual) {
-        console.log(password, passwordActual);
         return { err: 'La contraseña actual es requerida', errorCode: 400 };
       }
 
@@ -107,8 +106,12 @@ export const updatePasswordService = async ({ id, password, passwordActual, requ
       if (!currentHash) return { err: 'Usuario no encontrado', errorCode: 404 };
 
       const isValid = bcrypt.compareSync(passwordActual, currentHash);
-      console.log(isValid)
       if (!isValid) return { err: 'La contraseña actual no es correcta', errorCode: 400 };
+
+      // Validar que la nueva contraseña no sea igual a la actual
+      if (password === passwordActual) {
+        return { err: 'La nueva contraseña no puede ser igual a la actual', errorCode: 400 };
+      }
     }
 
     await UserModel.updatePassword({ id, password });

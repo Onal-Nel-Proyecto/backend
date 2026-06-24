@@ -51,9 +51,9 @@ const ctlCreateMaterial = async (req, res, next) => {
 const ctlUpdateMaterial = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial } = req.body;
+    const { nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock } = req.body;
 
-    const result = await updateMaterialService({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial });
+    const result = await updateMaterialService({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(200).json({ status: true, msg: result.msg });
   } catch (error) {

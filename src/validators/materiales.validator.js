@@ -107,6 +107,10 @@ export const updateMaterialValidator = [
     .notEmpty().withMessage('El tipo de material es requerido')
     .toUpperCase()
     .isIn(['TELA', 'HERRAMIENTA', 'HILO', 'BOTON', 'CREMALLERA', 'ELASTICO', 'ENTRETELA', 'CORDON', 'ENCAJE', 'APLIQUE', 'ETIQUETA', 'EMPAQUE', 'ACCESORIO']).withMessage('Tipo de material no válido'),
+
+  body('stock')
+    .optional({ nullable: true })
+    .isInt({ min: 0 }).withMessage('El stock debe ser un número entero mayor o igual a 0'),
 ];
 
 // ─────────────────────────────────────────────

@@ -253,8 +253,8 @@ export const entregarPedidoService = async (pedidoId, usuarioId) => {
     await connection.rollback();
     console.error('[entregarPedidoService] Error:', error.message);
     // Si el SP lanzó SIGNAL SQLSTATE, propagamos el mensaje real
-    if (error.code === 'ER_SIGNAL_EXCEPTION' || error.sqlMessage) {
-      return { err: error.sqlMessage || error.message, errorCode: 400 };
+    if (error.code === 'ER_SIGNAL_EXCEPTION') {
+      return { err: error.sqlMessage, errorCode: 400 };
     }
     return { err: 'Error interno al entregar el pedido', errorCode: 500 };
   } finally {

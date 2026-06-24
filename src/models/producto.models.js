@@ -8,6 +8,9 @@ export class ProductoModel {
     const filtros = [];
     const valores = [];
 
+    // Filtro base: solo estados 1,2,3 pero excluir estado=3 con tipo PERSONALIZADO
+    filtros.push("(p.proEst IN (1, 2) OR (p.proEst = 3 AND p.proTipPro != 'PERSONALIZADO'))");
+
     // Aplicar filtros opcionales según los query params recibidos
     if (nombre) {
       filtros.push('p.proNom LIKE ?');
@@ -125,6 +128,9 @@ export class ProductoModel {
   static async getProductosResumen({ nombre, estado, categoria, tipoProducto }) {
     const filtros = [];
     const valores = [];
+
+    // Filtro base: solo estados 1,2,3 pero excluir estado=3 con tipo PERSONALIZADO
+    filtros.push("(p.proEst IN (1, 2) OR (p.proEst = 3 AND p.proTipPro != 'PERSONALIZADO'))");
 
     if (nombre) {
       filtros.push('p.proNom LIKE ?');

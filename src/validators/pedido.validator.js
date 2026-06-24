@@ -48,8 +48,8 @@ export const basePedidoValidator = [
 
   body('recordatorio')
     .optional({ nullable: true })
-    .isISO8601()
-    .withMessage("El recordatorio debe tener formato válido (YYYY-MM-DD)")
+    // .isISO8601()
+    // .withMessage("El recordatorio debe tener formato válido (YYYY-MM-DD)")
     .custom(async (value, { req }) => {
       // Si se envía recordatorio, fecha_estimada es obligatoria
       if (!req.body.fecha_estimada) {
