@@ -102,7 +102,18 @@ export const getAllAbastecimientosService = async ({
         a.usuIdFk,
         (SELECT COUNT(*) FROM detalle_abastecimiento d WHERE d.absIdFk = a.id) AS total_items,
         (SELECT COALESCE(SUM(d.detAbsCant * d.detAbsCos), 0)
-         FROM detalle_abastecimiento d WHERE d.absIdFk = a.id) AS costo_total
+         FROM detalle_abastecimiento d WHERE d.absIdFk = a.id) AS costo_total,
+        (SELECT GROUP_CONCAT(
+           CASE
+             WHEN d.detAbsTip = 'PRODUCTO' THEN p.proNom
+             WHEN d.detAbsTip = 'MATERIAL'  THEN m.matNom
+             ELSE NULL
+           END SEPARATOR ', '
+         )
+         FROM detalle_abastecimiento d
+         LEFT JOIN productos p  ON d.detAbsTip = 'PRODUCTO' AND p.proId  = d.detAbsRefId
+         LEFT JOIN materiales m ON d.detAbsTip = 'MATERIAL' AND m.matId = d.detAbsRefId
+         WHERE d.absIdFk = a.id) AS suministros
       FROM abastecimiento a
       LEFT JOIN proveedor pv ON pv.provId = a.provIdFk
       ${whereSQL}
