@@ -226,7 +226,41 @@ export const createAbastecimientoService = async ({ provIdFk, detalles, usuIdFk 
 
     await connection.commit();
 
-    return { msg: 'Abastecimiento creado correctamente', id: absId };
+    // ── Obtener el abastecimiento recién creado con nombres de suministros resueltos ──
+    const [absRows] = await db.query(
+      `SELECT
+         a.id,
+         a.absEstado AS estado,
+         a.abaFec AS fecha,
+         a.provIdFk,
+         a.usuIdFk,
+         pv.provNom AS proveedor_nombre
+       FROM abastecimiento a
+       LEFT JOIN proveedor pv ON pv.provId = a.provIdFk
+       WHERE a.id = ?`,
+      [absId]
+    );
+
+    const sqlDet = `
+      SELECT 
+        dt.detAbsId AS id,
+        dt.detAbsTip AS tipo_suministro,
+        dt.detAbsCant AS cantidad,
+        dt.detAbsCos AS costo_unitario,
+        dt.detAbsRefId AS id_referencia,
+        CASE
+          WHEN dt.detAbsTip = 'PRODUCTO' THEN p.proNom
+          WHEN dt.detAbsTip = 'MATERIAL' THEN m.matNom
+          ELSE NULL
+        END AS nombre_suministro
+      FROM detalle_abastecimiento dt
+      LEFT JOIN productos p  ON dt.detAbsTip = 'PRODUCTO' AND p.proId  = dt.detAbsRefId
+      LEFT JOIN materiales m ON dt.detAbsTip = 'MATERIAL' AND m.matId = dt.detAbsRefId
+      WHERE dt.absIdFk = ?
+    `;
+    const [detallesRows] = await db.query(sqlDet, [absId]);
+
+    return { msg: 'Abastecimiento creado correctamente', id: absId, data: { ...absRows[0], detalles: detallesRows } };
   } catch (error) {
     await connection.rollback();
     console.error('[createAbastecimientoService] ERROR MySQL:', error.sqlMessage || error.message);
