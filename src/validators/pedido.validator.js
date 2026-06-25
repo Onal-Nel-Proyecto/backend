@@ -10,7 +10,14 @@ const getCurrentDate = async () => {
 
 // validacion basica para registro de pedido
 export const basePedidoValidator = [
+  body("tipo_de_origen")
+    .optional({ nullable: true, checkFalsy: true })
+    .toUpperCase()
+    .isIn(['CLIENTE', 'PRODUCCION'])
+    .withMessage("tipo_de_origen debe ser CLIENTE o PRODUCCION"),
+
   body("cliente_id")
+    .if((value, { req }) => req.body.tipo_de_origen !== 'PRODUCCION')
     .notEmpty()
     .withMessage("id del cliente requerido")
     .isLength({ max: 15, min: 7 })
@@ -151,6 +158,12 @@ export const parametroValidator = [
     .optional()
     .isInt({ min: 1, max: 12 })
     .withMessage("mes debe ser un número entre 1 y 12"),
+
+  check('tipo_origen')
+    .optional()
+    .toUpperCase()
+    .isIn(['CLIENTE', 'PRODUCCION'])
+    .withMessage("tipo_origen debe ser CLIENTE o PRODUCCION"),
 ]    
 
 export const updateValidator = [
@@ -225,6 +238,23 @@ export const entregarPedidoValidator = [
     .notEmpty()
     .isString()
     .withMessage('ID de pedido requerido'),
+];
+
+export const devolverPedidoValidator = [
+  body('tipo_devolucion')
+    .notEmpty()
+    .withMessage('tipo_devolucion es requerido')
+    .toUpperCase()
+    .isIn(['ANULACION', 'CORRECCION'])
+    .withMessage('tipo_devolucion debe ser ANULACION o CORRECCION'),
+
+  body('motivo')
+    .notEmpty()
+    .withMessage('El motivo de la devolución es obligatorio')
+    .isString()
+    .withMessage('El motivo debe ser texto')
+    .isLength({ max: 255 })
+    .withMessage('El motivo no puede superar los 255 caracteres'),
 ];
 
 export const cancelPedidoValidator = [
