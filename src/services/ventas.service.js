@@ -235,23 +235,19 @@ export const updateVentaService = async (id, body) => {
 };
 
 /**
- * Anular una venta (cambiar estado a ANULADO)
+ * Anular una venta usando SP sp_anular_venta
  */
-export const anularVentaService = async (id) => {
+export const anularVentaService = async (id, usuarioId) => {
   const venta = await VentasModel.getById(id);
   if (!venta) {
     throw new AppError('Venta no encontrada', 404);
   }
 
-  const anulado = await VentasModel.anular(id);
-
-  if (!anulado) {
-    throw new AppError('No se pudo anular la venta', 400);
-  }
+  const resultado = await VentasModel.anular(id, usuarioId);
 
   return {
     status: true,
-    msg: 'Se ha anulado la venta correctamente'
+    msg: resultado
   };
 };
 

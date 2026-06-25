@@ -33,6 +33,8 @@ const mapearProveedor = (row) => ({
   prov_telefono: row.provTel || null,
   prov_correo: row.provCorr || null,
   prov_direccion: row.provDir || null,
+  prov_tip_ident: row.provTipIdent,
+  prov_num_ident: row.provNumIdent,
   prov_suministro: parseSuministros(row.proTipMatSum),
   pro_estado: row.provEst || 'SIN ESTADO'
 });
@@ -136,6 +138,8 @@ export const obtenerProveedorPorId = async (id, pagina = 1, limite = 15) => {
     prov_telefono: proveedor.provTel || null,
     prov_correo: proveedor.provCorr || null,
     prov_direccion: proveedor.provDir || null,
+    prov_tip_ident: proveedor.provTipIdent,
+    prov_num_ident: proveedor.provNumIdent,
     prov_suministro: parseSuministros(proveedor.proTipMatSum),
     historial_de_abastecimiento: {
       meta: {
@@ -158,6 +162,8 @@ export const crearProveedor = async (body) => {
     prov_telefono,
     prov_correo,
     prov_direccion,
+    prov_tip_ident,
+    prov_num_ident,
     prov_suministro = []
   } = body;
 
@@ -169,6 +175,8 @@ export const crearProveedor = async (body) => {
     provTel: prov_telefono || null,
     provCorr: prov_correo || null,
     provDir: prov_direccion || null,
+    provTipIdent: prov_tip_ident,
+    provNumIdent: prov_num_ident,
     proTipMatSum: stringifySuministros(prov_suministro)
   };
 
@@ -196,6 +204,8 @@ export const actualizarProveedor = async (id, body) => {
     prov_telefono,
     prov_correo,
     prov_direccion,
+    prov_tip_ident,
+    prov_num_ident,
     prov_suministro = []
   } = body;
 
@@ -204,6 +214,8 @@ export const actualizarProveedor = async (id, body) => {
     provTel: prov_telefono || null,
     provCorr: prov_correo || null,
     provDir: prov_direccion || null,
+    provTipIdent: prov_tip_ident,
+    provNumIdent: prov_num_ident,
     proTipMatSum: stringifySuministros(prov_suministro)
   });
 

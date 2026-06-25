@@ -9,6 +9,8 @@ export class ProveedorModel {
         provTel,
         provCorr,
         provDir,
+        provTipIdent,
+        provNumIdent,
         proTipMatSum,
         provEst
       FROM proveedor
@@ -33,6 +35,8 @@ export class ProveedorModel {
         provTel,
         provCorr,
         provDir,
+        provTipIdent,
+        provNumIdent,
         proTipMatSum,
         provEst
       FROM proveedor
@@ -58,6 +62,8 @@ export class ProveedorModel {
         provTel,
         provCorr,
         provDir,
+        provTipIdent,
+        provNumIdent,
         proTipMatSum,
         provEst
       FROM proveedor
@@ -83,6 +89,8 @@ export class ProveedorModel {
         provTel,
         provCorr,
         provDir,
+        provTipIdent,
+        provNumIdent,
         proTipMatSum,
         provEst
       FROM proveedor
@@ -114,24 +122,37 @@ export class ProveedorModel {
   }
 
   static async create(data) {
-    const { provId, provNom, provTel, provCorr, provDir, proTipMatSum } = data;
+    const { provId, provNom, provTel, provCorr, provDir, provTipIdent, provNumIdent, proTipMatSum } = data;
     const sql = `
-      INSERT INTO proveedor (provId, provNom, provTel, provCorr, provDir, proTipMatSum)
-      VALUES (?, ?, ?, ?, ?, ?)
+      INSERT INTO proveedor (provId, provNom, provTel, provCorr, provDir, provTipIdent, provNumIdent, proTipMatSum)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
-    await db.query(sql, [provId, provNom, provTel || null, provCorr || null, provDir || null, proTipMatSum || null]);
+    await db.query(sql, [provId, provNom, provTel || null, provCorr || null, provDir || null, provTipIdent, provNumIdent, proTipMatSum || null]);
     return provId;
   }
 
   static async update(id, data) {
-    const { provNom, provTel, provCorr, provDir, proTipMatSum } = data;
+    const { provNom, provTel, provCorr, provDir, provTipIdent, provNumIdent, proTipMatSum } = data;
     const sql = `
       UPDATE proveedor
-      SET provNom = ?, provTel = ?, provCorr = ?, provDir = ?, proTipMatSum = ?
+      SET provNom = ?, provTel = ?, provCorr = ?, provDir = ?, provTipIdent = ?, provNumIdent = ?, proTipMatSum = ?
       WHERE provId = ?
     `;
-    const [result] = await db.query(sql, [provNom, provTel || null, provCorr || null, provDir || null, proTipMatSum || null, id]);
+    const [result] = await db.query(sql, [provNom, provTel || null, provCorr || null, provDir || null, provTipIdent, provNumIdent, proTipMatSum || null, id]);
     return result.affectedRows > 0;
+  }
+
+  static async existsByEmail(correo, excludeId = null) {
+    let sql = 'SELECT provId FROM proveedor WHERE provCorr = ?';
+    const values = [correo];
+
+    if (excludeId) {
+      sql += ' AND provId != ?';
+      values.push(excludeId);
+    }
+
+    const [rows] = await db.query(sql, values);
+    return rows.length > 0;
   }
 
   static async changeStatus(id, estado) {

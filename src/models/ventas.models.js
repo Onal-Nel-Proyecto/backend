@@ -29,7 +29,7 @@ export class VentasModel {
 
     if (filtros.cliente) {
       whereClauses.push(
-        "(c.cliId LIKE ? OR c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)"
+        "(c.cliNumDoc LIKE ? OR c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)"
       );
       const like = `%${filtros.cliente}%`;
       console.log(like)
@@ -262,15 +262,16 @@ export class VentasModel {
   }
 
   /**
-   * Anular venta (cambiar estado a ANULADO)
+   * Anular venta usando SP sp_anular_venta
    */
-  static async anular(id) {
-    const [result] = await db.query(
-      "UPDATE ventas SET estadoPago = 'ANULADO' WHERE venId = ? AND estadoPago <> 'ANULADO'",
-      [id]
+  static async anular(id, usuarioId) {
+    await db.query(
+      'CALL sp_anular_venta(?, ?, @resultado)',
+      [id, usuarioId]
     );
 
-    return result.affectedRows > 0;
+    const [[{ resultado }]] = await db.query('SELECT @resultado AS resultado');
+    return resultado;
   }
 
   // ─────────────────────────────────────────────

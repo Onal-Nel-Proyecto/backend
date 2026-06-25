@@ -1,4 +1,5 @@
 import { body } from 'express-validator';
+import { ProveedorModel } from '../models/proveedor.models.js';
 
 // ============================================================
 // Campos reutilizables
@@ -27,7 +28,15 @@ const correo = body('prov_correo')
   .withMessage('El correo electrónico no es válido')
   .isLength({ max: 254 })
   .withMessage('El correo supera los 254 caracteres permitidos')
-  .normalizeEmail();
+  .normalizeEmail()
+  .custom(async (value, { req }) => {
+    const excludeId = req.params?.id ? String(req.params.id) : null;
+    const existe = await ProveedorModel.existsByEmail(value, excludeId);
+    if (existe) {
+      throw new Error('El correo electrónico ya está registrado por otro proveedor');
+    }
+    return true;
+  });
 
 const direccion = body('prov_direccion')
   .optional({ values: 'falsy' })
@@ -35,6 +44,22 @@ const direccion = body('prov_direccion')
   .withMessage('La dirección debe ser texto')
   .isLength({ max: 500 })
   .withMessage('La dirección supera los 500 caracteres permitidos')
+  .trim();
+
+const tipoIdent = body('prov_tip_ident')
+  .notEmpty()
+  .withMessage('El tipo de identificación es requerido')
+  .toUpperCase()
+  .isIn(['NIT', 'DOCUMENTO'])
+  .withMessage('El tipo de identificación debe ser NIT o DOCUMENTO');
+
+const numIdent = body('prov_num_ident')
+  .notEmpty()
+  .withMessage('El número de identificación es requerido')
+  .isString()
+  .withMessage('El número de identificación debe ser texto')
+  .isLength({ max: 20 })
+  .withMessage('El número de identificación supera los 20 caracteres')
   .trim();
 
 const suministroArray = body('prov_suministro')
@@ -57,6 +82,8 @@ const suministroItem = body('prov_suministro.*')
 export const createProveedorRules = [
   nombre,
   telefono,
+  tipoIdent,
+  numIdent,
   correo,
   direccion,
   suministroArray,
@@ -66,6 +93,8 @@ export const createProveedorRules = [
 export const updateProveedorRules = [
   nombre,
   telefono,
+  tipoIdent,
+  numIdent,
   correo,
   direccion,
   suministroArray,
