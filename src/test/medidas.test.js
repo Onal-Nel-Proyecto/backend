@@ -25,6 +25,20 @@ jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
   isAdminOrSelf: (req, _res, next) => next()
 }));
 
+jest.unstable_mockModule('../config/db.js', () => {
+  const mockPool = {
+    query: jest.fn().mockResolvedValue([[]]),
+    getConnection: jest.fn().mockResolvedValue({
+      query: jest.fn(),
+      release: jest.fn(),
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn()
+    })
+  };
+  return { default: mockPool, connectDB: jest.fn() };
+});
+
 jest.unstable_mockModule('../services/medidas.service.js', () => ({
   getAllMedidasService: jest.fn(),
   getMedidaByIdService: jest.fn(),

@@ -12,7 +12,7 @@ export const createNewProductionController = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error en createNewProductionController:', error);
-    next(new AppError(error.message || 'Error interno del servidor', 500));
+    next(new AppError(error.message || 'Error interno del servidor', error.statusCode || 500));
   }
 };
 
@@ -28,7 +28,7 @@ export const updateProductionController = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error en updateProductionController:', error);
-    next(new AppError(error.message || 'Error interno del servidor', 500));
+    next(new AppError(error.message || 'Error interno del servidor', error.statusCode || 500));
   }
 };
 
@@ -43,6 +43,6 @@ export const eliminarProduccion = async (req, res, next) => {
     });
   } catch (error) {
     console.error('Error en eliminarProduccion:', error);
-    next(new AppError(error.message || 'Error interno del servidor', 500));
+    next(new AppError(error.message || 'Error interno del servidor', error.statusCode || 500));
   }
 };
