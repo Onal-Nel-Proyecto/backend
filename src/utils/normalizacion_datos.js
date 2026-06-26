@@ -22,6 +22,7 @@ export const formatDateColombia = (fecha) => {
 };
 
 export const toTitleCase = (text) => {
+  if (!text) return text;
   return text
     .toLowerCase()
     .trim()

@@ -102,18 +102,7 @@ export const getAllAbastecimientosService = async ({
         a.usuIdFk,
         (SELECT COUNT(*) FROM detalle_abastecimiento d WHERE d.absIdFk = a.id) AS total_items,
         (SELECT COALESCE(SUM(d.detAbsCant * d.detAbsCos), 0)
-         FROM detalle_abastecimiento d WHERE d.absIdFk = a.id) AS costo_total,
-        (SELECT GROUP_CONCAT(
-           CASE
-             WHEN d.detAbsTip = 'PRODUCTO' THEN p.proNom
-             WHEN d.detAbsTip = 'MATERIAL'  THEN m.matNom
-             ELSE NULL
-           END SEPARATOR ', '
-         )
-         FROM detalle_abastecimiento d
-         LEFT JOIN productos p  ON d.detAbsTip = 'PRODUCTO' AND p.proId  = d.detAbsRefId
-         LEFT JOIN materiales m ON d.detAbsTip = 'MATERIAL' AND m.matId = d.detAbsRefId
-         WHERE d.absIdFk = a.id) AS suministros
+         FROM detalle_abastecimiento d WHERE d.absIdFk = a.id) AS costo_total
       FROM abastecimiento a
       LEFT JOIN proveedor pv ON pv.provId = a.provIdFk
       ${whereSQL}
@@ -121,6 +110,50 @@ export const getAllAbastecimientosService = async ({
       LIMIT ? OFFSET ?
     `;
     const [rows] = await db.query(sql, [...values, limite, offset]);
+
+    // ── 3. Cargar detalles con nombres para todos los abastecimientos de esta página ──
+    if (rows.length > 0) {
+      const ids = rows.map(r => r.id);
+      const placeholders = ids.map(() => '?').join(',');
+      const sqlDet = `
+        SELECT
+          d.absIdFk,
+          d.detAbsId AS id,
+          d.detAbsTip AS tipo_suministro,
+          d.detAbsCant AS cantidad,
+          d.detAbsCos AS costo_unitario,
+          d.detAbsRefId AS id_referencia,
+          CASE
+            WHEN d.detAbsTip = 'PRODUCTO' THEN p.proNom
+            WHEN d.detAbsTip = 'MATERIAL' THEN m.matNom
+            ELSE NULL
+          END AS nombre_suministro
+        FROM detalle_abastecimiento d
+        LEFT JOIN productos p  ON d.detAbsTip = 'PRODUCTO' AND p.proId  = d.detAbsRefId
+        LEFT JOIN materiales m ON d.detAbsTip = 'MATERIAL' AND m.matId = d.detAbsRefId
+        WHERE d.absIdFk IN (${placeholders})
+      `;
+      const [detallesRaw] = await db.query(sqlDet, ids);
+
+      // Armar mapa de detalles por absId
+      const detallesMap = {};
+      for (const d of detallesRaw) {
+        if (!detallesMap[d.absIdFk]) detallesMap[d.absIdFk] = [];
+        detallesMap[d.absIdFk].push({
+          id: d.id,
+          tipo_suministro: d.tipo_suministro,
+          cantidad: d.cantidad,
+          costo_unitario: d.costo_unitario,
+          id_referencia: String(d.id_referencia || ''),
+          nombre_suministro: d.nombre_suministro || '',
+        });
+      }
+
+      // Adjuntar detalles a cada fila
+      for (const row of rows) {
+        row.detalles = detallesMap[row.id] || [];
+      }
+    }
 
     return {
       data: rows,
