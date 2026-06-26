@@ -64,6 +64,7 @@ const ctlCreate = async (req, res, next) => {
       status: true,
       msg: result.msg,
       id: result.id,
+      data: result.data,
     });
   } catch (error) {
     console.error('[ctlCreate] Error inesperado:', error.sqlMessage || error.message);

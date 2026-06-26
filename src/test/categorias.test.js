@@ -47,6 +47,17 @@ jest.unstable_mockModule('../services/categorias.service.js', () => ({
   changeCategoriaEstadoService: jest.fn()
 }));
 
+// Mock del modelo (validarNombreUnico lo usa directamente en el validador)
+jest.unstable_mockModule('../models/categoria.models.js', () => ({
+  CategoriaModel: {
+    getAll: jest.fn().mockResolvedValue([]),
+    getById: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    changeStatus: jest.fn()
+  }
+}));
+
 // =====================================================
 // 2. IMPORTS
 // =====================================================

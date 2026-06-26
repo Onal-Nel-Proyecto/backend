@@ -47,6 +47,18 @@ jest.unstable_mockModule('../services/medidas.service.js', () => ({
   changeMedidaEstadoService: jest.fn()
 }));
 
+// Mock del modelo (validarNombreUnico lo usa directamente en el validador)
+jest.unstable_mockModule('../models/medidas.models.js', () => ({
+  MedidaModel: {
+    getAll: jest.fn().mockResolvedValue([]),
+    getById: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    changeStatus: jest.fn(),
+    existsByName: jest.fn().mockResolvedValue(false)
+  }
+}));
+
 // =====================================================
 // 2. IMPORTS
 // =====================================================
