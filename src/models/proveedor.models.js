@@ -40,17 +40,17 @@ export class ProveedorModel {
         proTipMatSum,
         provEst
       FROM proveedor
-      WHERE provNom LIKE ?
+      WHERE provNom LIKE ? OR provNumIdent LIKE ?
       ORDER BY provNom ASC
       LIMIT ? OFFSET ?
     `;
-    const [rows] = await db.query(sql, [`%${filtro}%`, limit, offset]);
+    const [rows] = await db.query(sql, [`%${filtro}%`, `%${filtro}%`, limit, offset]);
     return rows;
   }
 
   static async getTotalSearch(filtro) {
-    const sql = "SELECT COUNT(*) AS total FROM proveedor WHERE provNom LIKE ?";
-    const [rows] = await db.query(sql, [`%${filtro}%`]);
+    const sql = "SELECT COUNT(*) AS total FROM proveedor WHERE provNom LIKE ? OR provNumIdent LIKE ?";
+    const [rows] = await db.query(sql, [`%${filtro}%`, `%${filtro}%`]);
     return rows[0].total;
   }
 
