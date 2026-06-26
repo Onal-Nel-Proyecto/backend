@@ -3,7 +3,7 @@ import db from "../config/db.js";
 export class ProductoModel {
 
   // Obtener todos los productos con paginación y filtros
-  static async getAllProductos({ pagina = 1, limite = 15, nombre, estado, categoria, tipoProducto }) {
+  static async getAllProductos({ pagina = 1, limite = 15, nombre, estado, categoria, tipoProducto, tipo_origen }) {
     const offset = (pagina - 1) * limite;
     const filtros = [];
     const valores = [];
@@ -27,6 +27,17 @@ export class ProductoModel {
     if (tipoProducto) {
       filtros.push('p.proTipPro = ?');
       valores.push(tipoProducto.toUpperCase());
+    }
+    // Filtro por tipo de origen: muestra INVENTARIO + PERSONALIZADO solo de pedidos PRODUCCION
+    if (tipo_origen === 'PRODUCCION') {
+      filtros.push(`(
+        p.proTipPro = 'INVENTARIO'
+        OR EXISTS (
+          SELECT 1 FROM det_pedido dp
+          JOIN pedidos pd ON pd.pedId = dp.pedIdFk
+          WHERE dp.proIdFk = p.proId AND pd.pedTipOri = 'PRODUCCION'
+        )
+      )`);
     }
 
     const where = filtros.length > 0 ? `WHERE ${filtros.join(' AND ')}` : '';
@@ -124,8 +135,8 @@ export class ProductoModel {
   }
 
   // Obtener resumen de productos (total_productos, alertas_stock, valor_total)
-  // Respetando los filtros aplicados (nombre, estado, categoria, tipoProducto)
-  static async getProductosResumen({ nombre, estado, categoria, tipoProducto }) {
+  // Respetando los filtros aplicados (nombre, estado, categoria, tipoProducto, tipo_origen)
+  static async getProductosResumen({ nombre, estado, categoria, tipoProducto, tipo_origen }) {
     const filtros = [];
     const valores = [];
 
@@ -147,6 +158,17 @@ export class ProductoModel {
     if (tipoProducto) {
       filtros.push('p.proTipPro = ?');
       valores.push(tipoProducto.toUpperCase());
+    }
+    // Filtro por tipo de origen: muestra INVENTARIO + PERSONALIZADO solo de pedidos PRODUCCION
+    if (tipo_origen === 'PRODUCCION') {
+      filtros.push(`(
+        p.proTipPro = 'INVENTARIO'
+        OR EXISTS (
+          SELECT 1 FROM det_pedido dp
+          JOIN pedidos pd ON pd.pedId = dp.pedIdFk
+          WHERE dp.proIdFk = p.proId AND pd.pedTipOri = 'PRODUCCION'
+        )
+      )`);
     }
 
     const whereBase = filtros.length > 0 ? `WHERE ${filtros.join(' AND ')}` : '';

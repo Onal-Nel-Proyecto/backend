@@ -21,6 +21,17 @@ export class PedidoModel {
     return { sql: `pedEst IN (${placeholders})`, values: estados };
   }
 
+  /**
+   * Procesa el filtro tipo_origen y retorna { sql, values }
+   * Solo acepta un valor: 'CLIENTE' o 'PRODUCCION'
+   */
+  static _buildTipoOrigenFilter(tipo_origen) {
+    if (!tipo_origen) {
+      return { sql: '', values: [] };
+    }
+    return { sql: 'p.pedTipOri = ?', values: [tipo_origen] };
+  }
+
   static async countPedidos(filtros = {}) {
     const whereClauses = [];
     const values = [];
@@ -43,9 +54,9 @@ export class PedidoModel {
     }
 
     if (filtros.cliente) {
-      whereClauses.push("(c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
+      whereClauses.push("(c.cliNumDoc LIKE ? OR c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
       const like = `%${filtros.cliente}%`;
-      values.push(like, like, like);
+      values.push(like, like, like, like);
     }
 
     if (filtros.tipo_pedido) {
@@ -77,6 +88,13 @@ export class PedidoModel {
       values.push(filtros.tipo_prenda);
     }
 
+    // Filtro por tipo de origen
+    const tipoOrigenFilter = PedidoModel._buildTipoOrigenFilter(filtros.tipo_origen);
+    if (tipoOrigenFilter.sql) {
+      whereClauses.push(tipoOrigenFilter.sql);
+      values.push(...tipoOrigenFilter.values);
+    }
+
     const whereSQL = whereClauses.length > 0
       ? `WHERE ${whereClauses.join(" AND ")}`
       : "";
@@ -92,7 +110,7 @@ export class PedidoModel {
               ELSE 'SIN PAGAR'
             END AS estado_pago
           FROM pedidos p
-          JOIN cliente c ON c.cliId = p.pedCliIdFk
+          LEFT JOIN cliente c ON c.cliId = p.pedCliIdFk
           LEFT JOIN ventas v ON v.pedIdFk = p.pedId
           LEFT JOIN (
     SELECT
@@ -120,7 +138,7 @@ export class PedidoModel {
     // Sin filtro estado_pago: count directo
     const [rows] = await db.query(
       `SELECT COUNT(*) AS total FROM pedidos p
-      JOIN cliente c ON c.cliId = p.pedCliIdFk
+      LEFT JOIN cliente c ON c.cliId = p.pedCliIdFk
       ${whereSQL}`,
       values
     );
@@ -173,9 +191,9 @@ export class PedidoModel {
     }
 
     if (filtros.cliente) {
-      whereClauses.push("(c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
+      whereClauses.push("(c.cliNumDoc LIKE ? OR c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
       const like = `%${filtros.cliente}%`;
-      values.push(like, like, like);
+      values.push(like, like, like, like);
     }
 
     if (filtros.tipo_pedido) {
@@ -207,6 +225,13 @@ export class PedidoModel {
       values.push(filtros.tipo_prenda);
     }
 
+    // Filtro por tipo de origen
+    const tipoOrigenFilter = PedidoModel._buildTipoOrigenFilter(filtros.tipo_origen);
+    if (tipoOrigenFilter.sql) {
+      whereClauses.push(tipoOrigenFilter.sql);
+      values.push(...tipoOrigenFilter.values);
+    }
+
     const whereSQL = whereClauses.length > 0
       ? `WHERE ${whereClauses.join(" AND ")}`
       : "";
@@ -232,7 +257,9 @@ export class PedidoModel {
         sub.dias_faltantes,
         sub.estado_pago,
         sub.total_pedido,
-        sub.tipo_pedido
+        sub.tipo_pedido,
+        sub.tipo_origen,
+        sub.fecha_ingreso
       FROM (
         SELECT
           p.pedId AS id,
@@ -242,6 +269,8 @@ export class PedidoModel {
           p.pedEst AS estado,
           p.pedTolEst AS total_pedido,
           p.pedTipPed AS tipo_pedido,
+          p.pedTipOri AS tipo_origen,
+          DATE(p.pedFecIng) AS fecha_ingreso,
           fn_dias_restantes_pedido(p.pedId) AS dias_faltantes,
           CASE
             WHEN COALESCE(pag.total_pagado, 0) >= p.pedTolEst AND p.pedTolEst > 0 THEN 'PAGADO'
@@ -249,7 +278,7 @@ export class PedidoModel {
             ELSE 'SIN PAGAR'
           END AS estado_pago
         FROM pedidos p
-        JOIN cliente c ON c.cliId = p.pedCliIdFk
+        LEFT JOIN cliente c ON c.cliId = p.pedCliIdFk
         LEFT JOIN ventas v ON v.pedIdFk = p.pedId
         LEFT JOIN (
     SELECT
@@ -279,7 +308,7 @@ export class PedidoModel {
   }
 
   static async create(data) {
-    const { cliente_id, fecha_estimada, observaciones, recordatorio, descripcion, usuarioId, tipo_pedido } = data
+    const { cliente_id, fecha_estimada, observaciones, recordatorio, descripcion, usuarioId, tipo_pedido, tipo_de_origen } = data
     const connection = await db.getConnection();
     try {
       await connection.beginTransaction();
@@ -291,9 +320,9 @@ export class PedidoModel {
 
       await connection.query(
         `INSERT INTO pedidos 
-      (pedId,pedCliIdFk, pedFecEst, pedObs, pedRecor, pedDesc, pedUsuIdFk, pedTipPed, pedFecIng)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-        [id, cliente_id, fecha_estimada, observaciones, recordatorio, descripcion, usuarioId, tipo_pedido]
+      (pedId, pedCliIdFk, pedFecEst, pedObs, pedRecor, pedDesc, pedUsuIdFk, pedTipPed, pedTipOri, pedFecIng)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [id, cliente_id || null, fecha_estimada, observaciones, recordatorio, descripcion, usuarioId, tipo_pedido, tipo_de_origen || 'CLIENTE']
       );
 
       await connection.commit();
@@ -325,6 +354,7 @@ export class PedidoModel {
         p.pedRecor AS recordatorio,
         p.pedTolEst AS total_pedido,
         p.pedTipPed AS tipo_pedido,
+        p.pedTipOri AS tipo_origen,
         v.venId AS venta_id,
         CASE 
           WHEN COALESCE(pag.total_pagado, 0) >= p.pedTolEst AND p.pedTolEst > 0 THEN 'PAGADO'
@@ -416,7 +446,10 @@ export class PedidoModel {
    * @returns {string} Cláusula WHERE
    */
   static _buildWhereEntregas(filtros, values) {
-    const whereClauses = ["p.pedEst IN ('TERMINADO', 'ENTREGADO')"];
+    const whereClauses = [
+      "p.pedEst IN ('TERMINADO', 'ENTREGADO')",
+      "(p.pedTipOri IS NULL OR p.pedTipOri != 'PRODUCCION')"
+    ];
 
     if (filtros.estado) {
       whereClauses.push("p.pedEst = ?");
@@ -424,9 +457,9 @@ export class PedidoModel {
     }
 
     if (filtros.cliente) {
-      whereClauses.push("(c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
+      whereClauses.push("(c.cliNumDoc LIKE ? OR c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
       const like = `%${filtros.cliente}%`;
-      values.push(like, like, like);
+      values.push(like, like, like, like);
     }
 
     if (filtros.fecha_desde) {
@@ -470,6 +503,7 @@ export class PedidoModel {
         DATE(p.pedFecEst) AS fecha_estimada,
         DATE(p.pedFecEnt) AS fecha_entrega,
         p.pedEst AS estado,
+        p.pedTipOri AS tipo_origen,
         p.pedTolEst AS precio_total,
         v.venId as venta_id,
         CASE
@@ -609,5 +643,48 @@ export class PedidoModel {
     }
 
     return result.resultado;
+  }
+
+  /**
+   * Obtener un pedido con FOR UPDATE para operaciones transaccionales
+   * @param {string} id - ID del pedido
+   * @param {object} connection - Conexión de la transacción activa
+   * @returns {Promise<object|null>} Datos del pedido o null
+   */
+  static async getByIdForUpdate(id, connection) {
+    const [[row]] = await connection.query(
+      `SELECT pedId, pedEst, pedDesc, pedObs, pedTipOri, pedTipPed, pedCliIdFk
+       FROM pedidos WHERE pedId = ? FOR UPDATE`,
+      [id]
+    );
+    return row || null;
+  }
+
+  /**
+   * Procesar la devolución de un pedido: actualiza observaciones, descripción,
+   * tipo de origen y tipo de pedido según corresponda.
+   * El cambio de estado se maneja por separado vía sp_cambiar_estado_pedido.
+   * @param {object} params - { pedidoId, tipoDevolucion, motivo, nuevaDesc }
+   * @param {object} connection - Conexión de la transacción activa
+   */
+  static async devolver({ pedidoId, tipoDevolucion, motivo, nuevaDesc }, connection) {
+    const updates = ['pedObs = ?', 'pedDesc = ?'];
+    const values = [motivo, nuevaDesc];
+
+    if (tipoDevolucion === 'ANULACION') {
+      updates.push('pedTipOri = ?');
+      values.push('PRODUCCION');
+    }
+
+    if (tipoDevolucion === 'CORRECCION') {
+      updates.push('pedTipPed = ?');
+      values.push('modificaciones');
+    }
+
+    const setClause = updates.join(', ');
+    await connection.query(
+      `UPDATE pedidos SET ${setClause} WHERE pedId = ?`,
+      [...values, pedidoId]
+    );
   }
 } 

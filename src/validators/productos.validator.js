@@ -34,6 +34,12 @@ export const getAllProductosValidator = [
     .toUpperCase()
     .isIn(['PERSONALIZADO', 'INVENTARIO'])
     .withMessage('El tipo de producto debe ser PERSONALIZADO o INVENTARIO'),
+
+  query('tipo_origen')
+    .optional()
+    .toUpperCase()
+    .isIn(['PRODUCCION'])
+    .withMessage('tipo_origen debe ser PRODUCCION'),
 ];
 
 // ─────────────────────────────────────────────

@@ -262,6 +262,20 @@ export class VentasModel {
   }
 
   /**
+   * Obtener el ID de una venta activa asociada a un pedido
+   * @param {string} pedidoId - ID del pedido
+   * @param {object} connection - Conexión de la transacción activa
+   * @returns {Promise<object|null>} { venId } o null
+   */
+  static async getVentaIdByPedidoId(pedidoId, connection) {
+    const [[row]] = await connection.query(
+      `SELECT venId FROM ventas WHERE pedIdFk = ? AND estadoPago <> 'ANULADO'`,
+      [pedidoId]
+    );
+    return row || null;
+  }
+
+  /**
    * Anular venta usando SP sp_anular_venta
    */
   static async anular(id, usuarioId) {

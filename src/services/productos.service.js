@@ -2,10 +2,10 @@ import { ProductoModel } from '../models/producto.models.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
 
 // Servicio para listar todos los productos con paginación y filtros
-export const getAllProductosService = async ({ pagina, limite, nombre, estado, categoria, tipoProducto }) => {
+export const getAllProductosService = async ({ pagina, limite, nombre, estado, categoria, tipoProducto, tipo_origen }) => {
   try {
-    const { rows, total } = await ProductoModel.getAllProductos({ pagina, limite, nombre, estado, categoria, tipoProducto });
-    const resumen = await ProductoModel.getProductosResumen({ nombre, estado, categoria, tipoProducto });
+    const { rows, total } = await ProductoModel.getAllProductos({ pagina, limite, nombre, estado, categoria, tipoProducto, tipo_origen });
+    const resumen = await ProductoModel.getProductosResumen({ nombre, estado, categoria, tipoProducto, tipo_origen });
 
     return {
       data: rows,

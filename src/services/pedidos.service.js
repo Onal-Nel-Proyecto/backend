@@ -2,6 +2,7 @@ import { ClienteModel } from '../models/cliente.models.js';
 import { DetallePedidoModel } from '../models/dt_pedido.models.js';
 import { PedidoModel } from '../models/pedido.models.js';
 import { PedidoFotoModel } from '../models/pedido_foto.models.js';
+import { VentasModel } from '../models/ventas.models.js';
 import { toTitleCase, formatDateColombia } from '../utils/normalizacion_datos.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
 import { getDetallePedidoByIdPedido } from './dt_pedido.service.js';
@@ -28,11 +29,13 @@ export const getAllPedidosService = async (pag = 1, filtros = {}) => {
     descripcion: e.descripcion,
     cliente_nombres: e.cliente_nombres,
     fecha_entrega_estimada: e.fecha_estimada ? formatDateColombia(new Date(e.fecha_estimada)) : null,
+    fecha_ingreso: e.fecha_ingreso ? formatDateColombia(new Date(e.fecha_ingreso)) : null,
     estado: e.estado,
     estado_pago: e.estado_pago,
     dias_faltantes: e.dias_faltantes,
     precio_total: e.total_pedido,
     tipo_pedido: e.tipo_pedido,
+    tipo_origen: e.tipo_origen,
     tipos_prenda: tiposMap[e.id] || [],
   }));
 
@@ -51,32 +54,35 @@ export const createNewPedido = async ({
   recordatorio,
   descripcion,
   usuarioId,
-  tipo_pedido
+  tipo_pedido,
+  tipo_de_origen
 }) => {
-  
-  // // 🔹 1. Validaciones básicas
-  // if (!cliente_id || !fecha_estimada || !descripcion || !usuarioId) {
-  //   return { err: 'Campos obligatorios faltantes', errorCode: 400 };
-  // }
+  const esProduccion = tipo_de_origen === 'PRODUCCION';
 
-  // // 🔹 2. Verificar cliente
-  const cliente = await ClienteModel.getById(cliente_id);
-  if (!cliente || !cliente.status) {
-    return { err: 'Cliente no encontrado', errorCode: 404 };
-  }
+  if (!esProduccion) {
+    // // 🔹 1. Validar cliente (solo para origen CLIENTE)
+    const cliente = await ClienteModel.getById(cliente_id);
+    if (!cliente || !cliente.status) {
+      return { err: 'Cliente no encontrado', errorCode: 404 };
+    }
 
-  // // 🔹 3. Validar si está bloqueado
-  if (cliente.data.estado === 2) {
-    return { err: 'El cliente está bloqueado', errorCode: 403 };
+    // // 🔹 2. Validar si está bloqueado
+    if (cliente.data.estado === 2) {
+      return { err: 'El cliente está bloqueado', errorCode: 403 };
+    }
   }
 
   // si la descripcion es null asignar un valor por defecto para evitar errores de validacion
   if (!descripcion) {
-    // estructura nombre del cliente - fecha de registro del pedido
-    
-    descripcion = `Pedido de ${toTitleCase(cliente.data.cliNom)} ${cliente.data?.cliApe !== null ? toTitleCase(cliente.data.cliApe) : ''} - ${formatDateColombia(new Date())}`;
+    if (esProduccion) {
+      descripcion = `Producción interna - ${formatDateColombia(new Date())}`;
+    } else {
+      // estructura nombre del cliente - fecha de registro del pedido
+      const cliente = await ClienteModel.getById(cliente_id);
+      descripcion = `Pedido de ${toTitleCase(cliente.data.cliNom)} ${cliente.data?.cliApe !== null ? toTitleCase(cliente.data.cliApe) : ''} - ${formatDateColombia(new Date())}`;
+    }
   }
-  // 🔹 4. Crear pedido
+  // 🔹 3. Crear pedido
   const result = await PedidoModel.create({
     cliente_id,
     fecha_estimada,
@@ -84,7 +90,8 @@ export const createNewPedido = async ({
     recordatorio,
     descripcion,
     usuarioId,
-    tipo_pedido
+    tipo_pedido,
+    tipo_de_origen: tipo_de_origen || 'CLIENTE'
   });
   // console.log(result)
   if (!result || !result.status) {
@@ -132,6 +139,7 @@ export const getPedidoByIdService = async (id_pedido) => {
     recordatorio: pedido[0].recordatorio,
     precio_total: pedido[0].total_pedido,
     tipo_pedido: pedido[0].tipo_pedido != null ? toTitleCase(pedido[0].tipo_pedido) : null,
+    tipo_origen: pedido[0].tipo_origen,
     fecha_estimada_entrega: pedido[0].f_estimada != null ? formatDateColombia(pedido[0].f_estimada) : null,
     fecha_entrega: pedido[0].f_entrega != null ? formatDateColombia(pedido[0].f_entrega) : null,
     fecha_ingreso: pedido[0].f_ingreso != null ? formatDateColombia(pedido[0].f_ingreso) : null,
@@ -163,7 +171,7 @@ export const updatePedidoService = async (id, data) => {
   if (!pedido) {
     return { err: "Pedido no encontrado", errorCode: 404 };
   }
-
+  const esProduccion = pedido[0].tipo_origen === 'PRODUCCION';
   // 🔹 construir update dinámico
   const fields = {};
   const values = [];
@@ -179,7 +187,11 @@ export const updatePedidoService = async (id, data) => {
 
   if (descripcion !== undefined) {
     fields.pedDesc = '?';
-    values.push(!descripcion ? `Pedido de ${toTitleCase(pedido[0].cliente_name)} - ${formatDateColombia(new Date(pedido[0].f_ingreso))}` : descripcion);
+    if (esProduccion) {
+      values.push(!descripcion ? `Producción interna - ${formatDateColombia(new Date())}`: descripcion);
+    }else {
+      values.push(!descripcion ? `Pedido de ${toTitleCase(pedido[0].cliente_name)} - ${formatDateColombia(new Date(pedido[0].f_ingreso))}` : descripcion);
+    }
   }
 
   if (observacion !== undefined) {
@@ -228,13 +240,19 @@ export const entregarPedidoService = async (pedidoId, usuarioId) => {
 
     // 1. Validar que el pedido existe
     const [[pedido]] = await connection.query(
-      `SELECT pedId, pedEst FROM pedidos WHERE pedId = ? FOR UPDATE`,
+      `SELECT pedId, pedEst, pedTipOri FROM pedidos WHERE pedId = ? FOR UPDATE`,
       [pedidoId]
     );
 
     if (!pedido) {
       await connection.rollback();
       return { err: 'Pedido no encontrado', errorCode: 404 };
+    }
+
+    // 1b. Validar que no sea un pedido de PRODUCCION
+    if (pedido.pedTipOri === 'PRODUCCION') {
+      await connection.rollback();
+      return { err: 'Los pedidos con origen PRODUCCION no pueden ser entregados', errorCode: 400 };
     }
 
     // 2. Validar que el estado sea TERMINADO
@@ -281,6 +299,7 @@ export const getAllEntregasService = async (pag = 1, filtros = {}) => {
     fecha_entrega_estimada: e.fecha_estimada ? formatDateColombia(new Date(e.fecha_estimada)) : null,
     fecha_entrega_real: e.fecha_entrega ? formatDateColombia(new Date(e.fecha_entrega)) : null,
     estado: e.estado,
+    tipo_origen: e.tipo_origen || 'CLIENTE',
     precio_total: Number(e.precio_total ?? 0),
     estado_pago: e.estado_pago,
     saldo: Number(e.saldo ?? 0),
@@ -293,6 +312,91 @@ export const getAllEntregasService = async (pag = 1, filtros = {}) => {
     data,
     resumen
   };
+};
+
+// ─────────────────────────────────────────────
+//  Servicio: devolución de pedido entregado
+// ─────────────────────────────────────────────
+export const devolverPedidoService = async (pedidoId, tipoDevolucion, motivo, usuarioId) => {
+  const connection = await db.getConnection();
+  try {
+    await connection.beginTransaction();
+
+    // 1. Obtener pedido con bloqueo (método del modelo)
+    const pedido = await PedidoModel.getByIdForUpdate(pedidoId, connection);
+
+    if (!pedido) {
+      await connection.rollback();
+      return { err: 'Pedido no encontrado', errorCode: 404 };
+    }
+
+    // 2. Validar que esté en estado ENTREGADO
+    if (pedido.pedEst !== 'ENTREGADO') {
+      await connection.rollback();
+      return {
+        err: `El pedido debe estar en estado ENTREGADO para devolverlo. Estado actual: ${pedido.pedEst}`,
+        errorCode: 400
+      };
+    }
+
+    // 3. Preparar nueva descripción común a ambos modos
+    const descripcionAnterior = pedido.pedDesc || '';
+    const tipoTexto = tipoDevolucion === 'ANULACION' ? 'Anulación' : 'Correcciones';
+    const nuevaDesc = `${tipoTexto}:${descripcionAnterior}`;
+
+    // 4. Cambiar estado a TERMINADO usando el SP primero
+    //    (debe ir antes de anular la venta porque sp_anular_venta
+    //     no permite anular si el pedido está ENTREGADO)
+    const resultadoSp = await PedidoModel.updateStatus({
+      pedidoId,
+      usu_id: usuarioId,
+      estado: 'TERMINADO',
+      motivo: `Devolución por ${tipoDevolucion === 'ANULACION' ? 'anulación' : 'corrección'}: ${motivo}`
+    }, connection);
+
+    if (resultadoSp !== 'OK') {
+      await connection.rollback();
+      return { err: resultadoSp || 'Error al cambiar el estado del pedido', errorCode: 400 };
+    }
+
+    // 5. Actualizar campos no-estado (pedObs, pedDesc, pedTipOri/pedTipPed)
+    await PedidoModel.devolver({
+      pedidoId,
+      tipoDevolucion,
+      motivo,
+      nuevaDesc
+    }, connection);
+
+    // 6. Para anulación: anular venta después de tener el pedido en TERMINADO
+    if (tipoDevolucion === 'ANULACION') {
+      if (pedido.pedTipOri !== 'CLIENTE') {
+        await connection.rollback();
+        return { err: 'Solo pedidos con origen CLIENTE pueden ser anulados', errorCode: 400 };
+      }
+
+      const venta = await VentasModel.getVentaIdByPedidoId(pedidoId, connection);
+      if (venta) {
+        const resultado = await VentasModel.anular(venta.venId, usuarioId);
+        if (resultado !== 'OK') {
+          await connection.rollback();
+          return { err: resultado || 'Error al anular la venta', errorCode: 400 };
+        }
+      }
+    }
+
+    await connection.commit();
+    return { status: true };
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('[devolverPedidoService] Error:', error.message);
+    if (error.code === 'ER_SIGNAL_EXCEPTION') {
+      return { err: error.sqlMessage, errorCode: 400 };
+    }
+    return { err: 'Error interno al procesar la devolución', errorCode: 500 };
+  } finally {
+    connection.release();
+  }
 };
 
 // cancelar un pedido

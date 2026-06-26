@@ -12,9 +12,9 @@ const ctlGetAllProductos = async (req, res, next) => {
   try {
     const pagina = parseInt(req.query.pagina) || 1;
     const limite = parseInt(req.query.limite) || 15;
-    const { nombre, estado, categoria, tipoProducto } = req.query;
+    const { nombre, estado, categoria, tipoProducto, tipo_origen } = req.query;
 
-    const result = await getAllProductosService({ pagina, limite, nombre, estado, categoria, tipoProducto });
+    const result = await getAllProductosService({ pagina, limite, nombre, estado, categoria, tipoProducto, tipo_origen });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(200).json({ status: true, data: result.data, meta: result.meta, resumen: result.resumen });
   } catch (error) {

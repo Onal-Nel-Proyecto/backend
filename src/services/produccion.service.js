@@ -1,3 +1,4 @@
+import { AppError } from '../utils/appError.js';
 import { DetallePedidoModel } from "../models/dt_pedido.models.js";
 import { PedidoModel } from "../models/pedido.models.js";
 import db from "../config/db.js";
@@ -16,7 +17,7 @@ export const createNewProduction = async (
     await PedidoModel.getById(pedidoId);
 
   if (!pedidoExiste) {
-    throw new Error('El pedido no existe');
+    throw new AppError('El pedido no existe', 400);
   }
 
   // 2. Obtener detalle
@@ -31,8 +32,8 @@ export const createNewProduction = async (
     !detalleActual ||
     detalleActual.pedIdFk !== pedidoId
   ) {
-    throw new Error(
-      'El detalle no pertenece al pedido especificado'
+    throw new AppError(
+      'El detalle no pertenece al pedido especificado', 400
     );
   }
 
@@ -43,8 +44,8 @@ export const createNewProduction = async (
     });
 
   if (!prodActual) {
-    throw new Error(
-      'El producto asociado al detalle no existe'
+    throw new AppError(
+      'El producto asociado al detalle no existe', 400
     );
   }
 
@@ -64,8 +65,8 @@ export const createNewProduction = async (
   if (
     totalProduccion >= detalleActual.detPedCant
   ) {
-    throw new Error(
-      'No se puede registrar más producción para este detalle'
+    throw new AppError(
+      'No se puede registrar más producción para este detalle', 400
     );
   }
 
@@ -76,8 +77,8 @@ export const createNewProduction = async (
 
   if (data.cantidad > cantidadDisponible) {
 
-    throw new Error(
-      'La cantidad suministrada supera la producción disponible para este detalle'
+    throw new AppError(
+      'La cantidad suministrada supera la producción disponible para este detalle', 400
     );
 
   }
@@ -112,7 +113,7 @@ export const updateProduction = async (
     const pedidoExiste = await PedidoModel.getById(pedidoId);
 
     if (!pedidoExiste) {
-      throw new Error('El pedido no existe');
+      throw new AppError('El pedido no existe', 400);
     }
 
     const detalleModel = new DetallePedidoModel(connection);
@@ -120,7 +121,7 @@ export const updateProduction = async (
     const detalleActual = await detalleModel.getDetalle(detalleId);
 
     if (!detalleActual || detalleActual.pedIdFk !== pedidoId) {
-      throw new Error('El detalle no pertenece al pedido especificado');
+      throw new AppError('El detalle no pertenece al pedido especificado', 400);
     }
 
     // const produccionModel = new ProduccionModel(connection);
@@ -128,19 +129,19 @@ export const updateProduction = async (
     const produccionActual = await ProduccionModel.getById(produccionId);
 
     if (!produccionActual[0]) {
-      throw new Error('La producción no existe');
+      throw new AppError('La producción no existe', 400);
     }
 
     //  5. Validar pertenencia al detalle
     if (produccionActual[0].detPedIdFk !== detalleId) {
-      throw new Error('La producción no pertenece al detalle especificado');
+      throw new AppError('La producción no pertenece al detalle especificado', 400);
     }
 
     if (
       produccionActual[0].estado === 'TERMINADO'
     ) {
-      throw new Error(
-        'La producción ya está terminada'
+      throw new AppError(
+        'La producción ya está terminada', 400
       );
     }
 
@@ -286,36 +287,36 @@ export const deleteProduction = async (pedidoId, detalleId, produccionId) => {
     const pedidoExiste = await PedidoModel.getById(pedidoId);
 
     if (!pedidoExiste) {
-      throw new Error('El pedido no existe');
+      throw new AppError('El pedido no existe', 400);
     }
 
     // 2. Validar detalle
     const detalleActual = await detalleModel.getDetalle(detalleId);
 
     if (!detalleActual) {
-      throw new Error('El detalle del pedido no existe');
+      throw new AppError('El detalle del pedido no existe', 400);
     }
 
     // 3. Validar pertenencia al pedido
     if (detalleActual.pedIdFk !== pedidoId) {
-      throw new Error('El detalle no pertenece al pedido especificado');
+      throw new AppError('El detalle no pertenece al pedido especificado', 400);
     }
 
     // 4. Validar producción
     const produccionActual = await ProduccionModel.getById(produccionId);
 
     if (!produccionActual[0]) {
-      throw new Error('La producción no existe');
+      throw new AppError('La producción no existe', 400);
     }
 
     // 5. Validar pertenencia al detalle
     if (produccionActual[0].detPedIdFk !== detalleId) {
-      throw new Error('La producción no pertenece al detalle especificado');
+      throw new AppError('La producción no pertenece al detalle especificado', 400);
     }
 
     // 6. Evitar eliminar producción terminada
     if (produccionActual[0].estado === 'TERMINADO') {
-      throw new Error('No se puede eliminar una producción terminada');
+      throw new AppError('No se puede eliminar una producción terminada', 400);
     }
 
     // 7. Eliminar producción
