@@ -71,11 +71,11 @@ export class MaterialesModel {
   }
 
   // Crear un nuevo material
-  static async createMaterial({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial }) {
+  static async createMaterial({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible }) {
     const [result] = await db.query(
       `INSERT INTO materiales (matNom, matEst, matDesc, matUmbMin, matCantDisp, matUniMed, matTipMat)
-       VALUES (?, 'DISPONIBLE', ?, ?, 0, ?, ?)`,
-      [nombre, descripcion || null, umbralMinimo, unidadMedida || null, tipoMaterial.toUpperCase()]
+       VALUES (?, 'DISPONIBLE', ?, ?, ?, ?, ?)`,
+      [nombre, descripcion || null, umbralMinimo, cantidadDisponible ?? 0, unidadMedida || null, tipoMaterial.toUpperCase()]
     );
     return result.insertId;
   }

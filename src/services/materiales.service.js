@@ -34,9 +34,9 @@ export const getMaterialByIdService = async ({ id }) => {
 };
 
 // Servicio para crear un material
-export const createMaterialService = async ({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial }) => {
+export const createMaterialService = async ({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible }) => {
   try {
-    const id = await MaterialesModel.createMaterial({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial });
+    const id = await MaterialesModel.createMaterial({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible: cantidadDisponible ?? 0 });
     return { msg: 'Material creado correctamente', id };
   } catch (error) {
     return { err: 'Error al crear material', errorCode: 500 };

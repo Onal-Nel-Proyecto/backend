@@ -34,7 +34,7 @@ export const getProductoByIdService = async ({ id }) => {
 };
 
 // Servicio para crear un producto
-export const createProductoService = async ({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla }) => {
+export const createProductoService = async ({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible }) => {
   try {
     // Verificar que la categoría exista si se proporcionó
     if (categoriaId) {
@@ -42,7 +42,7 @@ export const createProductoService = async ({ nombre, precioUnitario, descripcio
       if (!catValida) return { err: 'La categoría especificada no existe', errorCode: 400 };
     }
 
-    const id = await ProductoModel.createProducto({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla });
+    const id = await ProductoModel.createProducto({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible: cantidadDisponible ?? 0 });
 
     return { msg: 'Producto creado correctamente', id };
   } catch (error) {
