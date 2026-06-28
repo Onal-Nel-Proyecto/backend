@@ -341,7 +341,7 @@ export const devolverPedidoService = async (pedidoId, tipoDevolucion, motivo, us
 
     // 3. Preparar nueva descripción común a ambos modos
     const descripcionAnterior = pedido.pedDesc || '';
-    const tipoTexto = tipoDevolucion === 'ANULACION' ? 'Anulación' : 'Correcciones';
+    const tipoTexto = tipoDevolucion === 'ANULACION' ? 'Devolución' : 'Correcciones';
     const nuevaDesc = `${tipoTexto}:${descripcionAnterior}`;
 
     // 4. Cambiar estado a TERMINADO usando el SP primero
@@ -397,6 +397,37 @@ export const devolverPedidoService = async (pedidoId, tipoDevolucion, motivo, us
   } finally {
     connection.release();
   }
+};
+
+// ─────────────────────────────────────────────
+//  Servicio: obtener historial de cambios de estado de un pedido
+// ─────────────────────────────────────────────
+export const getHistorialPedidoService = async (pedidoId, pag = 1) => {
+  const limite = 15;
+
+  const [rows, total] = await Promise.all([
+    PedidoModel.getHistorialByPedidoId(pedidoId, pag, limite),
+    PedidoModel.countHistorialByPedidoId(pedidoId)
+  ]);
+
+  const data = rows.map(e => ({
+    hist_id: e.histId,
+    estado_anterior: e.estadoAnterior,
+    estado_actual: e.estadoNuevo,
+    usuario: {
+      user_id: e.usuIdFk,
+      user_nombres: e.usuNom,
+      user_apellidos: e.usuApe,
+    },
+    fecha_registro: e.hisFec ? formatDateColombia(new Date(e.hisFec), true) : null,
+    observacion: e.hisObs || null,
+  }));
+
+  return {
+    maxPag: calculateTotalPages(total, limite),
+    pagAct: Number(pag),
+    data
+  };
 };
 
 // cancelar un pedido

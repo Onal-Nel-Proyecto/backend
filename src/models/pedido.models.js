@@ -661,6 +661,48 @@ export class PedidoModel {
   }
 
   /**
+   * Obtiene el historial de cambios de estado de un pedido con paginación
+   * @param {string} pedidoId - ID del pedido
+   * @param {number} pag - Número de página
+   * @param {number} limite - Registros por página
+   * @returns {Promise<Array>} Lista de registros del historial
+   */
+  static async getHistorialByPedidoId(pedidoId, pag = 1, limite = 15) {
+    const indice = limite * (pag - 1);
+    const [rows] = await db.query(
+      `SELECT 
+        h.histId,
+        h.estadoAnterior,
+        h.estadoNuevo,
+        h.usuIdFk,
+        u.usuNom,
+        u.usuApe,
+        h.hisFec,
+        h.hisObs
+      FROM historial_pedido h
+      JOIN usuario u ON u.usuId = h.usuIdFk
+      WHERE h.pedIdFk = ?
+      ORDER BY h.hisFec DESC
+      LIMIT ? OFFSET ?`,
+      [pedidoId, limite, indice]
+    );
+    return rows;
+  }
+
+  /**
+   * Cuenta el total de registros del historial de un pedido
+   * @param {string} pedidoId - ID del pedido
+   * @returns {Promise<number>}
+   */
+  static async countHistorialByPedidoId(pedidoId) {
+    const [[{ total }]] = await db.query(
+      'SELECT COUNT(*) AS total FROM historial_pedido WHERE pedIdFk = ?',
+      [pedidoId]
+    );
+    return Number(total);
+  }
+
+  /**
    * Procesar la devolución de un pedido: actualiza observaciones, descripción,
    * tipo de origen y tipo de pedido según corresponda.
    * El cambio de estado se maneja por separado vía sp_cambiar_estado_pedido.

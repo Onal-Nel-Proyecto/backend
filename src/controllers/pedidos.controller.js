@@ -1,5 +1,5 @@
 import { AppError } from '../utils/appError.js';
-import { cancelPedidoService, createNewPedido, devolverPedidoService, getAllEntregasService, getAllPedidosService, getPedidoByIdService, entregarPedidoService, updatePedidoService } from "../services/pedidos.service.js";
+import { cancelPedidoService, createNewPedido, devolverPedidoService, getAllEntregasService, getAllPedidosService, getHistorialPedidoService, getPedidoByIdService, entregarPedidoService, updatePedidoService } from "../services/pedidos.service.js";
 import { normalizeEmptyStrings } from "../utils/normalizacion_datos.js";
 
 export const getAllPedidosController = async (req, res, next) => {
@@ -148,6 +148,19 @@ export const devolverPedidoController = async (req, res, next) => {
       status: true,
       msg: `Pedido #${id} devuelto con éxito - ${tipoLabel}`
     });
+  } catch (error) {
+    console.error(error);
+    next(new AppError('Error interno del servidor', 500));
+  }
+};
+
+export const getHistorialPedidoController = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { pag = 1 } = req.query;
+
+    const result = await getHistorialPedidoService(id, pag);
+    res.status(200).json(result);
   } catch (error) {
     console.error(error);
     next(new AppError('Error interno del servidor', 500));
