@@ -18,7 +18,7 @@ export class FacturaModel {
 
         p.pedEst AS pedido_estado,
 
-        v.cliIdFk AS cliente_id,
+        c.cliNumDoc AS cliente_id,
         c.cliNom AS nombres,
         c.cliApe AS apellidos,
         c.cliDir AS direccion,
@@ -27,7 +27,7 @@ export class FacturaModel {
         (
           SELECT cl.cliTel
           FROM cliente_telefono cl
-          WHERE c.cliId = cl.cliIdFk
+          WHERE cl.cliIdFk = c.cliId
           LIMIT 1
         ) AS telefono
 

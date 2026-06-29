@@ -150,9 +150,9 @@ export const parametroValidator = [
 
   check('tipo_prenda')
     .optional()
-    .toUpperCase()
-    .isIn(['CAMISA', 'CAMISETA', 'POLO', 'PANTALON', 'JEAN', 'BERMUDA', 'SHORT', 'FALDA', 'VESTIDO', 'CHAQUETA', 'BUSO', 'SUDADERA', 'HOODIE', 'OVEROL', 'DELANTAL', 'UNIFORME', 'DOTACION', 'GORRA', 'OTRO'])
-    .withMessage('tipo_prenda no válido'),
+    .isString()
+    .withMessage('Tipo de prenda debe de ser de tipo texto')
+    .toUpperCase(),
 
   check('mes')
     .optional()

@@ -69,7 +69,7 @@ router.patch('/:id/entregar', authValidator,
   entregarPedidoController
 )
 
-// ruta para devolver un pedido (ENTREGADO → TERMINADO + anulación/corrección)
+// ruta para devolver un pedido (ENTREGADO → TERMINADO / TERMINADO → PRODUCCION + anulación/corrección)
 router.patch('/:id/devolver', authValidator,
   [
     ...devolverPedidoValidator,

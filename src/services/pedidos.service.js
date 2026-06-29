@@ -315,7 +315,7 @@ export const getAllEntregasService = async (pag = 1, filtros = {}) => {
 };
 
 // ─────────────────────────────────────────────
-//  Servicio: devolución de pedido entregado
+//  Servicio: devolución de pedido
 // ─────────────────────────────────────────────
 export const devolverPedidoService = async (pedidoId, tipoDevolucion, motivo, usuarioId) => {
   const connection = await db.getConnection();
@@ -330,58 +330,86 @@ export const devolverPedidoService = async (pedidoId, tipoDevolucion, motivo, us
       return { err: 'Pedido no encontrado', errorCode: 404 };
     }
 
-    // 2. Validar que esté en estado ENTREGADO
-    if (pedido.pedEst !== 'ENTREGADO') {
-      await connection.rollback();
-      return {
-        err: `El pedido debe estar en estado ENTREGADO para devolverlo. Estado actual: ${pedido.pedEst}`,
-        errorCode: 400
-      };
-    }
-
-    // 3. Preparar nueva descripción común a ambos modos
     const descripcionAnterior = pedido.pedDesc || '';
     const tipoTexto = tipoDevolucion === 'ANULACION' ? 'Devolución' : 'Correcciones';
     const nuevaDesc = `${tipoTexto}:${descripcionAnterior}`;
 
-    // 4. Cambiar estado a TERMINADO usando el SP primero
-    //    (debe ir antes de anular la venta porque sp_anular_venta
-    //     no permite anular si el pedido está ENTREGADO)
-    const resultadoSp = await PedidoModel.updateStatus({
-      pedidoId,
-      usu_id: usuarioId,
-      estado: 'TERMINADO',
-      motivo: `Devolución por ${tipoDevolucion === 'ANULACION' ? 'anulación' : 'corrección'}: ${motivo}`
-    }, connection);
+    // ─── FLUJO A: Pedido entregado (vuelve a TERMINADO + posible anulación de venta) ───
+    if (pedido.pedEst === 'ENTREGADO') {
+      // 2. Cambiar estado a TERMINADO usando el SP
+      const resultadoSp = await PedidoModel.updateStatus({
+        pedidoId,
+        usu_id: usuarioId,
+        estado: 'TERMINADO',
+        motivo: `Devolución por ${tipoDevolucion === 'ANULACION' ? 'anulación' : 'corrección'}: ${motivo}`
+      }, connection);
 
-    if (resultadoSp !== 'OK') {
-      await connection.rollback();
-      return { err: resultadoSp || 'Error al cambiar el estado del pedido', errorCode: 400 };
-    }
-
-    // 5. Actualizar campos no-estado (pedObs, pedDesc, pedTipOri/pedTipPed)
-    await PedidoModel.devolver({
-      pedidoId,
-      tipoDevolucion,
-      motivo,
-      nuevaDesc
-    }, connection);
-
-    // 6. Para anulación: anular venta después de tener el pedido en TERMINADO
-    if (tipoDevolucion === 'ANULACION') {
-      if (pedido.pedTipOri !== 'CLIENTE') {
+      if (resultadoSp !== 'OK') {
         await connection.rollback();
-        return { err: 'Solo pedidos con origen CLIENTE pueden ser anulados', errorCode: 400 };
+        return { err: resultadoSp || 'Error al cambiar el estado del pedido', errorCode: 400 };
       }
 
-      const venta = await VentasModel.getVentaIdByPedidoId(pedidoId, connection);
-      if (venta) {
-        const resultado = await VentasModel.anular(venta.venId, usuarioId);
-        if (resultado !== 'OK') {
+      // 3. Actualizar campos no-estado (pedObs, pedDesc, pedTipOri/pedTipPed)
+      await PedidoModel.devolver({
+        pedidoId,
+        tipoDevolucion,
+        motivo,
+        nuevaDesc
+      }, connection);
+
+      // 4. Para anulación: anular venta
+      if (tipoDevolucion === 'ANULACION') {
+        if (pedido.pedTipOri !== 'CLIENTE') {
           await connection.rollback();
-          return { err: resultado || 'Error al anular la venta', errorCode: 400 };
+          return { err: 'Solo pedidos con origen CLIENTE pueden ser anulados', errorCode: 400 };
+        }
+
+        const venta = await VentasModel.getVentaIdByPedidoId(pedidoId, connection);
+        if (venta) {
+          const resultado = await VentasModel.anular(venta.venId, usuarioId);
+          if (resultado !== 'OK') {
+            await connection.rollback();
+            return { err: resultado || 'Error al anular la venta', errorCode: 400 };
+          }
         }
       }
+    }
+
+    // ─── FLUJO B: Pedido en TERMINADO (cambia origen a PRODUCCION directamente) ───
+    else if (pedido.pedEst === 'TERMINADO') {
+      // Actualizar campos (origen a PRODUCCION o tipo a modificaciones)
+      await PedidoModel.devolver({
+        pedidoId,
+        tipoDevolucion,
+        motivo,
+        nuevaDesc
+      }, connection);
+
+      // Anular venta si corresponde (aunque el pedido no esté ENTREGADO)
+      if (tipoDevolucion === 'ANULACION') {
+        if (pedido.pedTipOri !== 'CLIENTE') {
+          await connection.rollback();
+          return { err: 'Solo pedidos con origen CLIENTE pueden ser anulados', errorCode: 400 };
+        }
+
+        const venta = await VentasModel.getVentaIdByPedidoId(pedidoId, connection);
+        if (venta) {
+          const resultado = await VentasModel.anular(venta.venId, usuarioId);
+          if (resultado !== 'OK') {
+            await connection.rollback();
+            return { err: resultado || 'Error al anular la venta', errorCode: 400 };
+          }
+        }
+      }
+    }
+
+    // ─── Otros estados: rechazar ───
+    else {
+      await connection.rollback();
+      return {
+        err: `El pedido debe estar en estado ENTREGADO o TERMINADO. Estado actual: ${pedido.pedEst}`,
+        errorCode: 400
+      };
     }
 
     await connection.commit();
