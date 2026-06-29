@@ -4,6 +4,7 @@ import { PedidoModel } from "../models/pedido.models.js";
 import db from "../config/db.js";
 import { ProduccionModel } from "../models/produccion.models.js";
 import { ProductoModel } from "../models/producto.models.js";
+import { createMovimientoService } from './movimientos.service.js';
 
 export const createNewProduction = async (
   pedidoId,
@@ -200,11 +201,16 @@ export const updateProduction = async (
           [stockProducto.stock + produccionActual[0].cantidad, produccionActual[0].proIdFk]
         );
 
-        await db.query(
-          `INSERT INTO movimientos (tipoMov, tipoSuministro, referenciaID, cantidad, usuIdFk) 
-          VALUES('PRODUCCION', 'PRODUCTO', ?, ?, ?)`,
-          [produccionActual[0].proIdFk, produccionActual[0].cantidad, user]
-        )
+        await createMovimientoService({
+          tipoMov: 'PRODUCCION',
+          tipoSuministro: 'PRODUCTO',
+          referenciaID: produccionActual[0].proIdFk,
+          cantidad: produccionActual[0].cantidad,
+          usuIdFk: user,
+          stockAnterior: stockProducto.stock,
+          stockActual: stockProducto.stock + produccionActual[0].cantidad,
+          motivo: `Producción #${produccionActual[0].prodId} completada`
+        })
 
 
         // 2. Verificar si TODAS las producciones

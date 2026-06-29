@@ -1,5 +1,6 @@
 import { MaterialesModel } from '../models/materiales.models.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
+import { createMovimientoService } from './movimientos.service.js';
 
 // Servicio para listar todos los materiales con paginación y filtros
 export const getAllMaterialesService = async ({ pagina, limite, nombre, estado, tipoMaterial }) => {
@@ -34,9 +35,25 @@ export const getMaterialByIdService = async ({ id }) => {
 };
 
 // Servicio para crear un material
-export const createMaterialService = async ({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible }) => {
+export const createMaterialService = async ({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible, usuIdFk, motivo }) => {
   try {
-    const id = await MaterialesModel.createMaterial({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible: cantidadDisponible ?? 0 });
+    const cantidad = cantidadDisponible ?? 0;
+    const id = await MaterialesModel.createMaterial({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible: cantidad });
+
+    // Registrar movimiento si se asignó stock inicial
+    if (cantidad > 0 && id) {
+      await createMovimientoService({
+        tipoMov: 'AJUSTE',
+        tipoSuministro: 'MATERIAL',
+        referenciaID: String(id),
+        cantidad,
+        usuIdFk,
+        stockAnterior: 0,
+        stockActual: cantidad,
+        motivo: motivo || null
+      });
+    }
+
     return { msg: 'Material creado correctamente', id };
   } catch (error) {
     return { err: 'Error al crear material', errorCode: 500 };
@@ -44,12 +61,30 @@ export const createMaterialService = async ({ nombre, descripcion, umbralMinimo,
 };
 
 // Servicio para actualizar un material
-export const updateMaterialService = async ({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock }) => {
+export const updateMaterialService = async ({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock, usuIdFk, motivo }) => {
   try {
     const material = await MaterialesModel.getMaterialById({ id });
     if (!material) return { err: 'Material no encontrado', errorCode: 404 };
 
+    const stockAnterior = material.cantidadDisponible;
+
     await MaterialesModel.updateMaterial({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock });
+
+    // Registrar movimiento si se modificó el stock
+    if (stock !== undefined && stock !== stockAnterior) {
+      const diferencia = stock - stockAnterior;
+      await createMovimientoService({
+        tipoMov: 'AJUSTE',
+        tipoSuministro: 'MATERIAL',
+        referenciaID: id,
+        cantidad: diferencia,
+        usuIdFk,
+        stockAnterior,
+        stockActual: stock,
+        motivo: motivo || null
+      });
+    }
+
     return { msg: 'Material actualizado correctamente' };
   } catch (error) {
     return { err: 'Error al actualizar material', errorCode: 500 };

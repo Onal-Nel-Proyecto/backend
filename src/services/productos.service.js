@@ -1,5 +1,6 @@
 import { ProductoModel } from '../models/producto.models.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
+import { createMovimientoService } from './movimientos.service.js';
 
 // Servicio para listar todos los productos con paginación y filtros
 export const getAllProductosService = async ({ pagina, limite, nombre, estado, categoria, tipoProducto, tipo_origen }) => {
@@ -34,7 +35,7 @@ export const getProductoByIdService = async ({ id }) => {
 };
 
 // Servicio para crear un producto
-export const createProductoService = async ({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible }) => {
+export const createProductoService = async ({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible, usuIdFk, motivo }) => {
   try {
     // Verificar que la categoría exista si se proporcionó
     if (categoriaId) {
@@ -42,7 +43,22 @@ export const createProductoService = async ({ nombre, precioUnitario, descripcio
       if (!catValida) return { err: 'La categoría especificada no existe', errorCode: 400 };
     }
 
-    const id = await ProductoModel.createProducto({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible: cantidadDisponible ?? 0 });
+    const cantidad = cantidadDisponible ?? 0;
+    const id = await ProductoModel.createProducto({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible: cantidad });
+
+    // Registrar movimiento si se asignó stock inicial
+    if (cantidad > 0 && id) {
+      await createMovimientoService({
+        tipoMov: 'AJUSTE',
+        tipoSuministro: 'PRODUCTO',
+        referenciaID: id,
+        cantidad,
+        usuIdFk,
+        stockAnterior: 0,
+        stockActual: cantidad,
+        motivo: motivo || null
+      });
+    }
 
     return { msg: 'Producto creado correctamente', id };
   } catch (error) {

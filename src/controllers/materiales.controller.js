@@ -37,9 +37,10 @@ const ctlGetMaterialById = async (req, res, next) => {
 // Crear material
 const ctlCreateMaterial = async (req, res, next) => {
   try {
-    const { nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible } = req.body;
+    const { nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible, motivo } = req.body;
+    const usuIdFk = req.user.user_id;
 
-    const result = await createMaterialService({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible });
+    const result = await createMaterialService({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible, usuIdFk, motivo });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(201).json({ status: true, msg: result.msg, id: result.id });
   } catch (error) {
@@ -51,9 +52,10 @@ const ctlCreateMaterial = async (req, res, next) => {
 const ctlUpdateMaterial = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock } = req.body;
+    const { nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock, motivo } = req.body;
+    const usuIdFk = req.user.user_id;
 
-    const result = await updateMaterialService({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock });
+    const result = await updateMaterialService({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock, usuIdFk, motivo });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(200).json({ status: true, msg: result.msg });
   } catch (error) {

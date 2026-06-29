@@ -37,9 +37,10 @@ const ctlGetProductoById = async (req, res, next) => {
 // Crear producto
 const ctlCreateProducto = async (req, res, next) => {
   try {
-    const { nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible } = req.body;
+    const { nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible, motivo } = req.body;
+    const usuIdFk = req.user.user_id;
 
-    const result = await createProductoService({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible });
+    const result = await createProductoService({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible, usuIdFk, motivo });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(201).json({ status: true, msg: result.msg, id: result.id });
   } catch (error) {

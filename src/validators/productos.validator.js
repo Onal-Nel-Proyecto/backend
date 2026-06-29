@@ -82,9 +82,8 @@ export const createProductoValidator = [
 
   body('tipoPrenda')
     .optional({ nullable: true })
-    .toUpperCase()
-    .isIn(['CAMISA', 'CAMISETA', 'POLO', 'PANTALON', 'JEAN', 'BERMUDA', 'SHORT', 'FALDA', 'VESTIDO', 'CHAQUETA', 'BUSO', 'SUDADERA', 'HOODIE', 'OVEROL', 'DELANTAL', 'UNIFORME', 'DOTACION', 'GORRA', 'OTRO'])
-    .withMessage('Tipo de prenda no válido'),
+    .isString()
+    .withMessage('Tipo de prenda debe de ser de tipo texto'),
 
   body('tipoProducto')
     .notEmpty().withMessage('El tipo de producto es requerido')
@@ -147,9 +146,8 @@ export const updateProductoValidator = [
 
   body('tipoPrenda')
     .optional({ nullable: true })
-    .toUpperCase()
-    .isIn(['CAMISA', 'CAMISETA', 'POLO', 'PANTALON', 'JEAN', 'BERMUDA', 'SHORT', 'FALDA', 'VESTIDO', 'CHAQUETA', 'BUSO', 'SUDADERA', 'HOODIE', 'OVEROL', 'DELANTAL', 'UNIFORME', 'DOTACION', 'GORRA', 'OTRO'])
-    .withMessage('Tipo de prenda no válido'),
+    .isString()
+    .withMessage('Tipo de prenda debe de ser de tipo texto'),
 
   body('umbralMinimo')
     .optional({ nullable: true })
