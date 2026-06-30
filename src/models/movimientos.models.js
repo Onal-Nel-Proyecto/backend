@@ -40,6 +40,16 @@ export class MovimientosModel {
       values.push(filtros.tipo_mov);
     }
 
+    // Filtro por nombre del producto o material
+    if (filtros.nombre) {
+      whereClauses.push(
+        "(CASE WHEN m.tipoSuministro = 'PRODUCTO' THEN p.proNom " +
+        "WHEN m.tipoSuministro = 'MATERIAL' THEN mat.matNom " +
+        "ELSE NULL END) LIKE ?"
+      );
+      values.push(`%${filtros.nombre}%`);
+    }
+
     return whereClauses.length > 0
       ? `WHERE ${whereClauses.join(" AND ")}`
       : "";
@@ -118,6 +128,8 @@ export class MovimientosModel {
       `SELECT COUNT(*) AS total
       FROM movimientos m
       LEFT JOIN usuario u ON u.usuId = m.usuIdFk
+      LEFT JOIN productos p ON p.proId = m.referenciaID AND m.tipoSuministro = 'PRODUCTO'
+      LEFT JOIN materiales mat ON mat.matId = m.referenciaID AND m.tipoSuministro = 'MATERIAL'
       ${whereSQL}`,
       values
     );

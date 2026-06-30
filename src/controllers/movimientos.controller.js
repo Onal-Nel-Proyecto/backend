@@ -9,10 +9,11 @@ export const ctlGetAllMovimientos = async (req, res, next) => {
       fecha_desde,
       fecha_hasta,
       tipo_suministro,
-      tipo_mov
+      tipo_mov,
+      nombre
     } = req.query;
 
-    const filtros = { usuario, fecha_desde, fecha_hasta, tipo_suministro, tipo_mov };
+    const filtros = { usuario, fecha_desde, fecha_hasta, tipo_suministro, tipo_mov, nombre };
 
     const result = await getAllMovimientosService(pag, filtros);
     res.status(200).json(result);

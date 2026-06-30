@@ -22,7 +22,7 @@ app.use(cors({
     ]
     // console.log(origin)
     if(ACCEPTED_ORIGINS.includes(origin)) {
-      return callback(null, true)
+      return callback(null, origin)
     }
     if(!origin) return callback(null, true)
     return callback(new Error("Not allowed by CORS"))
