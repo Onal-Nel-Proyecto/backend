@@ -31,4 +31,10 @@ export const getAllMovimientosValidator = [
     .optional()
     .isIn(['COMPRA', 'VENTA', 'PRODUCCION', 'AJUSTE'])
     .withMessage("El tipo de movimiento debe ser COMPRA, VENTA, PRODUCCION o AJUSTE"),
+
+  query('nombre')
+    .optional()
+    .isString()
+    .trim()
+    .withMessage("El parámetro nombre debe ser un texto"),
 ];
