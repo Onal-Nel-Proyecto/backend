@@ -96,19 +96,8 @@ export const createProductoValidator = [
 
   body('talla')
     .optional({ nullable: true })
-    .customSanitizer(value => {
-      if (!value) return value;
-      if (!isNaN(value)) return String(value);
-      if (typeof value === 'string') return value.toUpperCase();
-      return value;
-    })
-    .custom(value => {
-      if (!value) return true;
-      const tallasTexto = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-      if (tallasTexto.includes(value)) return true;
-      if (!isNaN(value) && Number(value) > 0) return true;
-      throw new Error('Talla no válida — debe ser número (ej: 38) o talla de texto (XS, S, M, L, XL, XXL)');
-    }),
+    .isString()
+    .withMessage('La talla debe de ser de tipo texto'),
 ];
 
 // ─────────────────────────────────────────────
@@ -155,19 +144,8 @@ export const updateProductoValidator = [
 
   body('talla')
     .optional({ nullable: true })
-    .customSanitizer(value => {
-      if (!value) return value;
-      if (!isNaN(value)) return String(value);
-      if (typeof value === 'string') return value.toUpperCase();
-      return value;
-    })
-    .custom(value => {
-      if (!value) return true;
-      const tallasTexto = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-      if (tallasTexto.includes(value)) return true;
-      if (!isNaN(value) && Number(value) > 0) return true;
-      throw new Error('Talla no válida — debe ser número (ej: 38) o talla de texto (XS, S, M, L, XL, XXL)');
-    }),
+    .isString()
+    .withMessage('La talla debe de ser de tipo texto'),
 ];
 
 // ─────────────────────────────────────────────

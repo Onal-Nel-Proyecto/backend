@@ -337,6 +337,13 @@ export const devolverPedidoService = async (pedidoId, tipoDevolucion, motivo, us
     // ─── FLUJO A: Pedido entregado (vuelve a TERMINADO + posible anulación de venta) ───
     if (pedido.pedEst === 'ENTREGADO') {
       // 2. Cambiar estado a TERMINADO usando el SP
+      await PedidoModel.devolver({
+        pedidoId,
+        tipoDevolucion,
+        motivo,
+        nuevaDesc
+      }, connection);
+      
       const resultadoSp = await PedidoModel.updateStatus({
         pedidoId,
         usu_id: usuarioId,
@@ -350,12 +357,6 @@ export const devolverPedidoService = async (pedidoId, tipoDevolucion, motivo, us
       }
 
       // 3. Actualizar campos no-estado (pedObs, pedDesc, pedTipOri/pedTipPed)
-      await PedidoModel.devolver({
-        pedidoId,
-        tipoDevolucion,
-        motivo,
-        nuevaDesc
-      }, connection);
 
       // 4. Para anulación: anular venta
       if (tipoDevolucion === 'ANULACION') {
