@@ -111,6 +111,50 @@ export const getAllAbastecimientosService = async ({
     `;
     const [rows] = await db.query(sql, [...values, limite, offset]);
 
+    // ── 3. Cargar detalles con nombres para todos los abastecimientos de esta página ──
+    if (rows.length > 0) {
+      const ids = rows.map(r => r.id);
+      const placeholders = ids.map(() => '?').join(',');
+      const sqlDet = `
+        SELECT
+          d.absIdFk,
+          d.detAbsId AS id,
+          d.detAbsTip AS tipo_suministro,
+          d.detAbsCant AS cantidad,
+          d.detAbsCos AS costo_unitario,
+          d.detAbsRefId AS id_referencia,
+          CASE
+            WHEN d.detAbsTip = 'PRODUCTO' THEN p.proNom
+            WHEN d.detAbsTip = 'MATERIAL' THEN m.matNom
+            ELSE NULL
+          END AS nombre_suministro
+        FROM detalle_abastecimiento d
+        LEFT JOIN productos p  ON d.detAbsTip = 'PRODUCTO' AND p.proId  = d.detAbsRefId
+        LEFT JOIN materiales m ON d.detAbsTip = 'MATERIAL' AND m.matId = d.detAbsRefId
+        WHERE d.absIdFk IN (${placeholders})
+      `;
+      const [detallesRaw] = await db.query(sqlDet, ids);
+
+      // Armar mapa de detalles por absId
+      const detallesMap = {};
+      for (const d of detallesRaw) {
+        if (!detallesMap[d.absIdFk]) detallesMap[d.absIdFk] = [];
+        detallesMap[d.absIdFk].push({
+          id: d.id,
+          tipo_suministro: d.tipo_suministro,
+          cantidad: d.cantidad,
+          costo_unitario: d.costo_unitario,
+          id_referencia: String(d.id_referencia || ''),
+          nombre_suministro: d.nombre_suministro || '',
+        });
+      }
+
+      // Adjuntar detalles a cada fila
+      for (const row of rows) {
+        row.detalles = detallesMap[row.id] || [];
+      }
+    }
+
     return {
       data: rows,
       meta: {
@@ -226,7 +270,41 @@ export const createAbastecimientoService = async ({ provIdFk, detalles, usuIdFk 
 
     await connection.commit();
 
-    return { msg: 'Abastecimiento creado correctamente', id: absId };
+    // ── Obtener el abastecimiento recién creado con nombres de suministros resueltos ──
+    const [absRows] = await db.query(
+      `SELECT
+         a.id,
+         a.absEstado AS estado,
+         a.abaFec AS fecha,
+         a.provIdFk,
+         a.usuIdFk,
+         pv.provNom AS proveedor_nombre
+       FROM abastecimiento a
+       LEFT JOIN proveedor pv ON pv.provId = a.provIdFk
+       WHERE a.id = ?`,
+      [absId]
+    );
+
+    const sqlDet = `
+      SELECT 
+        dt.detAbsId AS id,
+        dt.detAbsTip AS tipo_suministro,
+        dt.detAbsCant AS cantidad,
+        dt.detAbsCos AS costo_unitario,
+        dt.detAbsRefId AS id_referencia,
+        CASE
+          WHEN dt.detAbsTip = 'PRODUCTO' THEN p.proNom
+          WHEN dt.detAbsTip = 'MATERIAL' THEN m.matNom
+          ELSE NULL
+        END AS nombre_suministro
+      FROM detalle_abastecimiento dt
+      LEFT JOIN productos p  ON dt.detAbsTip = 'PRODUCTO' AND p.proId  = dt.detAbsRefId
+      LEFT JOIN materiales m ON dt.detAbsTip = 'MATERIAL' AND m.matId = dt.detAbsRefId
+      WHERE dt.absIdFk = ?
+    `;
+    const [detallesRows] = await db.query(sqlDet, [absId]);
+
+    return { msg: 'Abastecimiento creado correctamente', id: absId, data: { ...absRows[0], detalles: detallesRows } };
   } catch (error) {
     await connection.rollback();
     console.error('[createAbastecimientoService] ERROR MySQL:', error.sqlMessage || error.message);

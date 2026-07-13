@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { PedidoModel } from "../models/pedido.models.js";
-import { cancelPedidoController, createNewPedidoController, entregarPedidoController, getAllEntregasController, getAllPedidosController, getPedidoByIdController, updatePedidoController } from "../controllers/pedidos.controller.js";
-import { authValidator } from "../middleware/auth.middleware.js";
-import { basePedidoValidator, cancelPedidoValidator, entregarPedidoValidator, parametroValidator, updateValidator } from "../validators/pedido.validator.js";
+import { cancelPedidoController, createNewPedidoController, devolverPedidoController, entregarPedidoController, getAllEntregasController, getAllPedidosController, getHistorialPedidoController, getPedidoByIdController, updatePedidoController } from "../controllers/pedidos.controller.js";
+import { authValidator, isAdmin } from "../middleware/auth.middleware.js";
+import { basePedidoValidator, cancelPedidoValidator, devolverPedidoValidator, entregarPedidoValidator, parametroValidator, updateValidator } from "../validators/pedido.validator.js";
 import validateFields from "../middleware/validator.middleware.js";
 import { actualizarDetalleValidator, crearDetalleValidator } from "../validators/dt_pedido.validator.js";
 import { actualizarDetalle, crearDetalle, eliminarDetalle } from "../controllers/dt_pedido.controller.js";
@@ -42,6 +42,9 @@ router.get('/entregas', authValidator,
 // ruta para obtener un pedido por id (pendiente de implementar)
 router.get('/:id', authValidator, getPedidoByIdController);
 
+// ruta para obtener el historial de cambios de estado de un pedido (solo administradores)
+router.get('/:id/historial', authValidator, isAdmin, getHistorialPedidoController);
+
 // ruta para actualizar un pedido
 router.put('/:id', authValidator,
   [
@@ -64,6 +67,15 @@ router.patch('/:id/entregar', authValidator,
     validateFields
   ],
   entregarPedidoController
+)
+
+// ruta para devolver un pedido (ENTREGADO → TERMINADO / TERMINADO → PRODUCCION + anulación/corrección)
+router.patch('/:id/devolver', authValidator,
+  [
+    ...devolverPedidoValidator,
+    validateFields
+  ],
+  devolverPedidoController
 )
 
 // ruta para detalles de pedido

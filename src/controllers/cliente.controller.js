@@ -18,6 +18,8 @@ export const getClienteById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const cliente = await obtenerClientePorId(id);
+    // console.log(id, cliente);
+    
     if (!cliente) {
       return next(new AppError('Cliente no encontrado', 404));
     }
@@ -39,15 +41,18 @@ export const createCliente = async (req, res, next) => {
       ? 'Cliente reactivado exitosamente'
       : 'Cliente registrado exitosamente';
       
-    res.status(201).json({status: true, msg: mensaje });
+    res.status(201).json({status: true, msg: mensaje, data: data });
   } catch (error) {
     console.error('Error al crear cliente:', error);
+    if (error.message.includes('Ya existe un cliente registrado con ese tipo y número de documento')) {
+      return next(new AppError(error.message, 400));
+    }
     if (error.message.includes('no existe')) {
       return next(new AppError(error.message, 400));
     }
     // Capturar errores SIGNAL SQLSTATE '45000' del SP sp_registrar_cliente
-    if (error.code === 'ER_SIGNAL_EXCEPTION' || error.sqlMessage) {
-      return next(new AppError(error.sqlMessage || error.message, 400));
+    if (error.code === 'ER_SIGNAL_EXCEPTION') {
+      return next(new AppError(error.sqlMessage, 400));
     }
     next(new AppError('Error interno del servidor', 500));
   }
@@ -80,6 +85,9 @@ export const updateCliente = async (req, res, next) => {
     console.error('Error al actualizar cliente:', error);
     if (error.message === 'Cliente no encontrado') {
       return next(new AppError(error.message, 404));
+    }
+    if (error.message.includes('Ya existe un cliente registrado con ese tipo y número de documento')) {
+      return next(new AppError(error.message, 400));
     }
     next(new AppError('Error interno del servidor', 500));
   }

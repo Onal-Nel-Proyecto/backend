@@ -34,6 +34,12 @@ export const getAllProductosValidator = [
     .toUpperCase()
     .isIn(['PERSONALIZADO', 'INVENTARIO'])
     .withMessage('El tipo de producto debe ser PERSONALIZADO o INVENTARIO'),
+
+  query('tipo_origen')
+    .optional()
+    .toUpperCase()
+    .isIn(['PRODUCCION'])
+    .withMessage('tipo_origen debe ser PRODUCCION'),
 ];
 
 // ─────────────────────────────────────────────
@@ -76,9 +82,8 @@ export const createProductoValidator = [
 
   body('tipoPrenda')
     .optional({ nullable: true })
-    .toUpperCase()
-    .isIn(['CAMISA', 'CAMISETA', 'POLO', 'PANTALON', 'JEAN', 'BERMUDA', 'SHORT', 'FALDA', 'VESTIDO', 'CHAQUETA', 'BUSO', 'SUDADERA', 'HOODIE', 'OVEROL', 'DELANTAL', 'UNIFORME', 'DOTACION', 'GORRA', 'OTRO'])
-    .withMessage('Tipo de prenda no válido'),
+    .isString()
+    .withMessage('Tipo de prenda debe de ser de tipo texto'),
 
   body('tipoProducto')
     .notEmpty().withMessage('El tipo de producto es requerido')
@@ -91,19 +96,8 @@ export const createProductoValidator = [
 
   body('talla')
     .optional({ nullable: true })
-    .customSanitizer(value => {
-      if (!value) return value;
-      if (!isNaN(value)) return String(value);
-      if (typeof value === 'string') return value.toUpperCase();
-      return value;
-    })
-    .custom(value => {
-      if (!value) return true;
-      const tallasTexto = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-      if (tallasTexto.includes(value)) return true;
-      if (!isNaN(value) && Number(value) > 0) return true;
-      throw new Error('Talla no válida — debe ser número (ej: 38) o talla de texto (XS, S, M, L, XL, XXL)');
-    }),
+    .isString()
+    .withMessage('La talla debe de ser de tipo texto'),
 ];
 
 // ─────────────────────────────────────────────
@@ -141,9 +135,8 @@ export const updateProductoValidator = [
 
   body('tipoPrenda')
     .optional({ nullable: true })
-    .toUpperCase()
-    .isIn(['CAMISA', 'CAMISETA', 'POLO', 'PANTALON', 'JEAN', 'BERMUDA', 'SHORT', 'FALDA', 'VESTIDO', 'CHAQUETA', 'BUSO', 'SUDADERA', 'HOODIE', 'OVEROL', 'DELANTAL', 'UNIFORME', 'DOTACION', 'GORRA', 'OTRO'])
-    .withMessage('Tipo de prenda no válido'),
+    .isString()
+    .withMessage('Tipo de prenda debe de ser de tipo texto'),
 
   body('umbralMinimo')
     .optional({ nullable: true })
@@ -151,19 +144,8 @@ export const updateProductoValidator = [
 
   body('talla')
     .optional({ nullable: true })
-    .customSanitizer(value => {
-      if (!value) return value;
-      if (!isNaN(value)) return String(value);
-      if (typeof value === 'string') return value.toUpperCase();
-      return value;
-    })
-    .custom(value => {
-      if (!value) return true;
-      const tallasTexto = ['XS', 'S', 'M', 'L', 'XL', 'XXL'];
-      if (tallasTexto.includes(value)) return true;
-      if (!isNaN(value) && Number(value) > 0) return true;
-      throw new Error('Talla no válida — debe ser número (ej: 38) o talla de texto (XS, S, M, L, XL, XXL)');
-    }),
+    .isString()
+    .withMessage('La talla debe de ser de tipo texto'),
 ];
 
 // ─────────────────────────────────────────────

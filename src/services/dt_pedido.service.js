@@ -322,6 +322,11 @@ export const actualizarDetalleService = async (pedidoId, detalleId, data) => {
           umbralMinimo: prodActual.umbralMinimo,
           talla: data.producto.talla !== undefined ? data.producto.talla : prodActual.talla
         }, connection);
+
+        // Recalcular total del pedido si cambió el precio
+        if (data.producto.precio !== undefined) {
+          await connection.query('CALL sp_recalcular_total_pedido(?)', [pedidoId]);
+        }
       }
     }
 

@@ -34,7 +34,9 @@ jest.unstable_mockModule('../services/pedidos.service.js', () => ({
   updatePedidoService: jest.fn(),
   cancelPedidoService: jest.fn(),
   entregarPedidoService: jest.fn(),
-  getAllEntregasService: jest.fn()
+  getAllEntregasService: jest.fn(),
+  devolverPedidoService: jest.fn(),
+  getHistorialPedidoService: jest.fn()
 }));
 
 jest.unstable_mockModule('../services/dt_pedido.service.js', () => ({

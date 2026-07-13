@@ -10,6 +10,7 @@ import {
 } from '../services/ventas.service.js';
 import { generarReportePDF } from '../utils/reportesPdf.js';
 import { generarReporteExcel } from '../utils/reportesExcel.js';
+import { AppError } from '../utils/appError.js';
 
 export const getVentasController = async (req, res, next) => {
   try {
@@ -92,12 +93,20 @@ export const updateVentaController = async (req, res, next) => {
 export const anularVentaController = async (req, res, next) => {
   try {
     const { id } = req.params;
+    const usuarioId = req.user.user_id;
 
-    const result = await anularVentaService(id);
+    const result = await anularVentaService(id, usuarioId);
 
     res.status(200).json(result);
   } catch (error) {
     console.error('Error en anularVentaController:', error);
+    if (error.code === 'ER_SIGNAL_EXCEPTION') {
+
+      return next(
+        new AppError(error.sqlMessage, 400)
+      );
+
+    }
     const status = error.statusCode || 500;
     const message = error.statusCode ? error.message : 'Error interno del servidor';
     res.status(status).json({ status: false, error: message });

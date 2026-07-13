@@ -119,8 +119,12 @@ describe('POST /clientes', () => {
   const clienteValido = {
     cliente_nombre: 'María',
     cliente_apellido: 'García',
+    cliente_tipo_doc: 'DOCUMENTO',
+    cliente_documento: '123456789',
     cliente_email: 'maria@example.com',
     cliente_direccion: 'Calle 456',
+    cliente_tipo_doc: 'DOCUMENTO',
+    cliente_documento: '1234567890',
     telefono: [{ numero_telefono: '1234567890' }]
   };
 
@@ -264,8 +268,12 @@ describe('PUT /clientes/:id', () => {
   const datosActualizacion = {
     cliente_nombre: 'Juan Carlos',
     cliente_apellido: 'Pérez López',
+    cliente_tipo_doc: 'DOCUMENTO',
+    cliente_documento: '987654321',
     cliente_email: 'juancarlos@example.com',
-    cliente_direccion: 'Av. Nueva 789'
+    cliente_direccion: 'Av. Nueva 789',
+    cliente_tipo_doc: 'DOCUMENTO',
+    cliente_documento: '9876543210'
   };
 
   test('debe actualizar un cliente y retornar 200', async () => {

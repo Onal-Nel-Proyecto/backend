@@ -71,26 +71,30 @@ export class MaterialesModel {
   }
 
   // Crear un nuevo material
-  static async createMaterial({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial }) {
+  static async createMaterial({ nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, cantidadDisponible }) {
     const [result] = await db.query(
       `INSERT INTO materiales (matNom, matEst, matDesc, matUmbMin, matCantDisp, matUniMed, matTipMat)
-       VALUES (?, 'DISPONIBLE', ?, ?, 0, ?, ?)`,
-      [nombre, descripcion || null, umbralMinimo, unidadMedida || null, tipoMaterial.toUpperCase()]
+       VALUES (?, 'DISPONIBLE', ?, ?, ?, ?, ?)`,
+      [nombre, descripcion || null, umbralMinimo, cantidadDisponible ?? 0, unidadMedida || null, tipoMaterial.toUpperCase()]
     );
     return result.insertId;
   }
 
   // Actualizar datos de un material
-  static async updateMaterial({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial }) {
+  static async updateMaterial({ id, nombre, descripcion, umbralMinimo, unidadMedida, tipoMaterial, stock }) {
+    const campos = ['matNom = ?', 'matDesc = ?', 'matUmbMin = ?', 'matUniMed = ?', 'matTipMat = ?'];
+    const valores = [nombre, descripcion || null, umbralMinimo, unidadMedida || null, tipoMaterial.toUpperCase()];
+
+    if (stock !== undefined) {
+      campos.push('matCantDisp = ?');
+      valores.push(stock);
+    }
+
+    valores.push(id);
+
     const [result] = await db.query(
-      `UPDATE materiales SET
-        matNom = ?,
-        matDesc = ?,
-        matUmbMin = ?,
-        matUniMed = ?,
-        matTipMat = ?
-      WHERE matId = ?`,
-      [nombre, descripcion || null, umbralMinimo, unidadMedida || null, tipoMaterial.toUpperCase(), id]
+      `UPDATE materiales SET ${campos.join(', ')} WHERE matId = ?`,
+      valores
     );
     return result;
   }

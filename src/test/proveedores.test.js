@@ -19,6 +19,21 @@ jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
   isAdminOrSelf: (req, _res, next) => next()
 }));
 
+// Mock de db para el validador (existsByEmail consulta ProveedorModel)
+jest.unstable_mockModule('../config/db.js', () => {
+  const mockPool = {
+    query: jest.fn().mockResolvedValue([[]]),
+    getConnection: jest.fn().mockResolvedValue({
+      query: jest.fn(),
+      release: jest.fn(),
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn()
+    })
+  };
+  return { default: mockPool, connectDB: jest.fn() };
+});
+
 jest.unstable_mockModule('../services/proveedores.service.js', () => ({
   obtenerProveedores: jest.fn(),
   obtenerProveedorPorId: jest.fn(),
@@ -141,6 +156,8 @@ describe('POST /proveedores', () => {
   const proveedorValido = {
     prov_nombre: 'Textiles del Norte EIRL',
     prov_telefono: '987654321',
+    prov_tip_ident: 'NIT',
+    prov_num_ident: '123456789',
     prov_correo: 'ventas@textilesnorte.com',
     prov_direccion: 'Calle Los Tejedores 321',
     prov_suministro: ['tela', 'hilo', 'botones']
@@ -263,6 +280,8 @@ describe('PUT /proveedores/:id', () => {
   const datosActualizacion = {
     prov_nombre: 'Distribuidora Textil del Sur SA',
     prov_telefono: '555123456',
+    prov_tip_ident: 'NIT',
+    prov_num_ident: '987654321',
     prov_correo: 'info@delsur.com',
     prov_direccion: 'Av. Nueva 789',
     prov_suministro: ['tela', 'jean', 'cierres']

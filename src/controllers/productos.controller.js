@@ -12,9 +12,9 @@ const ctlGetAllProductos = async (req, res, next) => {
   try {
     const pagina = parseInt(req.query.pagina) || 1;
     const limite = parseInt(req.query.limite) || 15;
-    const { nombre, estado, categoria, tipoProducto } = req.query;
+    const { nombre, estado, categoria, tipoProducto, tipo_origen } = req.query;
 
-    const result = await getAllProductosService({ pagina, limite, nombre, estado, categoria, tipoProducto });
+    const result = await getAllProductosService({ pagina, limite, nombre, estado, categoria, tipoProducto, tipo_origen });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(200).json({ status: true, data: result.data, meta: result.meta, resumen: result.resumen });
   } catch (error) {
@@ -37,9 +37,10 @@ const ctlGetProductoById = async (req, res, next) => {
 // Crear producto
 const ctlCreateProducto = async (req, res, next) => {
   try {
-    const { nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla } = req.body;
+    const { nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible, motivo } = req.body;
+    const usuIdFk = req.user.user_id;
 
-    const result = await createProductoService({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla });
+    const result = await createProductoService({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, cantidadDisponible, usuIdFk, motivo });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(201).json({ status: true, msg: result.msg, id: result.id });
   } catch (error) {

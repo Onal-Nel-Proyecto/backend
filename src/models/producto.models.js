@@ -3,10 +3,13 @@ import db from "../config/db.js";
 export class ProductoModel {
 
   // Obtener todos los productos con paginación y filtros
-  static async getAllProductos({ pagina = 1, limite = 15, nombre, estado, categoria, tipoProducto }) {
+  static async getAllProductos({ pagina = 1, limite = 15, nombre, estado, categoria, tipoProducto, tipo_origen }) {
     const offset = (pagina - 1) * limite;
     const filtros = [];
     const valores = [];
+
+    // Filtro base: solo estados 1,2,3 pero excluir estado=3 con tipo PERSONALIZADO
+    filtros.push("(p.proEst IN (1, 2) OR (p.proEst = 3 AND p.proTipPro != 'PERSONALIZADO'))");
 
     // Aplicar filtros opcionales según los query params recibidos
     if (nombre) {
@@ -24,6 +27,17 @@ export class ProductoModel {
     if (tipoProducto) {
       filtros.push('p.proTipPro = ?');
       valores.push(tipoProducto.toUpperCase());
+    }
+    // Filtro por tipo de origen: muestra INVENTARIO + PERSONALIZADO solo de pedidos PRODUCCION
+    if (tipo_origen === 'PRODUCCION') {
+      filtros.push(`(
+        p.proTipPro = 'INVENTARIO'
+        OR EXISTS (
+          SELECT 1 FROM det_pedido dp
+          JOIN pedidos pd ON pd.pedId = dp.pedIdFk
+          WHERE dp.proIdFk = p.proId AND pd.pedTipOri = 'PRODUCCION'
+        )
+      )`);
     }
 
     const where = filtros.length > 0 ? `WHERE ${filtros.join(' AND ')}` : '';
@@ -89,14 +103,14 @@ export class ProductoModel {
   }
 
   // Crear un nuevo producto
-  static async createProducto({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, estado }) {
+  static async createProducto({ nombre, precioUnitario, descripcion, genero, categoriaId, tipoPrenda, tipoProducto, umbralMinimo, talla, estado, cantidadDisponible }) {
     await db.query("CALL sp_generar_siguiente_id('PR','productos','proId', @id)");
     const [[{ id }]] = await db.query('SELECT @id AS id');
 
     await db.query(
       `INSERT INTO productos (proId, proNom, proStock, proPreUni, proDesc, proGen, ProCatFk, proTipPre, proTipPro, proUmbMin, proTall, proEst)
-       VALUES (?, ?, 0, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [id, nombre, precioUnitario, descripcion || null, genero || null, categoriaId || null, tipoPrenda || null, tipoProducto.toUpperCase(), umbralMinimo || null, talla || null, estado || 1]
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [id, nombre, cantidadDisponible ?? 0, precioUnitario, descripcion || null, genero || null, categoriaId || null, tipoPrenda || null, tipoProducto.toUpperCase(), umbralMinimo || null, talla || null, estado || 1]
     );
 
     return id;
@@ -121,10 +135,13 @@ export class ProductoModel {
   }
 
   // Obtener resumen de productos (total_productos, alertas_stock, valor_total)
-  // Respetando los filtros aplicados (nombre, estado, categoria, tipoProducto)
-  static async getProductosResumen({ nombre, estado, categoria, tipoProducto }) {
+  // Respetando los filtros aplicados (nombre, estado, categoria, tipoProducto, tipo_origen)
+  static async getProductosResumen({ nombre, estado, categoria, tipoProducto, tipo_origen }) {
     const filtros = [];
     const valores = [];
+
+    // Filtro base: solo estados 1,2,3 pero excluir estado=3 con tipo PERSONALIZADO
+    filtros.push("(p.proEst IN (1, 2) OR (p.proEst = 3 AND p.proTipPro != 'PERSONALIZADO'))");
 
     if (nombre) {
       filtros.push('p.proNom LIKE ?');
@@ -141,6 +158,17 @@ export class ProductoModel {
     if (tipoProducto) {
       filtros.push('p.proTipPro = ?');
       valores.push(tipoProducto.toUpperCase());
+    }
+    // Filtro por tipo de origen: muestra INVENTARIO + PERSONALIZADO solo de pedidos PRODUCCION
+    if (tipo_origen === 'PRODUCCION') {
+      filtros.push(`(
+        p.proTipPro = 'INVENTARIO'
+        OR EXISTS (
+          SELECT 1 FROM det_pedido dp
+          JOIN pedidos pd ON pd.pedId = dp.pedIdFk
+          WHERE dp.proIdFk = p.proId AND pd.pedTipOri = 'PRODUCCION'
+        )
+      )`);
     }
 
     const whereBase = filtros.length > 0 ? `WHERE ${filtros.join(' AND ')}` : '';

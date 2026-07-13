@@ -34,8 +34,8 @@ export const ctlGetMedidaById = async (req, res, next) => {
 // Crear medida
 export const ctlCreateMedida = async (req, res, next) => {
   try {
-    const { medNom, medDesc, medEst } = req.body;
-    const result = await createMedidaService({ medNom, medDesc, medEst });
+    const { medNom, medDesc, medEst, medTipo } = req.body;
+    const result = await createMedidaService({ medNom, medDesc, medEst, medTipo });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(201).json({ status: true, msg: result.msg, id: result.id });
   } catch (error) {
@@ -47,8 +47,8 @@ export const ctlCreateMedida = async (req, res, next) => {
 export const ctlUpdateMedida = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { medNom, medDesc, medEst } = req.body;
-    const result = await updateMedidaService({ id, medNom, medDesc, medEst });
+    const { medNom, medDesc, medEst, medTipo } = req.body;
+    const result = await updateMedidaService({ id, medNom, medDesc, medEst, medTipo });
     if (result.err) return next(new AppError(result.err, result.errorCode));
     res.status(200).json({ status: true, msg: result.msg });
   } catch (error) {

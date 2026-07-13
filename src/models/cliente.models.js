@@ -11,7 +11,7 @@ export class ClienteModel {
     const values = [];
 
     if (filtros.search) {
-      whereClauses.push("(c.cliId LIKE ? OR c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
+      whereClauses.push("(c.cliNumDoc LIKE ? OR c.cliNom LIKE ? OR c.cliApe LIKE ? OR CONCAT_WS(' ', c.cliNom, c.cliApe) LIKE ?)");
       const like = `%${filtros.search}%`;
       values.push(like, like, like, like);
     }
@@ -35,6 +35,8 @@ export class ClienteModel {
         c.cliApe,
         c.cliCorr,
         c.cliDir,
+        c.cliTipDoc,
+        c.cliNumDoc,
         c.cliEst,
         c.cliFecReg
       FROM cliente c
@@ -51,7 +53,7 @@ export class ClienteModel {
     const values = [];
 
     if (filtros.search) {
-      whereClauses.push("(cliId LIKE ? OR cliNom LIKE ? OR cliApe LIKE ? OR CONCAT_WS(' ', cliNom, cliApe) LIKE ?)");
+      whereClauses.push("(cliNumDoc LIKE ? OR cliNom LIKE ? OR cliApe LIKE ? OR CONCAT_WS(' ', cliNom, cliApe) LIKE ?)");
       const like = `%${filtros.search}%`;
       values.push(like, like, like, like);
     }
@@ -90,19 +92,38 @@ export class ClienteModel {
   }
 
   // Crear un nuevo cliente mediante SP (maneja cliente + teléfonos internamente)
-  static async create({ cliId, cliNom, cliApe, cliCorr, cliDir, cliFecReg, usuIdFk }, telefonos = []) {
+  static async create({ cliId, cliNom, cliApe, cliCorr, cliDir, cliFecReg, usuIdFk, cliTipDoc, cliNumDoc }, telefonos = []) {
     // Convertir array de teléfonos a JSON plano: ["3001234567","3019876543"]
     const telefonosJSON = JSON.stringify(telefonos.map(t => t.numero_telefono));
 
     await db.query(
-      `CALL sp_registrar_cliente(?, ?, ?, ?, ?, ?, ?, @cliIdOut, @tipoOperacion)`,
-      [cliId, cliNom, cliApe, cliCorr, cliDir, telefonosJSON, usuIdFk]
+      `CALL sp_registrar_cliente(?, ?, ?, ?, ?, ?, ?, ?, ?, @cliIdOut, @tipoOperacion)`,
+      [cliId, cliNom, cliApe, cliCorr, cliDir, telefonosJSON, usuIdFk, cliNumDoc, cliTipDoc]
     );
 
     const [[{ cliIdOut }]] = await db.query('SELECT @cliIdOut AS cliIdOut');
     const [[{ tipoOperacion }]] = await db.query('SELECT @tipoOperacion AS tipoOperacion');
 
     return { cliId, cliIdOut, tipoOperacion };
+  }
+
+  static async existsByDocumento({ tipoDoc, numDoc, excludeId }) {
+    let sql = 'SELECT COUNT(*) AS total FROM cliente WHERE cliTipDoc = ? AND cliNumDoc = ?';
+    const params = [tipoDoc, numDoc];
+
+    if (excludeId) {
+      sql += ' AND cliId != ?';
+      params.push(excludeId);
+    }
+
+    const [[{ total }]] = await db.query(sql, params);
+    return total > 0;
+  }
+
+  static async getByDocumento(documento) {
+    const [rows] = await db.query('SELECT * FROM cliente WHERE cliNumDoc = ?', [documento]);
+    if (rows.length === 0) return false;
+    return { status: true, data: rows[0] };
   }
 
   static async changeStatus(id, estado) {
@@ -112,13 +133,13 @@ export class ClienteModel {
   }
 
   static async update(id, datos, connection = null) {
-    const { cliNom, cliApe, cliCorr, cliDir } = datos;
+    const { cliNom, cliApe, cliCorr, cliDir, cliTipDoc, cliNumDoc } = datos;
     const sql = `
     UPDATE cliente
-    SET cliNom = ?, cliApe = ?, cliCorr = ?, cliDir = ?
+    SET cliNom = ?, cliApe = ?, cliCorr = ?, cliDir = ?, cliTipDoc = ?, cliNumDoc = ?
     WHERE cliId = ?
   `;
-    const [result] = await db.query(sql, [cliNom, cliApe, cliCorr, cliDir, id]);
+    const [result] = await db.query(sql, [cliNom, cliApe, cliCorr, cliDir, cliTipDoc, cliNumDoc, id]);
     return result.affectedRows > 0; // true si se actualizó
   }
 }

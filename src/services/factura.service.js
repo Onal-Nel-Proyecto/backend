@@ -9,7 +9,7 @@ const EMPRESA = {
   // eslogan: 'Calidad y confianza en cada prenda',
   // NIT: '123456789-0',
   direccion_empresa: 'Calle 8 #604, Santa Lucia',
-  telefono: '+51 987 654 321',
+  telefono_empresa: '3015355619',
 };
 
 /** Obtener datos completos de la factura */
@@ -37,8 +37,8 @@ export const getFacturaService = async (venta_id) => {
     nombres: factura.nombres,
     apellidos: factura.apellidos,
     documento: factura.cliente_id,
-    direccio_cliente: factura.direccion || null,
-    telefono: factura.telefono || null,
+    direccion_cliente: factura.direccion || null,
+    telefono_cliente: factura.telefono || null,
     correo: factura.correo || null,
 
     // datos de la venta

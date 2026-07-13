@@ -71,6 +71,10 @@ export const createMaterialValidator = [
     .notEmpty().withMessage('El tipo de material es requerido')
     .toUpperCase()
     .isIn(['TELA', 'HERRAMIENTA', 'HILO', 'BOTON', 'CREMALLERA', 'ELASTICO', 'ENTRETELA', 'CORDON', 'ENCAJE', 'APLIQUE', 'ETIQUETA', 'EMPAQUE', 'ACCESORIO']).withMessage('Tipo de material no válido'),
+
+  body('cantidadDisponible')
+    .optional({ nullable: true })
+    .isInt({ min: 0, max: 1000 }).withMessage('La cantidad disponible debe ser un número entero entre 0 y 1000'),
 ];
 
 // ─────────────────────────────────────────────
@@ -107,6 +111,10 @@ export const updateMaterialValidator = [
     .notEmpty().withMessage('El tipo de material es requerido')
     .toUpperCase()
     .isIn(['TELA', 'HERRAMIENTA', 'HILO', 'BOTON', 'CREMALLERA', 'ELASTICO', 'ENTRETELA', 'CORDON', 'ENCAJE', 'APLIQUE', 'ETIQUETA', 'EMPAQUE', 'ACCESORIO']).withMessage('Tipo de material no válido'),
+
+  body('stock')
+    .optional({ nullable: true })
+    .isInt({ min: 0 }).withMessage('El stock debe ser un número entero mayor o igual a 0'),
 ];
 
 // ─────────────────────────────────────────────

@@ -25,12 +25,37 @@ jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
   isAdminOrSelf: (req, _res, next) => next()
 }));
 
+jest.unstable_mockModule('../config/db.js', () => {
+  const mockPool = {
+    query: jest.fn().mockResolvedValue([[]]),
+    getConnection: jest.fn().mockResolvedValue({
+      query: jest.fn(),
+      release: jest.fn(),
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn()
+    })
+  };
+  return { default: mockPool, connectDB: jest.fn() };
+});
+
 jest.unstable_mockModule('../services/categorias.service.js', () => ({
   getAllCategoriasService: jest.fn(),
   getCategoriaByIdService: jest.fn(),
   createCategoriaService: jest.fn(),
   updateCategoriaService: jest.fn(),
   changeCategoriaEstadoService: jest.fn()
+}));
+
+// Mock del modelo (validarNombreUnico lo usa directamente en el validador)
+jest.unstable_mockModule('../models/categoria.models.js', () => ({
+  CategoriaModel: {
+    getAll: jest.fn().mockResolvedValue([]),
+    getById: jest.fn(),
+    create: jest.fn(),
+    update: jest.fn(),
+    changeStatus: jest.fn()
+  }
 }));
 
 // =====================================================

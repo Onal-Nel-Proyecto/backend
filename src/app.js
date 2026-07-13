@@ -18,11 +18,12 @@ app.use(cors({
       "http://localhost:5173",
       "https://sp78zgqw-5173.use2.devtunnels.ms",  
       "https://frontend-nine-vert-24.vercel.app",
-      "http://10.2.129.81:5173"
+      "http://192.168.18.65:5173",
+      "http://10.2.131.233:5173",
     ]
     // console.log(origin)
     if(ACCEPTED_ORIGINS.includes(origin)) {
-      return callback(null, true)
+      return callback(null, origin)
     }
     if(!origin) return callback(null, true)
     return callback(new Error("Not allowed by CORS"))

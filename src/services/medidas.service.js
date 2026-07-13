@@ -40,7 +40,7 @@ export const getMedidaByIdService = async ({ id }) => {
 };
 
 // Servicio para crear una medida
-export const createMedidaService = async ({ medNom, medDesc, medEst }) => {
+export const createMedidaService = async ({ medNom, medDesc, medEst, medTipo }) => {
   try {
     const existe = await MedidaModel.existsByName(medNom);
     if (existe) return { err: 'Ya existe una medida con ese nombre', errorCode: 400 };
@@ -54,7 +54,7 @@ export const createMedidaService = async ({ medNom, medDesc, medEst }) => {
 };
 
 // Servicio para actualizar una medida
-export const updateMedidaService = async ({ id, medNom, medDesc, medEst }) => {
+export const updateMedidaService = async ({ id, medNom, medDesc, medEst, medTipo }) => {
   try {
     const medida = await MedidaModel.getById(id);
     if (!medida) return { err: 'Medida no encontrada', errorCode: 404 };
