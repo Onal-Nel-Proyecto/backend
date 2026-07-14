@@ -18,22 +18,22 @@ router.post("/login",
   ctlLog)
 
 // ruta para salir de la sesión
+const isProduction = process.env.NODE_ENV === "production";
+
 router.post("/logout", (req, res) => {
+  const cookieOptions = {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: isProduction ? "none" : "lax",
+  };
+  
   // eliminar el token del cliente de la cookie
   res
-    .clearCookie('token', {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax"
-    })
-    .clearCookie('refreshToken', {
-      httpOnly: true,
-      secure: false,
-      sameSite: "lax"
-    })
+    .clearCookie("token", cookieOptions)
+    .clearCookie("refreshToken", cookieOptions)
     .status(200)
-    .json({ msg: 'Sesión cerrada' })
-})
+    .json({ msg: "Sesión cerrada" });
+});
 
 // ruta para refrescar el token de acceso
 router.post('/refresh', refreshTokenController);

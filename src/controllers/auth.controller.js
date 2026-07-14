@@ -1,5 +1,6 @@
 import { AppError } from '../utils/appError.js';
 import { loginUser, refreshTokenService } from '../services/auth.service.js';
+const isProduction = process.env.NODE_ENV === "production";
 
 const ctlLog = async (req, res, next) => {
   try {
@@ -14,14 +15,14 @@ const ctlLog = async (req, res, next) => {
     res.status(200)
       .cookie('token', result.token, {
         httpOnly: true,
-        secure: false,
-        sameSite: "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "None" : "Lax",
         credentials: true
       })
       .cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
-        secure: false,
-        sameSite: "lax",
+        secure: isProduction,
+        sameSite: isProduction ? "None" : "Lax",
         credentials: true
       })
       .json({
@@ -49,8 +50,8 @@ const refreshTokenController = async (req, res, next) => {
     res.status(200)
       .cookie('token', newAccessToken, {
         httpOnly: true,
-        sameSite: 'strict',
-        // secure: process.env.NODE_ENV === 'production',
+        secure: isProduction,
+        sameSite: isProduction ? "none" : "strict",
       })
       .json({ message: "Token de acceso actualizado" });
 
