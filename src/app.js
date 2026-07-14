@@ -8,11 +8,11 @@ import { FRONT_URL_DEV, FRONT_URL_PROD } from "./config/config.js";
 import { swaggerServe, swaggerSetup } from './config/swagger.js';
 
 const app = express();
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("FRONT_END_URL:", process.env.FRONT_END_URL);
 
 // configuración de middlewares
 app.use(express.json());
-// console.log(process.env.FRONT_END_URL);
-// console.log(typeof process.env.FRONT_END_URL);
 
 app.use(cors({
   origin: (origin, callback) => {
