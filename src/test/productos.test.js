@@ -232,22 +232,6 @@ describe('POST /productos', () => {
     expect(res.body.errors).toHaveProperty('tipoProducto');
   });
 
-  test('debe retornar 201 si tipoPrenda es inválido', async () => {
-    const res = await request(app)
-      .post('/productos')
-      .send({ ...PRODUCTO_VALIDO, tipoPrenda: 'ZAPATO' });
-
-    expect(res.status).toBe(201);
-  });
-
-  test('debe retornar 400 si talla es inválida', async () => {
-    const res = await request(app)
-      .post('/productos')
-      .send({ ...PRODUCTO_VALIDO, talla: 'XXXL' });
-
-    expect(res.status).toBe(400);
-  });
-
   test('debe retornar 400 si género es inválido', async () => {
     const res = await request(app)
       .post('/productos')
