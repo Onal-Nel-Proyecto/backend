@@ -93,7 +93,7 @@ export class MovimientosModel {
       LEFT JOIN productos p ON p.proId = m.referenciaID AND m.tipoSuministro = 'PRODUCTO'
       LEFT JOIN materiales mat ON mat.matId = m.referenciaID AND m.tipoSuministro = 'MATERIAL'
       ${whereSQL}
-      ORDER BY m.fecha DESC
+      ORDER BY m.idMov DESC
       LIMIT ? OFFSET ?`,
       values
     );

@@ -1,6 +1,7 @@
 import { MovimientosModel } from '../models/movimientos.models.js';
 import { formatDateColombia } from '../utils/normalizacion_datos.js';
 import { calculateTotalPages } from '../utils/paginacion.js';
+import db from "../config/db.js";
 
 /**
  * Crea un nuevo movimiento de inventario
@@ -26,25 +27,29 @@ export const getAllMovimientosService = async (pag = 1, filtros = {}) => {
     MovimientosModel.countAll(filtros)
   ]);
 
-  const data = rows.map(e => ({
-    id_mov: e.idMov,
-    tipo_mov: e.tipoMov,
-    tipo_suministro: e.tipoSuministro || null,
-    suministro: e.suministro_nombre ? {
-      nombre: e.suministro_nombre,
-      referencia_id: e.referenciaID || null,
-    } : null,
-    stock_anterior: e.stockAnterior ?? null,
-    stock_actual: e.stockActual ?? null,
-    motivo: e.motivo ?? null,
-    cantidad: e.cantidad > 0 ? `+${e.cantidad}` : String(e.cantidad),
-    fecha: e.fecha ? formatDateColombia(new Date(e.fecha), true) : null,
-    usuario: e.usuIdFk ? {
-      user_id: e.usuIdFk,
-      user_nombres: e.usuNom,
-      user_apellidos: e.usuApe,
-    } : null,
-  }));
+  const data = rows.map(e => {
+
+    
+    return ({
+      id_mov: e.idMov,
+      tipo_mov: e.tipoMov,
+      tipo_suministro: e.tipoSuministro || null,
+      suministro: e.suministro_nombre ? {
+        nombre: e.suministro_nombre,
+        referencia_id: e.referenciaID || null,
+      } : null,
+      stock_anterior: e.stockAnterior ?? null,
+      stock_actual: e.stockActual ?? null,
+      motivo: e.motivo ?? null,
+      cantidad: e.cantidad > 0 ? `+${e.cantidad}` : String(e.cantidad),
+      fecha: e.fecha ? formatDateColombia(e.fecha, true) : null,
+      usuario: e.usuIdFk ? {
+        user_id: e.usuIdFk,
+        user_nombres: e.usuNom,
+        user_apellidos: e.usuApe,
+      } : null,
+    })
+  });
 
   return {
     maxPag: calculateTotalPages(total, limite),

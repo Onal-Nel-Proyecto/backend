@@ -17,8 +17,8 @@ const pool = mysql2.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
-  timezone: '-05:00',
-  
+  timezone: 'Z',
+
 });
 
 // función para validar conexión
@@ -31,6 +31,8 @@ export const connectDB = async () => {
     connection.release(); // liberar conexión de vuelta al pool
 
     console.log('Conexión a MySQL establecida');
+const [rows] = await connection.query("SELECT * FROM prueba_fecha");
+console.log(rows[0]);
   } catch (error) {
     console.error('Error conectando a la base de datos:', error.message);
 
