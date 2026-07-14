@@ -23,7 +23,8 @@ jest.unstable_mockModule('../middleware/auth.middleware.js', () => ({
     };
     next();
   },
-  isAdmin: (req, _res, next) => next()
+  isAdmin: (req, _res, next) => next(),
+  isAdminOrSelf: (req, _res, next) => next()
 }));
 
 jest.unstable_mockModule('../services/pedidos.service.js', () => ({
@@ -31,7 +32,11 @@ jest.unstable_mockModule('../services/pedidos.service.js', () => ({
   createNewPedido: jest.fn(),
   getPedidoByIdService: jest.fn(),
   updatePedidoService: jest.fn(),
-  cancelPedidoService: jest.fn()
+  cancelPedidoService: jest.fn(),
+  entregarPedidoService: jest.fn(),
+  getAllEntregasService: jest.fn(),
+  devolverPedidoService: jest.fn(),
+  getHistorialPedidoService: jest.fn()
 }));
 
 jest.unstable_mockModule('../services/dt_pedido.service.js', () => ({
@@ -45,6 +50,30 @@ jest.unstable_mockModule('../services/produccion.service.js', () => ({
   updateProduction: jest.fn(),
   deleteProduction: jest.fn()
 }));
+
+// Mock de db para el validador (getCurrentDate consulta CURDATE())
+// Los modelos no se usan directamente (servicios mockeados)
+jest.unstable_mockModule('../config/db.js', () => {
+  const hoy = new Date().toISOString().split('T')[0];
+  const mockPool = {
+    query: jest.fn().mockImplementation((sql) => {
+      if (sql.includes('CURDATE()')) {
+        return [[{ hoy }]];
+      }
+      return [];
+    }),
+    getConnection: jest.fn().mockResolvedValue({
+      query: jest.fn(),
+      release: jest.fn(),
+      beginTransaction: jest.fn(),
+      commit: jest.fn(),
+      rollback: jest.fn()
+    })
+  };
+  return { default: mockPool, connectDB: jest.fn() };
+});
+
+
 
 // =====================================================
 // 2. IMPORTS (después de los mocks)

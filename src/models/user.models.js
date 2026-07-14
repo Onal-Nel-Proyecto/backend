@@ -91,18 +91,20 @@ export class UserModel {
   };
 }
 
-  // Crear un nuevo usuario
-  static async createUser({ id, nombres, apellidos, telefono, correo, password, rolId, supervisorId }) {
-    // Encriptar la contraseña antes de guardarla
+  // Crear un nuevo usuario mediante SP
+  static async createUser({ id, nombres, apellidos, telefono, correo, password, rolId, supervisorId, user_id }) {
+    // Encriptar la contraseña antes de pasarla al SP
     const passwordHash = hashSync(password, 10);
 
-    const [result] = await db.query(
-      `INSERT INTO usuario (usuId, usuNom, usuApe, usuTel, usuCor, usuPassHash, usuRol, usuSupFk, usuEst)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)`,
-      [id, nombres, apellidos, telefono, correo.toLowerCase(), passwordHash, rolId, supervisorId || null]
+    await db.query(
+      `CALL sp_registrar_usuario(?, ?, ?, ?, ?, ?, ?, ?, ?, @usuIdOut)`,
+      [id, nombres, apellidos, telefono, correo.toLowerCase(), passwordHash, rolId, supervisorId  || null, user_id || null]
     );
 
-    return result;
+    // Obtener el OUT parameter
+    const [[{ usuIdOut }]] = await db.query('SELECT @usuIdOut AS usuIdOut');
+
+    return { usuIdOut };
   }
 
   // Actualizar datos de un usuario
@@ -164,5 +166,24 @@ static async supervisorExists({ supervisorId }) {
       [id]
     )
     return rows
+  }
+
+  // Obtener el hash de la contraseña de un usuario por su ID (para verificar contraseña actual)
+  static async getPasswordHash({ id }) {
+    const [rows] = await db.query(
+      'SELECT usuPassHash FROM usuario WHERE usuId = ?',
+      [id]
+    );
+    return rows.length > 0 ? rows[0].usuPassHash : null;
+  }
+
+  // Actualizar la contraseña de un usuario (la encripta antes de guardar)
+  static async updatePassword({ id, password }) {
+    const passwordHash = hashSync(password, 10);
+    const [result] = await db.query(
+      'UPDATE usuario SET usuPassHash = ? WHERE usuId = ?',
+      [passwordHash, id]
+    );
+    return result;
   }
 }

@@ -5,6 +5,7 @@ export const crearDetalle = async (req, res, next) => {
   try {
     const { id: pedidoId } = req.params;
     const body = req.body;
+    body.user_id = req.user.user_id
 
     const resultado = await crear(pedidoId, body);
 
@@ -23,7 +24,7 @@ export const eliminarDetalle = async (req, res, next) => {
   try {
     const { id: pedidoId, id_detalle: detalleId } = req.params;
 
-    await eliminar(pedidoId, detalleId);
+    await eliminar(pedidoId, detalleId, req.user.user_id);
 
     return res.json({
       status: true,
@@ -39,9 +40,15 @@ export const actualizarDetalle = async (req, res, next) => {
   try {
     const { id: pedidoId, id_detalle: detalleId } = req.params;
     const body = req.body;
+    body.user_id = req.user.user_id
+    console.log(body.user_id);
+    
+
 
     const resultado = await actualizarDetalleService(pedidoId, detalleId, body);
-
+    if (resultado.err) {
+      return next(new AppError(resultado.err, resultado.errorCode));
+    }
     return res.json({
       status: true,
       msg: 'Detalle de pedido actualizado exitosamente',

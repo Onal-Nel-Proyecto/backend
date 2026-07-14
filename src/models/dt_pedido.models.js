@@ -12,7 +12,10 @@ export class DetallePedidoModel {
       p.proId,
       p.proNom,
       p.proPreUni,
-      ct.catNom,
+      p.proCatFk,
+      p.proGen,
+      p.proTall,
+      p.proTipPre,
       dt.pedObs,
       dt.detPedCant,
       md.medId,
@@ -88,7 +91,7 @@ export class DetallePedidoModel {
   }
 
   async deleteProduccionesPendientes(detalleId) {
-    const sql = "DELETE FROM produccion WHERE detPedIdFk = ? AND estado = 'pendiente'";
+    const sql = "DELETE FROM produccion WHERE detPedIdFk = ? AND estado IN ('pendiente', 'cancelado')";
     await this.connection.execute(sql, [detalleId]);
   }
 

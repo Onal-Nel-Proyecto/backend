@@ -3,10 +3,13 @@ import { ctlLog, profile, refreshTokenController } from '../controllers/auth.con
 import { loginValidator } from "../validators/auth.validator.js";
 import { authValidator } from "../middleware/auth.middleware.js";
 import validateFields from "../middleware/validator.middleware.js";
+import { authLimiter } from "../middleware/rateLimit.js";
+
 const router = express.Router();
 
 // ruta para login
 router.post("/login",
+  authLimiter,
   // middlewares para validar los campos de login
   [
     ...loginValidator,
@@ -20,13 +23,13 @@ router.post("/logout", (req, res) => {
   res
     .clearCookie('token', {
       httpOnly: true,
-      secure: true,
-      sameSite: "none"
+      secure: false,
+      sameSite: "lax"
     })
     .clearCookie('refreshToken', {
       httpOnly: true,
-      secure: true,
-      sameSite: "none"
+      secure: false,
+      sameSite: "lax"
     })
     .status(200)
     .json({ msg: 'Sesión cerrada' })

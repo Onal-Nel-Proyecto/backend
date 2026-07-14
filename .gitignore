@@ -27,3 +27,5 @@ dist-ssr
 instrucciones.txt
 .env.dev
 .env.prod
+.reasonix
+uploads/pedidos/

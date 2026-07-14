@@ -1,8 +1,10 @@
+import { AppError } from '../utils/appError.js';
 import { DetallePedidoModel } from "../models/dt_pedido.models.js";
 import { PedidoModel } from "../models/pedido.models.js";
 import db from "../config/db.js";
 import { ProduccionModel } from "../models/produccion.models.js";
 import { ProductoModel } from "../models/producto.models.js";
+import { createMovimientoService } from './movimientos.service.js';
 
 export const createNewProduction = async (
   pedidoId,
@@ -16,7 +18,7 @@ export const createNewProduction = async (
     await PedidoModel.getById(pedidoId);
 
   if (!pedidoExiste) {
-    throw new Error('El pedido no existe');
+    throw new AppError('El pedido no existe', 400);
   }
 
   // 2. Obtener detalle
@@ -31,23 +33,20 @@ export const createNewProduction = async (
     !detalleActual ||
     detalleActual.pedIdFk !== pedidoId
   ) {
-    throw new Error(
-      'El detalle no pertenece al pedido especificado'
+    throw new AppError(
+      'El detalle no pertenece al pedido especificado', 400
     );
   }
 
   // 4. Validar producto asociado
-  const productoModel =
-    new ProductoModel(connection);
-
   const prodActual =
-    await productoModel.getById(
-      detalleActual.proIdFk
-    );
+    await ProductoModel.getProductoById({
+      id: detalleActual.proIdFk
+    });
 
   if (!prodActual) {
-    throw new Error(
-      'El producto asociado al detalle no existe'
+    throw new AppError(
+      'El producto asociado al detalle no existe', 400
     );
   }
 
@@ -57,18 +56,18 @@ export const createNewProduction = async (
       detalleId
     );
 
-    
-    // Total ya producido
-    const totalProduccion =
+
+  // Total ya producido
+  const totalProduccion =
     Number(cantidadEnProduccion?.cantidad_total) || 0;
-    
-    // 6. Validar límite total
-    // console.log(totalProduccion)
-    if (
+
+  // 6. Validar límite total
+  // console.log(totalProduccion)
+  if (
     totalProduccion >= detalleActual.detPedCant
   ) {
-    throw new Error(
-      'No se puede registrar más producción para este detalle'
+    throw new AppError(
+      'No se puede registrar más producción para este detalle', 400
     );
   }
 
@@ -79,8 +78,8 @@ export const createNewProduction = async (
 
   if (data.cantidad > cantidadDisponible) {
 
-    throw new Error(
-      'La cantidad suministrada supera la producción disponible para este detalle'
+    throw new AppError(
+      'La cantidad suministrada supera la producción disponible para este detalle', 400
     );
 
   }
@@ -115,7 +114,7 @@ export const updateProduction = async (
     const pedidoExiste = await PedidoModel.getById(pedidoId);
 
     if (!pedidoExiste) {
-      throw new Error('El pedido no existe');
+      throw new AppError('El pedido no existe', 400);
     }
 
     const detalleModel = new DetallePedidoModel(connection);
@@ -123,7 +122,7 @@ export const updateProduction = async (
     const detalleActual = await detalleModel.getDetalle(detalleId);
 
     if (!detalleActual || detalleActual.pedIdFk !== pedidoId) {
-      throw new Error('El detalle no pertenece al pedido especificado');
+      throw new AppError('El detalle no pertenece al pedido especificado', 400);
     }
 
     // const produccionModel = new ProduccionModel(connection);
@@ -131,25 +130,23 @@ export const updateProduction = async (
     const produccionActual = await ProduccionModel.getById(produccionId);
 
     if (!produccionActual[0]) {
-      throw new Error('La producción no existe');
+      throw new AppError('La producción no existe', 400);
     }
 
     //  5. Validar pertenencia al detalle
     if (produccionActual[0].detPedIdFk !== detalleId) {
-      throw new Error('La producción no pertenece al detalle especificado');
+      throw new AppError('La producción no pertenece al detalle especificado', 400);
     }
 
     if (
       produccionActual[0].estado === 'TERMINADO'
     ) {
-      throw new Error(
-        'La producción ya está terminada'
+      throw new AppError(
+        'La producción ya está terminada', 400
       );
     }
 
-    const productoModel = new ProductoModel(connection);
-
-    const stockProducto = await productoModel.getById(produccionActual[0].proIdFk)
+    const stockProducto = await ProductoModel.getProductoById({ id: produccionActual[0].proIdFk })
 
 
     // 2. Actualizar producción
@@ -165,7 +162,7 @@ export const updateProduction = async (
     if (data.estado !== undefined) {
       data.estado = data.estado.toUpperCase()
       // Obtener pedido relacionado
-      
+
       // ===============================
       // PRODUCCIÓN EN PROCESO
       // ===============================
@@ -175,51 +172,92 @@ export const updateProduction = async (
         data.estado === 'EN PROCESO' &&
         pedidoExiste[0].estado === 'PENDIENTE'
       ) {
-        
+
         // const base =
         //   console.log(base)
         await PedidoModel.updateStatus(
-           {
+          {
             pedidoId: pedidoExiste[0].id,
             usu_id: user,
             estado: data.estado
-          }
+          }, connection
         );
 
       }
-
+      
+      const produccionesPendientes =
+        await ProduccionModel.countAllByPedido(
+          pedidoExiste[0].id
+        );
       // ===============================
       // PRODUCCIÓN TERMINADA
       // ===============================
 
       if (data.estado === 'TERMINADO') {
         // console.log(stockProducto.proStock)
-        // 1. Aumentar stock producto
-        await productoModel.update(
-          produccionActual[0].proIdFk,
-          {
-            stock: stockProducto.proStock + produccionActual[0].cantidad
-          }
+        // 1. Aumentar stock producto (consulta directa porque updateProducto no maneja stock)
+        await db.query(
+          'UPDATE productos SET proStock = ? WHERE proId = ?',
+          [stockProducto.stock + produccionActual[0].cantidad, produccionActual[0].proIdFk]
         );
+
+        await createMovimientoService({
+          tipoMov: 'PRODUCCION',
+          tipoSuministro: 'PRODUCTO',
+          referenciaID: produccionActual[0].proIdFk,
+          cantidad: produccionActual[0].cantidad,
+          usuIdFk: user,
+          stockAnterior: stockProducto.stock,
+          stockActual: stockProducto.stock + produccionActual[0].cantidad,
+          motivo: `Producción #${produccionActual[0].prodId} completada`
+        })
+
 
         // 2. Verificar si TODAS las producciones
         // del pedido están terminadas
 
-        const produccionesPendientes =
-          await ProduccionModel.countPendingByPedido(
-            pedidoExiste[0].id
-          );
-          // console.log(produccionesPendientes)
+        // console.log(produccionesPendientes)
+        // console.log(produccionesPendientes)
         // Si no quedan pendientes
-        if (produccionesPendientes === 0) {
-
+        if (
+          produccionesPendientes.activas === 0 &&
+          produccionesPendientes.cantidad_terminada >= produccionesPendientes.cantidad_solicitada
+        ) {
+          console.log('ENTRO EN TERMINADO');
+          
           await PedidoModel.updateStatus(
             {
               pedidoId: pedidoExiste[0].id,
               usu_id: user,
-              estado: data.estado
-            }
+              estado: data.estado,
+              motivo: 'Toda la producción del pedido ha sido completada'
+            },
+            connection
           );
+
+        }
+
+      }
+
+      // ===============================
+      // PRODUCCIÓN CANCELADA
+      // ===============================
+
+      if (data.estado === 'CANCELADO' &&
+        pedidoExiste[0].estado === 'EN PROCESO') {
+
+        if (
+          produccionesPendientes.activas === 0 &&
+          produccionesPendientes.terminadas === 0 &&
+          produccionesPendientes.canceladas > 0
+        ) {
+          console.log('ENTRO A CONDICCION DE CANCELAR PRODUCCION')
+          await PedidoModel.updateStatus({
+            pedidoId: pedidoExiste[0].id,
+            usu_id: user,
+            estado: 'PENDIENTE',
+            motivo: "Toda la produccion fue cancelada, se regresa a pendiente"
+          }, connection);
 
         }
 
@@ -255,36 +293,36 @@ export const deleteProduction = async (pedidoId, detalleId, produccionId) => {
     const pedidoExiste = await PedidoModel.getById(pedidoId);
 
     if (!pedidoExiste) {
-      throw new Error('El pedido no existe');
+      throw new AppError('El pedido no existe', 400);
     }
 
     // 2. Validar detalle
     const detalleActual = await detalleModel.getDetalle(detalleId);
 
     if (!detalleActual) {
-      throw new Error('El detalle del pedido no existe');
+      throw new AppError('El detalle del pedido no existe', 400);
     }
 
     // 3. Validar pertenencia al pedido
     if (detalleActual.pedIdFk !== pedidoId) {
-      throw new Error('El detalle no pertenece al pedido especificado');
+      throw new AppError('El detalle no pertenece al pedido especificado', 400);
     }
 
     // 4. Validar producción
     const produccionActual = await ProduccionModel.getById(produccionId);
 
     if (!produccionActual[0]) {
-      throw new Error('La producción no existe');
+      throw new AppError('La producción no existe', 400);
     }
 
     // 5. Validar pertenencia al detalle
     if (produccionActual[0].detPedIdFk !== detalleId) {
-      throw new Error('La producción no pertenece al detalle especificado');
+      throw new AppError('La producción no pertenece al detalle especificado', 400);
     }
 
     // 6. Evitar eliminar producción terminada
     if (produccionActual[0].estado === 'TERMINADO') {
-      throw new Error('No se puede eliminar una producción terminada');
+      throw new AppError('No se puede eliminar una producción terminada', 400);
     }
 
     // 7. Eliminar producción

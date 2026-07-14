@@ -1,10 +1,23 @@
-import { body, check } from 'express-validator';
+import { body, check, param } from 'express-validator';
+import db from "../config/db.js";
 const tipoPedido = ["personalizado", "retoques", "modificaciones",]
-const estadoPedido = ["pendiente", "retoques", "modificaciones",]
+
+// Obtener la fecha actual desde el servidor MySQL (no confiar en hora local)
+const getCurrentDate = async () => {
+  const [[{ hoy }]] = await db.query("SELECT CURDATE() AS hoy");
+  return hoy; // string YYYY-MM-DD
+};
 
 // validacion basica para registro de pedido
 export const basePedidoValidator = [
+  body("tipo_de_origen")
+    .optional({ nullable: true, checkFalsy: true })
+    .toUpperCase()
+    .isIn(['CLIENTE', 'PRODUCCION'])
+    .withMessage("tipo_de_origen debe ser CLIENTE o PRODUCCION"),
+
   body("cliente_id")
+    .if((value, { req }) => req.body.tipo_de_origen !== 'PRODUCCION')
     .notEmpty()
     .withMessage("id del cliente requerido")
     .isLength({ max: 15, min: 7 })
@@ -14,10 +27,9 @@ export const basePedidoValidator = [
     .optional({ nullable: true, checkFalsy: true })
     .isISO8601()
     .withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
-    .custom(value => {
-      // Obtener la fecha local actual en formato YYYY-MM-DD
-      const ahora = new Date();
-      const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+    .custom(async (value) => {
+      // Obtener la fecha actual desde MySQL (no confiar en hora local)
+      const hoy = await getCurrentDate();
 
       // value ya viene como YYYY-MM-DD validado por isISO8601
       if (value < hoy) {
@@ -25,7 +37,7 @@ export const basePedidoValidator = [
       }
 
       // Calcular fecha máxima (1 año a partir de hoy)
-      const fechaMax = new Date(ahora);
+      const fechaMax = new Date(hoy);
       fechaMax.setFullYear(fechaMax.getFullYear() + 1);
       const maxStr = `${fechaMax.getFullYear()}-${String(fechaMax.getMonth() + 1).padStart(2, '0')}-${String(fechaMax.getDate()).padStart(2, '0')}`;
 
@@ -43,8 +55,21 @@ export const basePedidoValidator = [
 
   body('recordatorio')
     .optional({ nullable: true })
-    .isInt()
-    .withMessage("El recordatorio debe ser un numero"),
+    // .isISO8601()
+    // .withMessage("El recordatorio debe tener formato válido (YYYY-MM-DD)")
+    .custom(async (value, { req }) => {
+      // Si se envía recordatorio, fecha_estimada es obligatoria
+      if (!req.body.fecha_estimada) {
+        throw new Error('Si se envía un recordatorio, la fecha estimada de entrega es obligatoria');
+      }
+
+      // El recordatorio no puede ser posterior a la fecha estimada
+      if (value > req.body.fecha_estimada) {
+        throw new Error('El recordatorio no puede ser mayor a la fecha estimada de entrega');
+      }
+
+      return true;
+    }),
 
   body('tipo_pedido')
     .optional({ nullable: true, checkFalsy: true })
@@ -69,8 +94,17 @@ export const parametroValidator = [
 
   check('estado')
     .optional()
-    .isIn(["pendiente", "terminado", "cancelado", "en_proceso"])
-    .withMessage("el estado debe ser: pendiente | terminado | cancelado | en_proceso"),
+    .custom((value) => {
+      const estados = value.split(',').map(s => s.trim().toLowerCase());
+      const validos = ["pendiente", "terminado", "cancelado", "en proceso", "entregado", "completados"];
+      for (const est of estados) {
+        if (!validos.includes(est)) {
+          throw new Error(`Estado inválido: "${est}". Valores permitidos: ${validos.join(', ')}`);
+        }
+      }
+      return true;
+    })
+    .customSanitizer(val => val.toLowerCase().replace(/_/g, ' ')),
 
   check('fecha_desde')
     .optional()
@@ -90,8 +124,47 @@ export const parametroValidator = [
   check('tipo_pedido')
     .optional()
     .isIn(["personalizado", "retoques", "modificaciones"])
-    .withMessage("tipo_pedido debe ser: personalizado | retoques | modificaciones")
-]
+    .withMessage("tipo_pedido debe ser: personalizado | retoques | modificaciones"),
+
+  check('estado_pago')
+    .optional()
+    .isIn(["SIN PAGAR", "ABONADO", "PAGADO"])
+    .withMessage("estado_pago debe ser: SIN PAGAR | ABONADO | PAGADO"),
+
+  check('fecha_entrega_desde')
+    .optional()
+    .isISO8601()
+    .withMessage("fecha_entrega_desde debe tener formato válido (YYYY-MM-DD)"),
+
+  check('fecha_entrega_hasta')
+    .optional()
+    .isISO8601()
+    .withMessage("fecha_entrega_hasta debe tener formato válido (YYYY-MM-DD)"),
+
+  check('descripcion')
+    .optional()
+    .isString()
+    .withMessage("descripcion debe ser texto")
+    .isLength({ max: 100 })
+    .withMessage("descripcion no puede tener más de 100 caracteres"),
+
+  check('tipo_prenda')
+    .optional()
+    .isString()
+    .withMessage('Tipo de prenda debe de ser de tipo texto')
+    .toUpperCase(),
+
+  check('mes')
+    .optional()
+    .isInt({ min: 1, max: 12 })
+    .withMessage("mes debe ser un número entre 1 y 12"),
+
+  check('tipo_origen')
+    .optional()
+    .toUpperCase()
+    .isIn(['CLIENTE', 'PRODUCCION'])
+    .withMessage("tipo_origen debe ser CLIENTE o PRODUCCION"),
+]    
 
 export const updateValidator = [
   body("cliente_id")
@@ -99,14 +172,13 @@ export const updateValidator = [
     .isLength({ max: 15, min: 7 })
     .withMessage("El id del cliente debe tener entre 7 y 15 caracteres"),
 
-  body('fecha_estimada')
+  body('fecha_estimada_entrega')
     .optional({ nullable: true, checkFalsy: true })
     .isISO8601()
     .withMessage("La fecha debe tener formato válido (YYYY-MM-DD)")
-    .custom(value => {
-      // Obtener la fecha local actual en formato YYYY-MM-DD
-      const ahora = new Date();
-      const hoy = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}-${String(ahora.getDate()).padStart(2, '0')}`;
+    .custom(async (value) => {
+      // Obtener la fecha actual desde MySQL (no confiar en hora local)
+      const hoy = await getCurrentDate();
 
       // value ya viene como YYYY-MM-DD validado por isISO8601
       if (value < hoy) {
@@ -114,7 +186,7 @@ export const updateValidator = [
       }
 
       // Calcular fecha máxima (1 año a partir de hoy)
-      const fechaMax = new Date(ahora);
+      const fechaMax = new Date(hoy);
       fechaMax.setFullYear(fechaMax.getFullYear() + 1);
       const maxStr = `${fechaMax.getFullYear()}-${String(fechaMax.getMonth() + 1).padStart(2, '0')}-${String(fechaMax.getDate()).padStart(2, '0')}`;
 
@@ -132,8 +204,19 @@ export const updateValidator = [
 
   body('recordatorio')
     .optional({ nullable: true })
-    .isInt()
-    .withMessage("El recordatorio debe ser un número"),
+    .custom(async (value, { req }) => {
+      // Si se envía recordatorio, fecha_estimada es obligatoria
+      if (!req.body.fecha_estimada_entrega) {
+        throw new Error('Si se envía un recordatorio, la fecha estimada de entrega es obligatoria');
+      }
+
+      // El recordatorio no puede ser posterior a la fecha estimada
+      if (value > req.body.fecha_estimada_entregaa) {
+        throw new Error('El recordatorio no puede ser mayor a la fecha estimada de entrega');
+      }
+
+      return true;
+    }),
 
   body('tipo_pedido')
     .optional({ nullable: true, checkFalsy: true })
@@ -148,6 +231,30 @@ export const updateValidator = [
     .isLength({ max: 100 })
     .withMessage("La descripción no puede tener más de 100 caracteres"),
 
+];
+
+export const entregarPedidoValidator = [
+  param('id')
+    .notEmpty()
+    .isString()
+    .withMessage('ID de pedido requerido'),
+];
+
+export const devolverPedidoValidator = [
+  body('tipo_devolucion')
+    .notEmpty()
+    .withMessage('tipo_devolucion es requerido')
+    .toUpperCase()
+    .isIn(['ANULACION', 'CORRECCION'])
+    .withMessage('tipo_devolucion debe ser ANULACION o CORRECCION'),
+
+  body('motivo')
+    .notEmpty()
+    .withMessage('El motivo de la devolución es obligatorio')
+    .isString()
+    .withMessage('El motivo debe ser texto')
+    .isLength({ max: 255 })
+    .withMessage('El motivo no puede superar los 255 caracteres'),
 ];
 
 export const cancelPedidoValidator = [

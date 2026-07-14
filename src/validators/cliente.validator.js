@@ -23,8 +23,8 @@ const nombre = body('cliente_nombre')
 
 // Apellido
 const apellido = body('cliente_apellido')
-  .notEmpty()
-  .withMessage('El apellido es requerido')
+  .optional({ values: 'falsy' })
+  // .withMessage('El apellido es requerido')
   .isString()
   .withMessage('El apellido debe ser texto')
   .isLength({ max: 255 })
@@ -33,13 +33,31 @@ const apellido = body('cliente_apellido')
 
 // Email
 const email = body('cliente_email')
-  .notEmpty()
-  .withMessage('El correo electrónico es requerido')
+  .optional({ values: 'falsy' })
+  // .withMessage('El correo electrónico es requerido')
   .isEmail()
   .withMessage('El correo electrónico no es válido')
   .isLength({ max: 254 })
   .withMessage('El correo supera los 254 caracteres permitidos')
   .normalizeEmail();
+
+// Tipo de documento (DOCUMENTO o NIT)
+const tipoDoc = body('cliente_tipo_doc')
+  .notEmpty()
+  .withMessage('El tipo de documento es requerido')
+  .toUpperCase()
+  .isIn(['DOCUMENTO', 'NIT'])
+  .withMessage('El tipo de documento debe ser DOCUMENTO o NIT');
+
+// Número de documento
+const documento = body('cliente_documento')
+  .notEmpty()
+  .withMessage('El número de documento es requerido')
+  .isString()
+  .withMessage('El número de documento debe ser texto')
+  .isLength({ max: 20 })
+  .withMessage('El número de documento supera los 20 caracteres permitidos')
+  .trim();
 
 // Dirección
 const direccion = body('cliente_direccion')
@@ -54,7 +72,17 @@ const direccion = body('cliente_direccion')
 const telefonoArray = body('telefono')
   .optional()
   .isArray()
-  .withMessage('El campo teléfono debe ser un arreglo');
+  .withMessage('El campo teléfono debe ser un arreglo')
+  .custom((value) => {
+    if (!value || value.length === 0) return true;
+    const numeros = value.map(t => t.numero_telefono?.trim());
+    const duplicados = numeros.filter((num, idx) => num && numeros.indexOf(num) !== idx);
+    if (duplicados.length > 0) {
+      const dups = [...new Set(duplicados)];
+      throw new Error(`Números de teléfono duplicados: ${dups.join(', ')}`);
+    }
+    return true;
+  });
 
 // Cada elemento del arreglo teléfono
 const telefonoItem = body('telefono.*.numero_telefono')
@@ -73,9 +101,11 @@ const telefonoItem = body('telefono.*.numero_telefono')
 
 // Validación para POST /clientes
 export const createClienteRules = [
-  clienteId,
+  // clienteId,
   nombre,
   apellido,
+  tipoDoc,
+  documento,
   email,
   direccion,
   telefonoArray,
@@ -87,6 +117,8 @@ export const updateClienteRules = [
   // cliente_id no se incluye porque va en la URL
   nombre,
   apellido,
+  tipoDoc,
+  documento,
   email,
   direccion,
   telefonoArray,

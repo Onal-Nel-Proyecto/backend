@@ -4,7 +4,7 @@ import { loginUser, refreshTokenService } from '../services/auth.service.js';
 const ctlLog = async (req, res, next) => {
   try {
     const { email, pass } = req.body;
-    console.log("BODY:", req.body);
+    // console.log("BODY:", req.body);
 
     const result = await loginUser({ email, pass });
 
@@ -14,14 +14,14 @@ const ctlLog = async (req, res, next) => {
     res.status(200)
       .cookie('token', result.token, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: false,
+        sameSite: "lax",
         credentials: true
       })
       .cookie('refreshToken', result.refreshToken, {
         httpOnly: true,
-        secure: true,
-        sameSite: "none",
+        secure: false,
+        sameSite: "lax",
         credentials: true
       })
       .json({

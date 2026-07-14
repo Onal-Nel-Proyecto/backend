@@ -8,7 +8,7 @@ const {
   // variables de entorno para CORS
   FRONT_URL_PROD,
   FRONT_URL_DEV,
-  
+
   // variables de entorno para la conexión a la base de datos MySQL
   MYSQL_HOST,
   MYSQL_USER,
@@ -19,7 +19,11 @@ const {
   ACCESS_TOKEN_KEY, // clave secreta para generar tokens de autenticación
   ACCESS_TOKEN_EXPIRES_IN, // tiempo de expiración del token de acceso
   REFRESH_TOKEN_KEY, // clave secreta para generar tokens de actualización
-  REFRESH_TOKEN_EXPIRES_IN // tiempo de expiración del token de actualización
+  REFRESH_TOKEN_EXPIRES_IN, // tiempo de expiración del token de actualización
+
+  CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET,
 } = process.env
 
 export {
@@ -34,5 +38,8 @@ export {
   REFRESH_TOKEN_KEY,
   REFRESH_TOKEN_EXPIRES_IN,
   FRONT_URL_PROD,
-  FRONT_URL_DEV
+  FRONT_URL_DEV,
+  CLOUDINARY_CLOUD_NAME,
+  CLOUDINARY_API_KEY,
+  CLOUDINARY_API_SECRET,
 }
